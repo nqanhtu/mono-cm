@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "bun --watch src/index.ts",
-    "build": "tsc --noEmit",
+    "build": "prisma generate && tsc --noEmit",
     "start": "bun src/index.ts",
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate deploy",

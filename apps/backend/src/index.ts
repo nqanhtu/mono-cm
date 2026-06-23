@@ -88,9 +88,13 @@ export function createApp(options: CreateAppOptions = {}) {
     });
 }
 
+const app = createApp();
+
 if (import.meta.main) {
-  const app = createApp().listen({ port, hostname: '0.0.0.0' });
+  app.listen({ port, hostname: '0.0.0.0' });
   console.log(
     `Court Management API running at ${app.server?.hostname}:${app.server?.port}`,
   );
 }
+
+export default app;
