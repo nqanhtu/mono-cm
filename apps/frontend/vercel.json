@@ -1,8 +1,9 @@
 {
+  "bunVersion": "1.x",
   "rewrites": [
     {
       "source": "/api/:path*",
-      "destination": "https://court-management-api.onrender.com/api/:path*"
+      "destination": "https://backend-six-psi-31.vercel.app/api/:path*"
     },
     {
       "source": "/(.*)",
