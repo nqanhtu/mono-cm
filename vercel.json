@@ -8,7 +8,7 @@
   "devCommand": "vite --port $PORT",
   "outputDirectory": "dist",
   "functions": {
-    "api/index.ts": {
+    "api/entry.js": {
       "maxDuration": 60,
       "regions": ["sin1"]
     }
