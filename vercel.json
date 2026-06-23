@@ -1,0 +1,26 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "bunVersion": "1.x",
+  "fluid": true,
+  "regions": ["sin1"],
+  "framework": "vite",
+  "buildCommand": "bun run build",
+  "devCommand": "vite --port $PORT",
+  "outputDirectory": "dist",
+  "functions": {
+    "api/entry.js": {
+      "maxDuration": 60,
+      "regions": ["sin1"]
+    }
+  },
+  "rewrites": [
+    {
+      "source": "/api/:path*",
+      "destination": "/api/entry"
+    },
+    {
+      "source": "/((?!api/|@vite/|@react-refresh$)(?!.*\\.[a-zA-Z0-9]+$).*)",
+      "destination": "/index.html"
+    }
+  ]
+}

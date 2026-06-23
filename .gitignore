@@ -1,38 +1,8 @@
-# Logs
-logs
-*.log
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-pnpm-debug.log*
-lerna-debug.log*
-
-# Diagnostic reports
-report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.ts
-
-# Dependency directories
 node_modules
-jspm_packages
-
-# Build outputs
 dist
-dist-ssr
-*.local
-
-# Environment variables files
-.env.production
-.env.development
-.env.local
-.env.*.local
-
-# OS metadata
-.DS_Store
-Thumbs.db
-
-# IDEs
-.vscode
-.idea
-
-# Prisma
-/apps/backend/generated/
+.env
+.env.*
 .vercel
+generated/
+api/entry.generated.js
+api/entry.generated.js.map

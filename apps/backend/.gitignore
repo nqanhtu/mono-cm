@@ -1,9 +1,0 @@
-node_modules/
-.env
-generated/
-dist/
-*.log
-.agents/
-skills-lock.json
-.local-tools/
-.DS_Store
