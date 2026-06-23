@@ -1,0 +1,16 @@
+{
+  "name": "Phần mềm quản lý hồ sơ",
+  "short_name": "Quản lý hồ sơ",
+  "description": "Web app quản lý, chỉnh lý, khai thác và mượn trả hồ sơ.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#0f172a",
+  "icons": [
+    {
+      "src": "/favicon.ico",
+      "sizes": "48x48",
+      "type": "image/x-icon"
+    }
+  ]
+}

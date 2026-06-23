@@ -1,0 +1,13 @@
+{
+  "name": "court-management-monorepo",
+  "private": true,
+  "workspaces": [
+    "apps/*"
+  ],
+  "scripts": {
+    "dev:frontend": "bun --filter frontend dev",
+    "dev:backend": "bun --filter backend dev",
+    "build:frontend": "bun --filter frontend build",
+    "build:backend": "bun --filter backend build"
+  }
+}

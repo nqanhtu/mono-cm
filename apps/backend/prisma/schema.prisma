@@ -1,0 +1,343 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ==========================================
+// 1. Phân quyền & Người dùng Hệ thống
+// ==========================================
+
+enum UserRole {
+  SUPER_ADMIN // SuperAdmin: Toàn quyền, quản lý user
+  ADMIN // Admin (Chánh án): Xem, sửa, xoá hồ sơ, xem phiếu mượn
+  VIEWER // View (Thẩm phán): Xem hồ sơ
+  COORDINATOR // Coordinate: Xem hồ sơ, tạo phiếu mượn trả, xem vị trí lưu kho
+  BASIC_VIEWER // Basic Viewer: Xem hồ sơ, lưu trữ, báo cáo cơ bản
+}
+
+model User {
+  id       String   @id @default(uuid(7))
+  username String   @unique
+  password String // Hashed
+  fullName String
+  role     UserRole @default(VIEWER)
+
+  // Thông tin thêm
+  unit   String? // Đơn vị
+  status Boolean @default(true) // Active/Inactive
+
+  // Quan hệ
+  auditLogs   AuditLog[]
+  accessLogs  UserAccessLog[]
+  borrowSlips BorrowSlip[]    @relation("Lender")
+
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  borrowSlipEvents BorrowSlipEvent[]
+  createdFiles     File[]            @relation("FileCreator")
+  updatedFiles     File[]            @relation("FileUpdater")
+  createdDocs      Document[]        @relation("DocumentCreator")
+  updatedDocs      Document[]        @relation("DocumentUpdater")
+
+  @@map("user")
+}
+
+// ==========================================
+// 2. File Management & Storage
+// ==========================================
+
+// Agency Name History (Storage Font)
+model AgencyHistory {
+  id        String    @id @default(uuid(7))
+  name      String // Agency Name (e.g., TAND Binh Duong)
+  startDate DateTime // Start period
+  endDate   DateTime? // End period (null = present)
+
+  boxes StorageBox[]
+}
+
+// Location & Box Management
+model StorageBox {
+  id   String @id @default(uuid(7))
+  code String @unique // Box code (generated or QR code content)
+
+  // Physical Location (Warehouse -> Line -> Shelf -> Slot -> Box)
+  warehouse String // Warehouse
+  line      String // Line
+  shelf     String // Shelf
+  slot      String // Slot/Compartment
+  boxNumber String // Box Number (sequential)
+
+  // Box Label Info
+  agencyId     String?
+  agency       AgencyHistory? @relation(fields: [agencyId], references: [id])
+  caseType     String? // Case Type (Criminal, Civil...)
+  year         Int? // Year
+  fromFileCode String? // From File Code
+  toFileCode   String? // To File Code
+  retention    String? // Retention Period (Permanent, 10 years...)
+
+  files File[]
+
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  storageBoxLabels StorageBoxLabel[]
+
+  @@index([warehouse, line, shelf, slot])
+}
+
+model StorageBoxLabel {
+  id           String      @id @default(uuid(7))
+  agencyId     String?
+  fromYear     Int?
+  toYear       Int?
+  label        String
+  storageBoxId String?
+  storageBox   StorageBox? @relation(fields: [storageBoxId], references: [id])
+}
+
+model StorageLayout {
+  id        String   @id @default("default")
+  data      Json
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// Case File (File Jacket)
+model File {
+  id   String @id @default(uuid(7))
+  code String @unique // Convention: Code - Type - Year - #
+
+  // General Info (Sheet 1)
+  title     String // Title
+  type      String // Case Type (Criminal, Civil...)
+  datetime  DateTime // File Date
+  year      Int? // Year (Filter)
+  pageCount Int? // Page Count
+
+  // Details (JSON for flexibility: Defendant, Plaintiff, Summary...)
+  details Json?
+
+  // Time & Retention
+  judgmentDate DateTime? // Judgment Date
+  retention    String? // Retention Period (Permanent, 10 years...)
+
+  // New fields from Excel analysis
+  note      String? // Note
+  indexCode String? // File Index Code (MLHS)
+
+  judgmentNumber  String? // Judgment Number
+  defendants      String[] // Defendants
+  plaintiffs      String[] // Plaintiffs
+  civilDefendants String[] // Civil Defendants
+
+  // Status & Lock
+  isLocked Boolean @default(false) // Locked (Admin only edit)
+  status   String  @default("IN_STOCK") // IN_STOCK, BORROWED, LOST
+
+  // Relations
+  boxId       String?
+  box         StorageBox?  @relation(fields: [boxId], references: [id])
+  fileIndex   FileIndex?
+  documents   Document[] // Child Documents (Sheet 2)
+  borrowItems BorrowItem[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  createdById String?
+  createdBy   User?   @relation("FileCreator", fields: [createdById], references: [id])
+  updatedById String?
+  updatedBy   User?   @relation("FileUpdater", fields: [updatedById], references: [id])
+}
+
+model FileIndex {
+  id     String @id @default(uuid(7))
+  fileId String @unique
+  file   File   @relation(fields: [fileId], references: [id], onDelete: Cascade)
+
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  attachments  String[]
+  totalPage    Int
+  judgmentTime DateTime
+}
+
+// Documents within File (Sheet 2 - Document List)
+model Document {
+  id        String  @id @default(uuid(7))
+  code      String? // Child Document Code (if any - corresponds to File No in Excel)
+  title     String // Title / Abstract
+  year      Int?
+  pageCount Int? // Page Count
+  order     Int? // Order Number
+
+  // New fields form Excel
+  contentIndex     String? // Document Index
+  preservationTime String? // Preservation Period
+  note             String? // Note
+
+  fileId String
+  file   File   @relation(fields: [fileId], references: [id], onDelete: Cascade)
+
+  createdById String?
+  createdBy   User?   @relation("DocumentCreator", fields: [createdById], references: [id])
+  updatedById String?
+  updatedBy   User?   @relation("DocumentUpdater", fields: [updatedById], references: [id])
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+// ==========================================
+// 3. Mượn Trả
+// ==========================================
+
+model BorrowSlip {
+  id   String @id @default(uuid(7))
+  code String @unique // Mã phiếu (PM-YYYY-XXX)
+
+  // Thông tin người mượn (Khách) - Lưu text vì không phải User hệ thống
+  borrowerName  String
+  borrowerUnit  String? // Đơn vị/Phòng ban
+  borrowerTitle String? // Chức danh
+  reason        String? // Lý do mượn
+
+  // Thông tin phiếu
+  borrowDate   DateTime  @default(now())
+  dueDate      DateTime // Hạn trả
+  returnedDate DateTime? // Ngày trả hết toàn bộ
+  status       String    @default("PENDING_APPROVAL") // PENDING_APPROVAL, APPROVED, REJECTED, EXPORTED, PARTIAL_RETURN, RETURNED, OVERDUE
+  approvedById String?
+  approvedAt   DateTime?
+  rejectedById String?
+  rejectedAt   DateTime?
+  rejectReason String?
+  exportedById String?
+  exportedAt   DateTime?
+
+  // Người lập phiếu (Cán bộ lưu trữ)
+  lenderId String
+  lender   User   @relation("Lender", fields: [lenderId], references: [id])
+
+  items  BorrowItem[]
+  events BorrowSlipEvent[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model BorrowItem {
+  id String @id @default(uuid(7))
+
+  borrowSlipId String
+  borrowSlip   BorrowSlip @relation(fields: [borrowSlipId], references: [id], onDelete: Cascade)
+
+  fileId String
+  file   File   @relation(fields: [fileId], references: [id])
+
+  returnedDate DateTime? // Ngày trả cụ thể
+  status       String    @default("REQUESTED") // REQUESTED, APPROVED, BORROWING, RETURNED
+  condition    String? // Tình trạng khi trả
+
+  @@unique([borrowSlipId, fileId])
+}
+
+model BorrowSlipEvent {
+  id           String     @id @default(uuid(7))
+  borrowSlipId String
+  borrowSlip   BorrowSlip @relation(fields: [borrowSlipId], references: [id], onDelete: Cascade)
+
+  eventType   String // CREATED, RETURNED_PARTIAL, RETURNED_ALL, EXTENDED, ADD_FILE, REMOVE_FILE, NOTE
+  description String? // "Trả 2 hồ sơ", "Mượn thêm hồ sơ ABC"
+  details     Json? // { fileIds: ["..."], changes: {} }
+
+  creatorId String?
+  creator   User?   @relation(fields: [creatorId], references: [id])
+
+  createdAt DateTime @default(now())
+}
+
+// ==========================================
+// 4. Audit & System
+// ==========================================
+
+model AuditLog {
+  id         String      @id @default(uuid(7))
+  action     AuditAction // LOGIN, VIEW, CREATE, UPDATE, DELETE, EXPORT
+  target     String // Tên bảng/đối tượng bị tác động (File/User...)
+  targetId   String? // ID đối tượng
+  detail     Json? // Chi tiết thay đổi (Old value -> New value)
+  ipAddress  String?
+  macAddress String?
+
+  userId String?
+  user   User?   @relation(fields: [userId], references: [id])
+
+  createdAt DateTime @default(now())
+}
+
+enum AuditAction {
+  LOGIN
+  VIEW
+  CREATE
+  UPDATE
+  DELETE
+  EXPORT
+  IMPORT
+  UPLOAD
+}
+
+model UserAccessLog {
+  id             String          @id @default(uuid(7))
+  event          UserAccessEvent
+  occurredAt     DateTime        @default(now())
+  ipAddress      String?
+  macAddress     String?
+  userAgent      String?
+  deviceType     String?
+  osName         String?
+  osVersion      String?
+  browserName    String?
+  browserVersion String?
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, occurredAt])
+  @@index([event, occurredAt])
+}
+
+enum UserAccessEvent {
+  LOGIN
+  LOGOUT
+}
+
+model BackupSchedule {
+  id            String    @id @default("default")
+  enabled       Boolean   @default(false)
+  frequency     String    @default("DAILY")
+  timeOfDay     String    @default("23:00")
+  retentionDays Int       @default(7)
+  target        String    @default("local")
+  lastRunAt     DateTime?
+  lastStatus    String?
+  lastMessage   String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+}
+
+model BackupRun {
+  id        String    @id @default(uuid(7))
+  filename  String?
+  size      Int?
+  status    String
+  message   String?
+  target    String    @default("local")
+  startedAt DateTime  @default(now())
+  endedAt   DateTime?
+}

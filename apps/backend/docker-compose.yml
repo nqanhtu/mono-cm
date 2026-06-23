@@ -1,0 +1,39 @@
+# Docker Compose for Elysia Backend (CM Server)
+# Runs alongside n8n on the same server, reusing Traefik and the n8n-net network
+#
+# How to deploy:
+#   1. Copy this file to server: scp docker-compose.yaml root@103.152.164.153:/opt/cm/
+#   2. Copy .env:         scp .env root@103.152.164.153:/opt/cm/
+#   3. Build & run: cd /opt/cm && docker compose up -d --build
+
+services:
+  # Elysia Backend Server
+  cm-server:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: cm_server
+    restart: always
+    environment:
+      - NODE_ENV=production
+      - PORT=3001
+      # Neon Postgres (external, reused)
+      - DATABASE_URL=${DATABASE_URL:-postgresql://neondb_owner:npg_O4VRWPH7ohnB@ep-fancy-pine-aoqnm96e-pooler.c-2.ap-southeast-1.aws.neon.tech/neondb?channel_binding=require&sslmode=require&uselibpqcompat=true}
+      # Backend secrets specified in README
+      - JWT_SECRET=${JWT_SECRET:-shared-secret-with-frontend}
+      - FRONTEND_ORIGIN=${FRONTEND_ORIGIN:-http://localhost:3000,https://court-management-livid.vercel.app,/.*-livid\.vercel\.app$/}
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=n8n_n8n-net"
+      # Router for API subdomain
+      - "traefik.http.routers.cm-server.rule=Host(`namnn07.zhost.store`) && (PathPrefix(`/api`) || Path(`/health`) || Path(`/openapi.json`) || Path(`/docs`) || Path(`/openapi`))"
+      - "traefik.http.routers.cm-server.entrypoints=websecure"
+      - "traefik.http.routers.cm-server.tls.certresolver=myresolver"
+      - "traefik.http.services.cm-server.loadbalancer.server.port=3001"
+    networks:
+      - n8n_n8n-net
+
+networks:
+  # External — reuse the existing n8n Traefik instance
+  n8n_n8n-net:
+    external: true
