@@ -4,3 +4,5 @@ dist
 .env.*
 .vercel
 generated/
+api/entry.generated.js
+api/entry.generated.js.map
