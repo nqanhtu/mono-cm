@@ -235,6 +235,10 @@ export function EditFileDialog({ file, onSuccess }: EditFileDialogProps) {
         }))
     ]
 
+    const selectedBox = boxes.find(b => b.id === formData.boxId)
+    const isRetentionLocked = !!formData.boxId && formData.boxId !== 'none_clear' && !!selectedBox?.retention
+
+
     return (
         <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
@@ -353,6 +357,7 @@ export function EditFileDialog({ file, onSuccess }: EditFileDialogProps) {
                                     value={formData.retention}
                                     suggestions={suggestions.retentions}
                                     onValueChange={(val) => setFormData({ ...formData, retention: val })}
+                                    disabled={isRetentionLocked}
                                 />
                             </div>
                             <div className="space-y-2">
@@ -373,7 +378,19 @@ export function EditFileDialog({ file, onSuccess }: EditFileDialogProps) {
                                 placeholder="Tìm kiếm hộp lưu trữ..."
                                 value={formData.boxId || ''}
                                 suggestions={boxOptions}
-                                onValueChange={(val) => setFormData({ ...formData, boxId: val })}
+                                onValueChange={(val) => {
+                                    const selectedBox = boxes.find(b => b.id === val);
+                                    setFormData(prev => {
+                                        const nextRetention = selectedBox && selectedBox.retention 
+                                            ? selectedBox.retention 
+                                            : (isRetentionLocked ? '10 năm' : prev.retention);
+                                        return {
+                                            ...prev,
+                                            boxId: val,
+                                            retention: nextRetention
+                                        };
+                                    });
+                                }}
                             />
                         </div>
 

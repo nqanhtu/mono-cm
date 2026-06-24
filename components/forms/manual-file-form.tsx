@@ -194,6 +194,10 @@ export function ManualFileForm({ onSuccess }: ManualFileFormProps) {
         label: `${b.code} (Kệ: ${b.shelf}) ${b.agency?.name ? `- Phông: ${b.agency.name}` : ''}`
     }))
 
+    const selectedBox = boxes.find(b => b.id === formData.boxId)
+    const isRetentionLocked = !!formData.boxId && !!selectedBox?.retention
+
+
     const handleKeyDown = (e: React.KeyboardEvent<HTMLFormElement>) => {
         if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
             e.preventDefault()
@@ -299,6 +303,7 @@ export function ManualFileForm({ onSuccess }: ManualFileFormProps) {
                             value={formData.retention}
                             suggestions={suggestions.retentions}
                             onValueChange={(val) => setFormData({ ...formData, retention: val })}
+                            disabled={isRetentionLocked}
                         />
                     </div>
                     <div className="space-y-2">
@@ -319,7 +324,19 @@ export function ManualFileForm({ onSuccess }: ManualFileFormProps) {
                         placeholder="Tìm kiếm hộp lưu trữ..."
                         value={formData.boxId}
                         suggestions={boxOptions}
-                        onValueChange={(val) => setFormData({ ...formData, boxId: val })}
+                        onValueChange={(val) => {
+                            const selectedBox = boxes.find(b => b.id === val);
+                            setFormData(prev => {
+                                const nextRetention = selectedBox && selectedBox.retention 
+                                    ? selectedBox.retention 
+                                    : (isRetentionLocked ? '10 năm' : prev.retention);
+                                return {
+                                    ...prev,
+                                    boxId: val,
+                                    retention: nextRetention
+                                };
+                            });
+                        }}
                     />
                 </div>
 

@@ -343,6 +343,10 @@ export function CaseFileForm({ onSuccess, onCancel, setIsDirty, draftOwnerId }: 
     label: `${b.code} (Kệ: ${b.shelf}) ${b.agency?.name ? `- Phông: ${b.agency.name}` : ''}`
   }))
 
+  const selectedBox = boxes.find(b => b.id === formData.boxId)
+  const isRetentionLocked = !!formData.boxId && !!selectedBox?.retention
+
+
   // Keyboard Shortcuts handler
   const handleManualSubmitRef = useRef(handleManualSubmit)
   const onCancelRef = useRef(onCancel)
@@ -469,6 +473,7 @@ export function CaseFileForm({ onSuccess, onCancel, setIsDirty, draftOwnerId }: 
                 suggestions={suggestions.retentions}
                 onValueChange={(val) => handleFieldChange('retention', val)}
                 className="h-9 text-xs rounded-md"
+                disabled={isRetentionLocked}
               />
             </div>
             <div className="space-y-1">
@@ -493,7 +498,15 @@ export function CaseFileForm({ onSuccess, onCancel, setIsDirty, draftOwnerId }: 
               placeholder="Tìm theo mã hộp, kệ hoặc phông..."
               value={formData.boxId}
               suggestions={boxOptions}
-              onValueChange={(val) => handleFieldChange('boxId', val)}
+              onValueChange={(val) => {
+                handleFieldChange('boxId', val);
+                const selectedBox = boxes.find(b => b.id === val);
+                if (selectedBox && selectedBox.retention) {
+                  handleFieldChange('retention', selectedBox.retention);
+                } else if (isRetentionLocked) {
+                  handleFieldChange('retention', '10 năm');
+                }
+              }}
               className="h-9 text-xs rounded-md"
             />
             {isBoxesLoading ? (
