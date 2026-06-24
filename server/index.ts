@@ -68,8 +68,9 @@ export function createApp(options: CreateAppOptions = {}) {
       }),
     )
     .onRequest(({ request }) => {
-      logger &&
+      if (logger) {
         logger.log(`${request.method} ${new URL(request.url).pathname}`);
+      }
     })
     .get("/health", () => ({ ok: true }), {
       response: t.Object({ ok: t.Boolean() }),
@@ -80,7 +81,9 @@ export function createApp(options: CreateAppOptions = {}) {
     })
     .use(apiRoutes)
     .onError(({ code, error, set }) => {
-      logger && logger.error(code, error);
+      if (logger) {
+        logger.error(code, error);
+      }
       set.status = code === "NOT_FOUND" ? 404 : 500;
       return {
         error: code === "NOT_FOUND" ? "Not Found" : "Internal Server Error",

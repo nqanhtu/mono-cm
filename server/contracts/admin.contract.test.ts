@@ -574,7 +574,7 @@ describe('admin contract', () => {
 
       expect(response.status).toBe(200)
       expect(response.headers.get('content-type')).toBe('application/octet-stream')
-      expect(response.headers.get('content-disposition')).toBe('attachment; filename=\"court-management-2026-05-21T00-00-00-000Z.dump\"')
+      expect(response.headers.get('content-disposition')).toBe('attachment; filename="court-management-2026-05-21T00-00-00-000Z.dump"')
       expect(response.headers.get('content-length')).toBe('11')
       expect(await response.text()).toBe('dump-output')
       expect(auditCreateCalls).toHaveLength(1)
