@@ -1,8 +1,5 @@
-import { spawn } from 'node:child_process'
-import { mkdir, rm, writeFile } from 'node:fs/promises'
-import { join } from 'node:path'
-import { tmpdir } from 'node:os'
-import { randomUUID } from 'node:crypto'
+import { db } from '../db';
+import * as zlib from 'node:zlib';
 
 export type PostgresRestoreInput = {
   file: File
@@ -17,105 +14,105 @@ export type DatabaseRestoreResult = {
 
 export type PostgresRestoreRunner = (input: PostgresRestoreInput) => Promise<DatabaseRestoreResult>
 
-let restoreInProgress = false
-let restoreRunner: PostgresRestoreRunner = runPgRestore
+const MODELS = [
+  'borrowSlipEvent',
+  'borrowItem',
+  'borrowSlip',
+  'fileIndex',
+  'document',
+  'file',
+  'storageBoxLabel',
+  'storageBox',
+  'auditLog',
+  'userAccessLog',
+  'agencyHistory',
+  'storageLayout',
+  'backupRun',
+  'user',
+  'backupSchedule',
+];
+
+let restoreInProgress = false;
+let restoreRunner: PostgresRestoreRunner = runJsNativeRestore;
 
 export function setPostgresRestoreRunnerForTesting(runner: PostgresRestoreRunner) {
-  restoreRunner = runner
+  restoreRunner = runner;
 }
 
 export function resetPostgresRestoreRunnerForTesting() {
-  restoreRunner = runPgRestore
-  restoreInProgress = false
+  restoreRunner = runJsNativeRestore;
+  restoreInProgress = false;
 }
 
-export async function restorePostgresBackup(input: PostgresRestoreInput) {
-  return await restoreRunner(input)
+export async function restorePostgresBackup(input: PostgresRestoreInput): Promise<DatabaseRestoreResult> {
+  return await restoreRunner(input);
 }
 
-async function runPgRestore(input: PostgresRestoreInput): Promise<DatabaseRestoreResult> {
+function convertDates(obj: any): any {
+  if (typeof obj !== 'object' || obj === null) return obj;
+  if (Array.isArray(obj)) {
+    return obj.map(convertDates);
+  }
+  const result = { ...obj } as Record<string, any>;
+  for (const key of Object.keys(result)) {
+    const val = result[key];
+    if (typeof val === 'string' && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/.test(val)) {
+      result[key] = new Date(val);
+    } else if (typeof val === 'object' && val !== null) {
+      result[key] = convertDates(val);
+    }
+  }
+  return result;
+}
+
+async function runJsNativeRestore(input: PostgresRestoreInput): Promise<DatabaseRestoreResult> {
   if (restoreInProgress) {
-    throw new Error('A database restore is already in progress')
+    throw new Error('A database restore is already in progress');
   }
 
-  restoreInProgress = true
-
-  const directory = join(tmpdir(), 'court-management-api-restores')
-  const inputPath = join(directory, `${randomUUID()}-${sanitizeFilename(input.filename)}`)
+  restoreInProgress = true;
 
   try {
-    const connectionString = process.env.DATABASE_URL
-    if (!connectionString) {
-      throw new Error('DATABASE_URL is not configured')
+    const arrayBuffer = await input.file.arrayBuffer();
+    const gzipBuffer = Buffer.from(arrayBuffer);
+    const jsonString = zlib.gunzipSync(gzipBuffer).toString('utf-8');
+    const payload = JSON.parse(jsonString);
+
+    if (!payload.metadata || payload.metadata.version !== '1.0' || !payload.data) {
+      throw new Error('Invalid backup file format');
     }
 
-    await mkdir(directory, { recursive: true })
-    await writeFile(inputPath, Buffer.from(await input.file.arrayBuffer()))
-    await runPgRestoreCommand(inputPath, buildPgEnv(connectionString))
+    const backupData = convertDates(payload.data);
+
+    await db.$transaction(async (tx) => {
+      // 1. Clear all tables in child-to-parent order to avoid foreign key violations
+      for (const model of MODELS) {
+        if (model in tx) {
+          await (tx as any)[model].deleteMany();
+        }
+      }
+
+      // 2. Populate tables in reverse order (parent-to-child)
+      for (const model of [...MODELS].reverse()) {
+        if (model in tx && backupData[model]) {
+          const records = backupData[model];
+          if (records.length > 0) {
+            await (tx as any)[model].createMany({
+              data: records,
+              skipDuplicates: true
+            });
+          }
+        }
+      }
+    }, {
+      timeout: 30000 // 30s timeout for import transaction
+    });
 
     return {
       filename: input.filename,
       size: input.size,
-    }
+    };
   } finally {
-    restoreInProgress = false
-    await rm(inputPath, { force: true })
+    restoreInProgress = false;
   }
-}
-
-function sanitizeFilename(filename: string) {
-  return filename.replace(/[^a-zA-Z0-9._-]/g, '_')
-}
-
-function buildPgEnv(connectionString: string) {
-  const url = new URL(connectionString)
-  const database = url.pathname.replace(/^\//, '')
-  const sslMode = url.searchParams.get('sslmode')
-
-  return {
-    ...process.env,
-    PGHOST: url.hostname,
-    PGPORT: url.port || '5432',
-    PGDATABASE: decodeURIComponent(database),
-    PGUSER: decodeURIComponent(url.username),
-    PGPASSWORD: decodeURIComponent(url.password),
-    ...(sslMode ? { PGSSLMODE: sslMode } : {}),
-  }
-}
-
-function runPgRestoreCommand(inputPath: string, env: NodeJS.ProcessEnv) {
-  return new Promise<void>((resolve, reject) => {
-    const child = spawn('pg_restore', [
-      '--clean',
-      '--if-exists',
-      '--no-owner',
-      '--no-acl',
-      '--dbname',
-      env.PGDATABASE || '',
-      inputPath,
-    ], {
-      env,
-      stdio: ['ignore', 'ignore', 'pipe'],
-    })
-
-    let stderr = ''
-
-    child.stderr.on('data', (chunk: Buffer) => {
-      stderr += chunk.toString('utf8')
-      if (stderr.length > 4000) stderr = stderr.slice(-4000)
-    })
-
-    child.on('error', (error) => {
-      reject(error)
-    })
-
-    child.on('close', (code) => {
-      if (code === 0) {
-        resolve()
-        return
-      }
-
-      reject(new Error(`pg_restore exited with code ${code}${stderr ? `: ${stderr}` : ''}`))
-    })
-  })
 }
