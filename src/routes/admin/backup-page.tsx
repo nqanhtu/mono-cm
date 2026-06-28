@@ -200,7 +200,7 @@ export default function BackupPage() {
   const handleRestore = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!restoreFile) {
-      toast.error("Vui lòng chọn file sao lưu (.dump)");
+      toast.error("Vui lòng chọn file sao lưu (.json.gz)");
       return;
     }
     if (confirmText !== "RESTORE") {
@@ -415,18 +415,18 @@ export default function BackupPage() {
                                 Khôi phục cơ sở dữ liệu
                             </CardTitle>
                             <CardDescription className="text-xs text-red-500/80">
-                                Tải lên bản sao lưu (.dump) để ghi đè cơ sở dữ liệu hiện có. Hành động này sẽ thay thế hoàn toàn dữ liệu cũ!
+                                Tải lên bản sao lưu (.json.gz) để ghi đè cơ sở dữ liệu hiện có. Hành động này sẽ thay thế hoàn toàn dữ liệu cũ!
                             </CardDescription>
                         </CardHeader>
                         <CardContent className="pt-4">
                             <form onSubmit={handleRestore} className="space-y-4">
                                 <div className="grid gap-4 md:grid-cols-2">
                                     <div className="space-y-1.5">
-                                        <Label htmlFor="restore-file" className="text-xs text-muted-foreground">Chọn tệp sao lưu (.dump)</Label>
+                                        <Label htmlFor="restore-file" className="text-xs text-muted-foreground">Chọn tệp sao lưu (.json.gz)</Label>
                                         <Input 
                                             id="restore-file"
                                             type="file"
-                                            accept=".dump"
+                                            accept=".json.gz,.gz"
                                             className="h-9 rounded-lg text-xs"
                                             onChange={(e) => setRestoreFile(e.target.files?.[0] || null)}
                                         />

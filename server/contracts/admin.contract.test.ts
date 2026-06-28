@@ -553,7 +553,7 @@ describe('admin contract', () => {
       const auditCreateCalls: unknown[] = []
 
       setPostgresBackupRunnerForTesting(async () => ({
-        filename: 'court-management-2026-05-21T00-00-00-000Z.dump',
+        filename: 'court-management-2026-05-21T00-00-00-000Z.json.gz',
         size: 11,
         stream: () => new Blob(['dump-output']).stream(),
         cleanup: async () => undefined,
@@ -574,7 +574,7 @@ describe('admin contract', () => {
 
       expect(response.status).toBe(200)
       expect(response.headers.get('content-type')).toBe('application/octet-stream')
-      expect(response.headers.get('content-disposition')).toBe('attachment; filename="court-management-2026-05-21T00-00-00-000Z.dump"')
+      expect(response.headers.get('content-disposition')).toBe('attachment; filename="court-management-2026-05-21T00-00-00-000Z.json.gz"')
       expect(response.headers.get('content-length')).toBe('11')
       expect(await response.text()).toBe('dump-output')
       expect(auditCreateCalls).toHaveLength(1)
@@ -586,7 +586,7 @@ describe('admin contract', () => {
       const app = createTestApp()
       const formData = new FormData()
       formData.set('confirm', 'RESTORE')
-      formData.set('file', new File(['dump-output'], 'backup.dump'))
+      formData.set('file', new File(['dump-output'], 'backup.json.gz'))
 
       const response = await app.handle(jsonRequest('/api/admin/database/restore', {
         method: 'POST',
@@ -602,7 +602,7 @@ describe('admin contract', () => {
       const app = createTestApp()
       const formData = new FormData()
       formData.set('confirm', 'WRONG')
-      formData.set('file', new File(['dump-output'], 'backup.dump'))
+      formData.set('file', new File(['dump-output'], 'backup.json.gz'))
 
       const response = await app.handle(jsonRequest('/api/admin/database/restore', {
         method: 'POST',
@@ -626,7 +626,7 @@ describe('admin contract', () => {
       }))
 
       expect(response.status).toBe(400)
-      expect(await response.json()).toEqual({ error: 'Vui lòng chọn file .dump để khôi phục' })
+      expect(await response.json()).toEqual({ error: 'Vui lòng chọn file .json.gz để khôi phục' })
     })
 
     test('POST /api/admin/database/restore restores a PostgreSQL dump and writes audit log', async () => {
@@ -635,7 +635,7 @@ describe('admin contract', () => {
       const auditCreateCalls: unknown[] = []
       const formData = new FormData()
       formData.set('confirm', 'RESTORE')
-      formData.set('file', new File(['dump-output'], 'court-management.dump'))
+      formData.set('file', new File(['dump-output'], 'court-management.json.gz'))
 
       setPostgresRestoreRunnerForTesting(async (input) => {
         restoreCalls.push(input)
@@ -659,10 +659,10 @@ describe('admin contract', () => {
       expect(response.status).toBe(200)
       expect(await response.json()).toEqual({
         success: true,
-        filename: 'court-management.dump',
+        filename: 'court-management.json.gz',
         size: 11,
       })
-      expect(restoreCalls).toEqual([{ file: expect.any(File), filename: 'court-management.dump', size: 11 }])
+      expect(restoreCalls).toEqual([{ file: expect.any(File), filename: 'court-management.json.gz', size: 11 }])
       expect(auditCreateCalls).toHaveLength(1)
       expect(auditCreateCalls[0]).toMatchObject({
         data: {
@@ -670,7 +670,7 @@ describe('admin contract', () => {
           target: 'Database',
           targetId: 'postgres',
           userId: 'test-user-id',
-          detail: JSON.stringify({ filename: 'court-management.dump', size: 11 }),
+          detail: JSON.stringify({ filename: 'court-management.json.gz', size: 11 }),
         },
       })
 

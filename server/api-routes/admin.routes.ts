@@ -589,8 +589,8 @@ export const adminRoutes = new Elysia()
         return jsonError(set, 'Vui lòng nhập RESTORE để xác nhận khôi phục cơ sở dữ liệu', 400)
       }
 
-      if (!isUploadedFile(file) || !file.name.toLowerCase().endsWith('.dump')) {
-        return jsonError(set, 'Vui lòng chọn file .dump để khôi phục', 400)
+      if (!isUploadedFile(file) || (!file.name.toLowerCase().endsWith('.json.gz') && !file.name.toLowerCase().endsWith('.gz'))) {
+        return jsonError(set, 'Vui lòng chọn file .json.gz để khôi phục', 400)
       }
 
       const restore = await restorePostgresBackup({
