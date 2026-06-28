@@ -9,6 +9,7 @@ import { sessionOrDenied, requireSuperAdmin, isUploadedFile } from '@/api-routes
 import { createAuditLog } from '@/lib/services/audit-log'
 import { createPostgresBackup } from '@/lib/services/database-backup'
 import { restorePostgresBackup } from '@/lib/services/database-restore'
+import { uploadBackupToBlob, cleanExpiredBlobs } from '@/lib/services/vercel-blob'
 import type { UserAccessEvent } from '@/generated/prisma/client'
 
 const DEFAULT_STORAGE_LAYOUT_ID = 'default'
@@ -497,6 +498,16 @@ export const adminRoutes = new Elysia()
     const denied = requireSuperAdmin(set, session)
     if (denied) return denied
 
+    let target = 'local'
+    try {
+      const body = await request.json() as { target?: string }
+      if (body.target === 'server-cloud') {
+        target = 'server-cloud'
+      }
+    } catch {
+      // Fallback to local if body is empty
+    }
+
     let backup: Awaited<ReturnType<typeof createPostgresBackup>> | null = null
 
     try {
@@ -509,28 +520,52 @@ export const adminRoutes = new Elysia()
         ipAddress: getClientIp(request),
         detail: { filename: backup.filename, size: backup.size },
       })
-      await recordBackupRun({
-        status: 'SUCCESS',
-        filename: backup.filename,
-        size: backup.size,
-        target: 'local',
-      })
 
-      return new Response(backup.stream(), {
-        headers: {
-          'content-type': 'application/octet-stream',
-          'content-disposition': `attachment; filename="${backup.filename}"`,
-          'content-length': String(backup.size),
-          'cache-control': 'no-store',
-        },
-      })
+      if (target === 'server-cloud') {
+        const url = await uploadBackupToBlob(backup.filename, backup.buffer)
+        await recordBackupRun({
+          status: 'SUCCESS',
+          filename: backup.filename,
+          size: backup.size,
+          target: 'server-cloud',
+        })
+
+        // Retention
+        const schedule = await db.backupSchedule.findUnique({ where: { id: 'default' } })
+        if (schedule && schedule.enabled) {
+          await cleanExpiredBlobs(schedule.retentionDays)
+          await db.backupRun.deleteMany({
+            where: {
+              startedAt: { lt: new Date(Date.now() - schedule.retentionDays * 24 * 60 * 60 * 1000) }
+            }
+          })
+        }
+
+        return { success: true, url, filename: backup.filename, size: backup.size }
+      } else {
+        await recordBackupRun({
+          status: 'SUCCESS',
+          filename: backup.filename,
+          size: backup.size,
+          target: 'local',
+        })
+
+        return new Response(backup.stream(), {
+          headers: {
+            'content-type': 'application/octet-stream',
+            'content-disposition': `attachment; filename="${backup.filename}"`,
+            'content-length': String(backup.size),
+            'cache-control': 'no-store',
+          },
+        })
+      }
     } catch (error) {
       await backup?.cleanup()
       console.error('Database backup error:', error instanceof Error ? error.message : error)
       await recordBackupRun({
         status: 'FAILED',
         message: error instanceof Error ? error.message : 'Unknown backup error',
-        target: 'local',
+        target,
       })
       return jsonError(set, 'Không thể tạo bản sao lưu cơ sở dữ liệu', 500)
     }
@@ -739,6 +774,71 @@ export const adminRoutes = new Elysia()
     } catch (error) {
       console.error('Backup schedule update error:', error)
       return jsonError(set, 'Không thể lưu lịch sao lưu', 500)
+    }
+  })
+  .post('/api/cron/backup', async ({ request, set }) => {
+    const authHeader = request.headers.get('authorization');
+    const expectedToken = process.env.CRON_SECRET;
+    
+    if (expectedToken && authHeader !== `Bearer ${expectedToken}`) {
+      set.status = 401;
+      return { error: 'Unauthorized' };
+    }
+
+    try {
+      const schedule = await db.backupSchedule.findUnique({ where: { id: 'default' } });
+      if (!schedule || !schedule.enabled) {
+        return { success: true, message: 'Backup schedule is disabled' };
+      }
+
+      // Check if backup is due
+      const now = new Date();
+      const currentHour = now.getHours();
+      const [scheduledHour] = schedule.timeOfDay.split(':').map(Number);
+
+      // Verify trigger window (hourly trigger triggers at matching hour)
+      if (currentHour !== scheduledHour) {
+        return { success: true, message: `Skipping: scheduled at ${schedule.timeOfDay}, current hour is ${currentHour}` };
+      }
+
+      // Ensure we haven't run it in the last 20 hours to prevent duplicate runs
+      if (schedule.lastRunAt) {
+        const hoursSinceLastRun = (now.getTime() - new Date(schedule.lastRunAt).getTime()) / (1000 * 60 * 60);
+        if (hoursSinceLastRun < 20) {
+          return { success: true, message: 'Backup already run recently' };
+        }
+      }
+
+      const backup = await createPostgresBackup();
+      const url = await uploadBackupToBlob(backup.filename, backup.buffer);
+
+      const target = schedule.target || 'server-cloud';
+      await recordBackupRun({
+        status: 'SUCCESS',
+        filename: backup.filename,
+        size: backup.size,
+        target,
+      });
+
+      // Cleanup
+      await cleanExpiredBlobs(schedule.retentionDays);
+      await db.backupRun.deleteMany({
+        where: {
+          startedAt: { lt: new Date(Date.now() - schedule.retentionDays * 24 * 60 * 60 * 1000) }
+        }
+      });
+
+      return { success: true, filename: backup.filename, url };
+    } catch (error) {
+      const errMsg = error instanceof Error ? error.message : 'Unknown cron backup error';
+      console.error('Scheduled backup error:', errMsg);
+      await recordBackupRun({
+        status: 'FAILED',
+        message: errMsg,
+        target: 'server-cloud',
+      });
+      set.status = 500;
+      return { error: errMsg };
     }
   })
 
