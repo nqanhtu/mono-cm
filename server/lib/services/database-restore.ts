@@ -84,29 +84,35 @@ async function runJsNativeRestore(input: PostgresRestoreInput): Promise<Database
 
     const backupData = convertDates(payload.data);
 
-    await db.$transaction(async (tx) => {
+    const executeRestore = async (tx: any) => {
       // 1. Clear all tables in child-to-parent order to avoid foreign key violations
       for (const model of MODELS) {
-        if (model in tx) {
-          await (tx as any)[model].deleteMany();
+        if (model in tx && typeof tx[model]?.deleteMany === 'function') {
+          await tx[model].deleteMany();
         }
       }
 
       // 2. Populate tables in reverse order (parent-to-child)
       for (const model of [...MODELS].reverse()) {
-        if (model in tx && backupData[model]) {
+        if (model in tx && backupData[model] && typeof tx[model]?.createMany === 'function') {
           const records = backupData[model];
           if (records.length > 0) {
-            await (tx as any)[model].createMany({
+            await tx[model].createMany({
               data: records,
               skipDuplicates: true
             });
           }
         }
       }
-    }, {
-      timeout: 30000 // 30s timeout for import transaction
-    });
+    };
+
+    if (typeof db.$transaction === 'function') {
+      await db.$transaction(executeRestore, {
+        timeout: 30000 // 30s timeout for import transaction
+      });
+    } else {
+      await executeRestore(db);
+    }
 
     return {
       filename: input.filename,
