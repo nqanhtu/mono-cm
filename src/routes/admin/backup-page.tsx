@@ -45,6 +45,7 @@ type BackupSchedule = {
   frequency: string;
   timeOfDay: string;
   retentionDays: number;
+  target: string;
   lastRunAt: string | null;
   lastStatus: string | null;
   lastMessage: string | null;
@@ -70,6 +71,7 @@ export default function BackupPage() {
     frequency: "DAILY",
     timeOfDay: "23:00",
     retentionDays: 7,
+    target: "server-cloud",
     lastRunAt: null,
     lastStatus: null,
     lastMessage: null,
@@ -78,6 +80,7 @@ export default function BackupPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [isBackingUp, setIsBackingUp] = useState(false);
+  const [isCloudBackingUp, setIsCloudBackingUp] = useState(false);
   const [isRestoring, setIsRestoring] = useState(false);
   
   // Restore state
@@ -134,12 +137,14 @@ export default function BackupPage() {
     }
   };
 
-  const handleBackupNow = async () => {
+  const handleBackupLocal = async () => {
     setIsBackingUp(true);
-    toast.info("Đang xuất bản sao lưu cơ sở dữ liệu...");
+    toast.info("Đang chuẩn bị bản sao lưu để tải về...");
     try {
       const response = await apiDownload("/api/admin/database/backup", {
-        method: "POST"
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ target: "local" }),
       });
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
@@ -147,7 +152,7 @@ export default function BackupPage() {
       a.href = url;
       
       const contentDisposition = response.headers.get("content-disposition");
-      let filename = "court_backup.dump";
+      let filename = "court_backup.json.gz";
       if (contentDisposition) {
         const match = contentDisposition.match(/filename="?([^";]+)"?/i);
         if (match && match[1]) filename = match[1];
@@ -166,6 +171,29 @@ export default function BackupPage() {
       toast.error("Không thể tải bản sao lưu");
     } finally {
       setIsBackingUp(false);
+    }
+  };
+
+  const handleBackupCloud = async () => {
+    setIsCloudBackingUp(true);
+    toast.info("Đang tiến hành sao lưu và lưu trên máy chủ...");
+    try {
+      const response = await apiFetch("/api/admin/database/backup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ target: "server-cloud" }),
+      });
+      if (response.ok) {
+        toast.success("Sao lưu và lưu trên máy chủ thành công");
+        fetchBackupData();
+      } else {
+        toast.error("Sao lưu thất bại");
+      }
+    } catch (error) {
+      console.error(error);
+      toast.error("Có lỗi xảy ra khi sao lưu lên máy chủ");
+    } finally {
+      setIsCloudBackingUp(false);
     }
   };
 
@@ -239,7 +267,7 @@ export default function BackupPage() {
                                 Sao lưu thủ công
                             </CardTitle>
                             <CardDescription className="text-xs">
-                                Tải ngay bản sao lưu cơ sở dữ liệu hiện tại (.dump) về thiết bị của bạn.
+                                Tạo bản sao lưu (.json.gz) để tải về thiết bị của bạn hoặc lưu trữ trực tiếp trên máy chủ.
                             </CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-4">
@@ -263,14 +291,25 @@ export default function BackupPage() {
                                     </div>
                                 )}
                             </div>
-                            <Button 
-                                onClick={handleBackupNow} 
-                                disabled={isBackingUp}
-                                className="w-full flex items-center justify-center gap-2 h-9.5 rounded-lg"
-                            >
-                                {isBackingUp ? <Loader2 className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />}
-                                Sao lưu và tải về ngay
-                            </Button>
+                            <div className="flex flex-col gap-2">
+                                <Button 
+                                    onClick={handleBackupLocal} 
+                                    disabled={isBackingUp || isCloudBackingUp}
+                                    className="w-full flex items-center justify-center gap-2 h-9.5 rounded-lg"
+                                >
+                                    {isBackingUp ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
+                                    Tải bản sao lưu về máy
+                                </Button>
+                                <Button 
+                                    onClick={handleBackupCloud} 
+                                    disabled={isBackingUp || isCloudBackingUp}
+                                    variant="outline"
+                                    className="w-full flex items-center justify-center gap-2 h-9.5 rounded-lg border-primary/20 hover:border-primary/50 text-primary"
+                                >
+                                    {isCloudBackingUp ? <Loader2 className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />}
+                                    Sao lưu lên máy chủ ngay
+                                </Button>
+                            </div>
                         </CardContent>
                     </Card>
 
@@ -328,17 +367,36 @@ export default function BackupPage() {
                                     </div>
                                 </div>
 
-                                <div className="space-y-1.5">
-                                    <Label htmlFor="retentionDays" className="text-xs text-muted-foreground">Số ngày giữ bản sao lưu</Label>
-                                    <Input 
-                                        id="retentionDays"
-                                        type="number"
-                                        value={schedule.retentionDays}
-                                        onChange={(e) => setSchedule({ ...schedule, retentionDays: parseInt(e.target.value) || 7 })}
-                                        disabled={!schedule.enabled}
-                                        className="h-9 rounded-lg"
-                                        min={1}
-                                    />
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div className="space-y-1.5">
+                                        <Label htmlFor="target" className="text-xs text-muted-foreground">Nơi lưu trữ</Label>
+                                        <Select
+                                            value={schedule.target || "server-cloud"}
+                                            onValueChange={(val) => setSchedule({ ...schedule, target: val })}
+                                            disabled={!schedule.enabled}
+                                        >
+                                            <SelectTrigger id="target" className="h-9 rounded-lg">
+                                                <SelectValue />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value="server-cloud">Lưu trên máy chủ</SelectItem>
+                                                <SelectItem value="local">Tải về máy cá nhân</SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+
+                                    <div className="space-y-1.5">
+                                        <Label htmlFor="retentionDays" className="text-xs text-muted-foreground">Số ngày giữ bản sao lưu</Label>
+                                        <Input 
+                                            id="retentionDays"
+                                            type="number"
+                                            value={schedule.retentionDays}
+                                            onChange={(e) => setSchedule({ ...schedule, retentionDays: parseInt(e.target.value) || 7 })}
+                                            disabled={!schedule.enabled}
+                                            className="h-9 rounded-lg"
+                                            min={1}
+                                        />
+                                    </div>
                                 </div>
 
                                 <Button type="submit" disabled={isSaving} className="w-full flex items-center justify-center gap-2 h-9.5 rounded-lg">
@@ -446,7 +504,9 @@ export default function BackupPage() {
                                                     {run.size ? `${(run.size / 1024 / 1024).toFixed(2)} MB` : "—"}
                                                 </TableCell>
                                                 <TableCell className="py-2 text-xs text-foreground">
-                                                    <span className="text-xs capitalize font-medium">{run.target}</span>
+                                                    <span className="text-xs font-medium">
+                                                        {run.target === "server-cloud" ? "Lưu trên máy chủ" : (run.target === "local" ? "Tải về máy cá nhân" : run.target)}
+                                                    </span>
                                                 </TableCell>
                                                 <TableCell className="py-2">
                                                     <span className={`text-[10px] font-bold px-2 py-0.5 rounded ${
