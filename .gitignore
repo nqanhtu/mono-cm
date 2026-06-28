@@ -6,3 +6,5 @@ dist
 generated/
 api/entry.generated.js
 api/entry.generated.js.map
+.superpowers/
+
