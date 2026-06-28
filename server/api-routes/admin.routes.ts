@@ -796,8 +796,13 @@ export const adminRoutes = new Elysia()
       const currentHour = now.getHours();
       const [scheduledHour] = schedule.timeOfDay.split(':').map(Number);
 
-      // Verify trigger window (hourly trigger triggers at matching hour)
-      if (currentHour !== scheduledHour) {
+      // Verify trigger window (only if not forced or triggered by Vercel Cron)
+      const urlObj = new URL(request.url);
+      const isForce = urlObj.searchParams.get('force') === 'true';
+      const isVercelCron = request.headers.get('x-vercel-cron') === 'true' || 
+                           request.headers.get('user-agent')?.toLowerCase().includes('vercel-cron');
+
+      if (!isForce && !isVercelCron && currentHour !== scheduledHour) {
         return { success: true, message: `Skipping: scheduled at ${schedule.timeOfDay}, current hour is ${currentHour}` };
       }
 
