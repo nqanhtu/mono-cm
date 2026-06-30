@@ -83,8 +83,8 @@ export function FileTable({ files, isLoading, role, canBorrow = false, canManage
         }
       }
       return {
-        defendants_civil: false,
-        plaintiffs_victims: false,
+        defendants_civil: true,
+        plaintiffs_victims: true,
       }
     })
   const [density, setDensity] = React.useState<'compact' | 'comfortable'>('comfortable')
@@ -104,8 +104,8 @@ export function FileTable({ files, isLoading, role, canBorrow = false, canManage
     if (storedVisibility) setColumnVisibility(JSON.parse(storedVisibility))
     else {
       setColumnVisibility({
-        defendants_civil: false,
-        plaintiffs_victims: false,
+        defendants_civil: true,
+        plaintiffs_victims: true,
       })
     }
     if (storedDensity === 'compact' || storedDensity === 'comfortable') setDensity(storedDensity)
