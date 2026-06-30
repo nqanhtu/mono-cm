@@ -5,7 +5,7 @@
     "dev": "vite",
     "dev:server": "bun --watch server/index.ts",
     "dev:vercel": "bun run build:api && vercel dev",
-    "build": "bun run build:api && vite build",
+    "build": "bun run db:generate && bun run build:api && vite build",
     "build:api": "bun run scripts/build-api.ts",
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate deploy",
