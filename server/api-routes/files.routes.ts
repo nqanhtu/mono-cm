@@ -33,6 +33,36 @@ export const fileRoutes = new Elysia()
       filterCreatedById = String(query.createdById)
     }
 
+    let partyFileIds: string[] | undefined = undefined
+    if (party) {
+      try {
+        const matchingFiles = await db.$queryRaw<{ id: string }[]>`
+          SELECT id FROM "File" 
+          WHERE EXISTS (SELECT 1 FROM unnest(defendants) AS x WHERE x ILIKE ${'%' + party + '%'})
+             OR EXISTS (SELECT 1 FROM unnest(plaintiffs) AS x WHERE x ILIKE ${'%' + party + '%'})
+             OR EXISTS (SELECT 1 FROM unnest("civilDefendants") AS x WHERE x ILIKE ${'%' + party + '%'})
+        `
+        partyFileIds = matchingFiles.map(f => f.id)
+      } catch (err) {
+        console.error('Error querying party with raw SQL:', err)
+      }
+    }
+
+    let qPartyFileIds: string[] | undefined = undefined
+    if (q) {
+      try {
+        const matchingFiles = await db.$queryRaw<{ id: string }[]>`
+          SELECT id FROM "File" 
+          WHERE EXISTS (SELECT 1 FROM unnest(defendants) AS x WHERE x ILIKE ${'%' + q + '%'})
+             OR EXISTS (SELECT 1 FROM unnest(plaintiffs) AS x WHERE x ILIKE ${'%' + q + '%'})
+             OR EXISTS (SELECT 1 FROM unnest("civilDefendants") AS x WHERE x ILIKE ${'%' + q + '%'})
+        `
+        qPartyFileIds = matchingFiles.map(f => f.id)
+      } catch (err) {
+        console.error('Error querying q party with raw SQL:', err)
+      }
+    }
+
     const where: Prisma.FileWhereInput = {
       AND: [
         q ? {
@@ -41,16 +71,25 @@ export const fileRoutes = new Elysia()
             { title: { contains: q, mode: 'insensitive' } },
             { judgmentNumber: { contains: q, mode: 'insensitive' } },
             { indexCode: { contains: q, mode: 'insensitive' } },
-            { defendants: { has: q } },
-            { plaintiffs: { has: q } },
-            { civilDefendants: { has: q } },
+            ...(qPartyFileIds !== undefined 
+              ? [{ id: { in: qPartyFileIds } }] 
+              : [
+                  { defendants: { has: q } },
+                  { plaintiffs: { has: q } },
+                  { civilDefendants: { has: q } },
+                ]
+            )
           ],
         } : {},
         type && type !== 'all' ? { type: { equals: type } } : {},
         year ? { year: { equals: year } } : {},
         status && status !== 'all' ? { status: { equals: status } } : { NOT: { status: 'ARCHIVED' } },
         judgmentNumber ? { judgmentNumber: { contains: judgmentNumber, mode: 'insensitive' } } : {},
-        party ? { OR: [{ defendants: { has: party } }, { plaintiffs: { has: party } }, { civilDefendants: { has: party } }] } : {},
+        party ? (
+          partyFileIds !== undefined 
+            ? { id: { in: partyFileIds } } 
+            : { OR: [{ defendants: { has: party } }, { plaintiffs: { has: party } }, { civilDefendants: { has: party } }] }
+        ) : {},
         warehouse || line || shelf || slot ? {
           box: {
             is: {
