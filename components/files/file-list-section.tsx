@@ -1,5 +1,6 @@
 'use client'
 
+import * as React from 'react'
 import { useSearchParams, useRouter } from '@/src/lib/router'
 import { useFiles } from '@/lib/hooks/use-files'
 import { FileTable } from '@/components/files/file-table'
