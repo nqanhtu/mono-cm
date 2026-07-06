@@ -848,7 +848,7 @@ function ChildDocumentTable({ documents, canManage, isSuperAdmin, highlightedId,
                                                 </TooltipTrigger>
                                                 <TooltipContent className="text-xs">Chỉnh sửa văn bản</TooltipContent>
                                             </Tooltip>
-                                            {isSuperAdmin && (
+                                            {canManage && (
                                                 <ChildDocumentDeleteDialog docId={doc.id} docTitle={doc.title || ''} onMutate={onMutate} />
                                             )}
                                         </div>
@@ -885,16 +885,16 @@ function ChildDocumentDeleteDialog({ docId, docTitle, onMutate }: { docId: strin
 
     return (
         <AlertDialog>
-            <AlertDialogTrigger asChild>
-                <Tooltip>
-                    <TooltipTrigger asChild>
+            <Tooltip>
+                <TooltipTrigger asChild>
+                    <AlertDialogTrigger asChild>
                         <Button variant="ghost" size="icon" aria-label="Xóa văn bản" className="h-7 w-7 text-muted-foreground hover:text-red-600 hover:bg-red-500/10 rounded-md">
                             <Trash2 className="h-3.5 w-3.5" />
                         </Button>
-                    </TooltipTrigger>
-                    <TooltipContent className="text-xs">Xóa văn bản</TooltipContent>
-                </Tooltip>
-            </AlertDialogTrigger>
+                    </AlertDialogTrigger>
+                </TooltipTrigger>
+                <TooltipContent className="text-xs">Xóa văn bản</TooltipContent>
+            </Tooltip>
             <AlertDialogContent className="rounded-2xl max-w-[400px]">
                 <AlertDialogHeader>
                     <AlertDialogTitle>Xóa văn bản?</AlertDialogTitle>
