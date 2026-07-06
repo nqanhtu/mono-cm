@@ -61,9 +61,25 @@ interface FileTableProps {
   pageSize?: number
   onPaginationChange?: (page: number, pageSize: number) => void
   onRefresh?: () => void
+  sorting?: SortingState
+  onSortingChange?: (sorting: SortingState) => void
 }
 
-export function FileTable({ files, isLoading, role, canBorrow = false, canManageFiles = false, onCreate, total, page = 1, pageSize = 10, onPaginationChange, onRefresh }: FileTableProps) {
+export function FileTable({
+  files,
+  isLoading,
+  role,
+  canBorrow = false,
+  canManageFiles = false,
+  onCreate,
+  total,
+  page = 1,
+  pageSize = 10,
+  onPaginationChange,
+  onRefresh,
+  sorting,
+  onSortingChange,
+}: FileTableProps) {
   const searchParams = useSearchParams()
   const [rowSelection, setRowSelection] = React.useState({})
   const [isBorrowModalOpen, setIsBorrowModalOpen] = React.useState(false);
@@ -91,7 +107,9 @@ export function FileTable({ files, isLoading, role, canBorrow = false, canManage
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
     []
   )
-  const [sorting, setSorting] = React.useState<SortingState>([])
+  const [localSorting, setLocalSorting] = React.useState<SortingState>([])
+  const activeSorting = sorting !== undefined ? sorting : localSorting
+  const handleSortingChange = onSortingChange !== undefined ? onSortingChange : setLocalSorting
   const [isBulkDeleteDialogOpen, setIsBulkDeleteDialogOpen] = React.useState(false)
 
   // Determine if we are using manual pagination (server-side)
@@ -184,13 +202,14 @@ export function FileTable({ files, isLoading, role, canBorrow = false, canManage
     columns,
     pageCount: isManual ? Math.ceil(total / pageSize) : undefined,
     state: {
-      sorting,
+      sorting: activeSorting,
       columnVisibility,
       rowSelection,
       columnFilters,
       pagination: isManual ? paginationState : undefined,
     },
     manualPagination: isManual,
+    manualSorting: true,
     onPaginationChange: isManual ? (updater) => {
       if (onPaginationChange) {
         const nextState = typeof updater === 'function' ? updater(paginationState) : updater;
@@ -198,7 +217,10 @@ export function FileTable({ files, isLoading, role, canBorrow = false, canManage
       }
     } : undefined,
     onRowSelectionChange: setRowSelection,
-    onSortingChange: setSorting,
+    onSortingChange: (updater) => {
+      const nextSorting = typeof updater === 'function' ? updater(activeSorting) : updater
+      handleSortingChange(nextSorting)
+    },
     onColumnFiltersChange: setColumnFilters,
     onColumnVisibilityChange: setColumnVisibility,
     getCoreRowModel: getCoreRowModel(),
