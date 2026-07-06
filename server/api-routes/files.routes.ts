@@ -25,6 +25,8 @@ export const fileRoutes = new Elysia()
     const slot = query.slot || undefined
     const limit = toInt(query.limit, 20) ?? 20
     const offset = toInt(query.offset, 0) ?? 0
+    const sortField = query.sortField || undefined
+    const sortOrder = query.sortOrder === 'asc' ? 'asc' : 'desc'
 
     let filterCreatedById: string | undefined = undefined
     if (session?.role === 'COORDINATOR') {
@@ -109,8 +111,20 @@ export const fileRoutes = new Elysia()
     }
 
     try {
+      const validFields = ['code', 'title', 'type', 'year', 'pageCount', 'status', 'createdAt', 'updatedAt', 'note', 'judgmentNumber', 'judgmentDate']
+      let orderBy: Prisma.FileOrderByWithRelationInput = { createdAt: 'desc' }
+      if (sortField) {
+        if (sortField === 'defendants_civil') {
+          orderBy = { defendants: sortOrder }
+        } else if (sortField === 'plaintiffs_victims') {
+          orderBy = { plaintiffs: sortOrder }
+        } else if (validFields.includes(sortField)) {
+          orderBy = { [sortField]: sortOrder }
+        }
+      }
+
       const [files, total] = await Promise.all([
-        db.file.findMany({ where, take: limit, skip: offset, orderBy: { createdAt: 'desc' }, include: { box: true, createdBy: { select: USER_SELECT }, updatedBy: { select: USER_SELECT } } }),
+        db.file.findMany({ where, take: limit, skip: offset, orderBy, include: { box: true, createdBy: { select: USER_SELECT }, updatedBy: { select: USER_SELECT } } }),
         db.file.count({ where }),
       ])
       return { files, total }

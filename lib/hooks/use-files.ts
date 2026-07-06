@@ -18,6 +18,8 @@ export interface SearchParams {
     limit?: number
     offset?: number
     createdById?: string
+    sortField?: string
+    sortOrder?: 'asc' | 'desc'
 }
 
 export function getFilesQueryString(params: SearchParams) {
@@ -35,6 +37,8 @@ export function getFilesQueryString(params: SearchParams) {
     if (params.createdById && params.createdById !== 'all') queryString.set('createdById', params.createdById)
     if (params.limit) queryString.set('limit', params.limit.toString())
     if (params.offset) queryString.set('offset', params.offset.toString())
+    if (params.sortField) queryString.set('sortField', params.sortField)
+    if (params.sortOrder) queryString.set('sortOrder', params.sortOrder)
     return queryString.toString()
 }
 
