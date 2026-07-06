@@ -23,7 +23,7 @@ import {
 import { AutocompleteInput } from '@/components/ui/autocomplete-input';
 import { useAutocompleteSuggestions } from '@/lib/hooks/use-autocomplete-suggestions';
 import { cn } from '@/lib/utils';
-import { FileText, Plus, Pencil, Trash2, Loader2, Keyboard, CheckCircle2, Printer, FileSpreadsheet } from 'lucide-react';
+import { FileText, Plus, Pencil, Trash2, Loader2, Keyboard, CheckCircle2, Printer, FileSpreadsheet, ArrowDown, ArrowUp, ChevronsUpDown } from 'lucide-react';
 import type { DocumentDto } from '@/lib/api/types';
 import { toast } from 'sonner';
 import { printChildDocumentList } from '@/lib/files/print-child-documents';
@@ -719,22 +719,98 @@ interface TableProps {
 }
 
 function ChildDocumentTable({ documents, canManage, isSuperAdmin, highlightedId, onEdit, onMutate }: TableProps) {
+    const [sortField, setSortField] = useState<'order' | 'title' | 'code' | 'year' | 'pageCount' | 'note' | null>(null);
+    const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
+
+    const sortedDocuments = useMemo(() => {
+        if (!sortField) return documents;
+        return [...documents].sort((a, b) => {
+            let valA: any = a[sortField];
+            let valB: any = b[sortField];
+            
+            if (sortField === 'order') {
+                valA = a.order ?? 0;
+                valB = b.order ?? 0;
+            } else if (sortField === 'pageCount') {
+                valA = a.pageCount ?? 0;
+                valB = b.pageCount ?? 0;
+            } else {
+                valA = (valA as string || '').toLowerCase();
+                valB = (valB as string || '').toLowerCase();
+            }
+            
+            if (valA < valB) return sortDirection === 'asc' ? -1 : 1;
+            if (valA > valB) return sortDirection === 'asc' ? 1 : -1;
+            return 0;
+        });
+    }, [documents, sortField, sortDirection]);
+
+    const handleSort = (field: 'order' | 'title' | 'code' | 'year' | 'pageCount' | 'note') => {
+        if (sortField === field) {
+            setSortDirection(prev => prev === 'asc' ? 'desc' : 'asc');
+        } else {
+            setSortField(field);
+            setSortDirection('asc');
+        }
+    };
+
+    const renderSortIcon = (field: 'order' | 'title' | 'code' | 'year' | 'pageCount' | 'note') => {
+        if (sortField !== field) {
+            return <ChevronsUpDown className="ml-1 h-3.5 w-3.5 inline text-muted-foreground/50" />;
+        }
+        return sortDirection === 'asc' 
+            ? <ArrowUp className="ml-1 h-3.5 w-3.5 inline text-foreground" />
+            : <ArrowDown className="ml-1 h-3.5 w-3.5 inline text-foreground" />;
+    };
+
     return (
         <div className="overflow-x-auto rounded-lg border">
             <Table className="w-full min-w-[650px]">
                 <TableHeader className="bg-muted/30">
                     <TableRow className="hover:bg-transparent">
-                        <TableHead className="w-[70px] text-xs font-semibold text-foreground py-2.5">TT</TableHead>
-                        <TableHead className="w-[320px] max-w-[320px] text-xs font-semibold text-foreground py-2.5">Trích yếu / Tên văn bản</TableHead>
-                        <TableHead className="text-xs font-semibold text-foreground py-2.5">Mã VB</TableHead>
-                        <TableHead className="text-xs font-semibold text-foreground py-2.5">Thời gian</TableHead>
-                        <TableHead className="text-right text-xs font-semibold text-foreground py-2.5">Số tờ</TableHead>
-                        <TableHead className="text-xs font-semibold text-foreground py-2.5">Ghi chú</TableHead>
+                        <TableHead 
+                            className="w-[70px] text-xs font-semibold text-foreground py-2.5 cursor-pointer select-none hover:bg-muted/40"
+                            onClick={() => handleSort('order')}
+                        >
+                            TT {renderSortIcon('order')}
+                        </TableHead>
+                        <TableHead 
+                            className="w-[320px] max-w-[320px] text-xs font-semibold text-foreground py-2.5 cursor-pointer select-none hover:bg-muted/40"
+                            onClick={() => handleSort('title')}
+                        >
+                            Trích yếu / Tên văn bản {renderSortIcon('title')}
+                        </TableHead>
+                        <TableHead 
+                            className="text-xs font-semibold text-foreground py-2.5 cursor-pointer select-none hover:bg-muted/40"
+                            onClick={() => handleSort('code')}
+                        >
+                            Mã VB {renderSortIcon('code')}
+                        </TableHead>
+                        <TableHead 
+                            className="text-xs font-semibold text-foreground py-2.5 cursor-pointer select-none hover:bg-muted/40"
+                            onClick={() => handleSort('year')}
+                        >
+                            Thời gian {renderSortIcon('year')}
+                        </TableHead>
+                        <TableHead 
+                            className="text-right text-xs font-semibold text-foreground py-2.5 cursor-pointer select-none hover:bg-muted/40"
+                            onClick={() => handleSort('pageCount')}
+                        >
+                            <span className="flex items-center justify-end">
+                                Số tờ {renderSortIcon('pageCount')}
+                            </span>
+                        </TableHead>
+                        <TableHead 
+                            className="text-xs font-semibold text-foreground py-2.5 cursor-pointer select-none hover:bg-muted/40"
+                            onClick={() => handleSort('note')}
+                        >
+                            Ghi chú {renderSortIcon('note')}
+                        </TableHead>
                         {canManage && <TableHead className="w-[80px] py-2.5"></TableHead>}
                     </TableRow>
                 </TableHeader>
                 <TableBody>
-                    {documents.map((doc, index) => {
+                    {sortedDocuments.map((doc, index) => {
                         const isHighlighted = highlightedId === doc.id;
                         return (
                             <TableRow 
