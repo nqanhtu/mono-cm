@@ -3,6 +3,7 @@
 import { useSearchParams, useRouter } from '@/src/lib/router'
 import { useFiles } from '@/lib/hooks/use-files'
 import { FileTable } from '@/components/files/file-table'
+import type { SortingState } from '@tanstack/react-table'
 import { useQueryClient } from '@tanstack/react-query'
 import { useSession } from '@/lib/hooks/use-auth'
 import { can } from '@/lib/rbac'
@@ -26,6 +27,8 @@ export function FileListSection({ onCreate }: FileListSectionProps) {
     const createdById = searchParams.get('createdById') || undefined
     const page = parseInt(searchParams.get('page') || '1')
     const limit = parseInt(searchParams.get('limit') || '10')
+    const sortField = searchParams.get('sortField') || undefined
+    const sortOrder = (searchParams.get('sortOrder') as 'asc' | 'desc') || undefined
 
     const { files, total, isLoading, mutate } = useFiles({
         query: q,
@@ -39,7 +42,9 @@ export function FileListSection({ onCreate }: FileListSectionProps) {
         slot,
         createdById,
         limit,
-        offset: (page - 1) * limit
+        offset: (page - 1) * limit,
+        sortField,
+        sortOrder,
     })
 
     const queryClient = useQueryClient()
@@ -50,10 +55,30 @@ export function FileListSection({ onCreate }: FileListSectionProps) {
 
     const router = useRouter()
 
+    const activeSorting = React.useMemo<SortingState>(() => {
+        if (sortField && sortOrder) {
+            return [{ id: sortField, desc: sortOrder === 'desc' }]
+        }
+        return []
+    }, [sortField, sortOrder])
+
     const handlePaginationChange = (newPage: number, newPageSize: number) => {
-        const params = new URLSearchParams(searchParams)
+        const params = new URLSearchParams(searchParams.toString())
         params.set('page', newPage.toString())
         params.set('limit', newPageSize.toString())
+        router.replace(`/?${params.toString()}`)
+    }
+
+    const handleSortingChange = (sortingState: SortingState) => {
+        const params = new URLSearchParams(searchParams.toString())
+        if (sortingState.length > 0) {
+            params.set('sortField', sortingState[0].id)
+            params.set('sortOrder', sortingState[0].desc ? 'desc' : 'asc')
+        } else {
+            params.delete('sortField')
+            params.delete('sortOrder')
+        }
+        params.set('page', '1') // Reset to page 1 on sorting change
         router.replace(`/?${params.toString()}`)
     }
 
@@ -70,6 +95,8 @@ export function FileListSection({ onCreate }: FileListSectionProps) {
                 page={page}
                 pageSize={limit}
                 onPaginationChange={handlePaginationChange}
+                sorting={activeSorting}
+                onSortingChange={handleSortingChange}
                 onRefresh={() => {
                     mutate();
                     queryClient.invalidateQueries({ queryKey: queryKeys.files.stats });
