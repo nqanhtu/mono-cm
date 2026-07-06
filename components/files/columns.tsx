@@ -22,6 +22,7 @@ import { toast } from 'sonner'
 import { Badge } from "@/components/ui/badge"
 import { cn } from '@/lib/utils'
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
+import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
 
 
 import type { FileDto, StorageBoxDto } from "@/lib/api/types"
@@ -86,7 +87,9 @@ export const getColumns = (
   },
     {
       accessorKey: "code",
-      header: "Mã VB / MLHS",
+      header: ({ column }) => (
+        <DataTableColumnHeader column={column} title="Mã VB / MLHS" />
+      ),
       cell: ({ row }) => (
         <div className="flex flex-col gap-1 text-xs">
           <span className="font-mono font-semibold tabular-nums text-slate-700 dark:text-slate-200">{row.original.code || "-"}</span>
@@ -95,7 +98,9 @@ export const getColumns = (
     },
     {
       accessorKey: "title",
-      header: "Trích yếu / Tên văn bản",
+      header: ({ column }) => (
+        <DataTableColumnHeader column={column} title="Trích yếu / Tên văn bản" />
+      ),
       cell: ({ row }) => {
         const title = row.original.title;
         const contentIndex = row.original.contentIndex || row.original.indexCode;
@@ -125,7 +130,9 @@ export const getColumns = (
     },
     {
       accessorKey: "status",
-      header: "Trạng thái",
+      header: ({ column }) => (
+        <DataTableColumnHeader column={column} title="Trạng thái" />
+      ),
       cell: ({ row }) => {
         const status = row.original.status || "IN_STOCK"
         const label = status === "BORROWED"
@@ -150,7 +157,13 @@ export const getColumns = (
     },
     {
       id: "defendants_civil",
-      header: "Bị cáo / Bị đơn",
+      accessorFn: (row) => [
+        ...(row.defendants || []),
+        ...(row.civilDefendants || [])
+      ].join(", "),
+      header: ({ column }) => (
+        <DataTableColumnHeader column={column} title="Bị cáo / Bị đơn" />
+      ),
       cell: ({ row }) => {
         const defs = row.original.defendants || [];
         const civilDefs = row.original.civilDefendants || [];
@@ -206,7 +219,10 @@ export const getColumns = (
     },
     {
       id: "plaintiffs_victims",
-      header: "Nguyên đơn / Bị hại",
+      accessorFn: (row) => (row.plaintiffs || []).join(", "),
+      header: ({ column }) => (
+        <DataTableColumnHeader column={column} title="Nguyên đơn / Bị hại" />
+      ),
       cell: ({ row }) => {
         const plaintiffs = row.original.plaintiffs || [];
         if (plaintiffs.length === 0) return <span className="text-muted-foreground">-</span>;
@@ -250,27 +266,39 @@ export const getColumns = (
     },
     {
       accessorKey: "year",
-      header: "Thời gian",
+      header: ({ column }) => (
+        <DataTableColumnHeader column={column} title="Thời gian" />
+      ),
       cell: ({ row }) => <div className="tabular-nums">{row.original.year || "-"}</div>,
     },
     {
       accessorKey: "pageCount",
-      header: () => <div className="text-right">Số tờ</div>,
+      header: ({ column }) => (
+        <DataTableColumnHeader column={column} title="Số tờ" className="justify-end" />
+      ),
       cell: ({ row }) => <div className="text-right tabular-nums">{row.original.pageCount}</div>,
     },
     {
-      accessorKey: "createdBy",
-      header: "Người tạo",
+      id: "createdBy",
+      accessorFn: (row) => row.createdBy?.fullName || row.createdBy?.username || "",
+      header: ({ column }) => (
+        <DataTableColumnHeader column={column} title="Người tạo" />
+      ),
       cell: ({ row }) => <div className="text-muted-foreground text-xs truncate max-w-[120px]">{row.original.createdBy?.fullName || row.original.createdBy?.username || "-"}</div>,
     },
     {
-      accessorKey: "updatedBy",
-      header: "Người cập nhật",
+      id: "updatedBy",
+      accessorFn: (row) => row.updatedBy?.fullName || row.updatedBy?.username || "",
+      header: ({ column }) => (
+        <DataTableColumnHeader column={column} title="Người cập nhật" />
+      ),
       cell: ({ row }) => <div className="text-muted-foreground text-xs truncate max-w-[120px]">{row.original.updatedBy?.fullName || row.original.updatedBy?.username || "-"}</div>,
     },
     {
       accessorKey: "note",
-      header: "Ghi chú",
+      header: ({ column }) => (
+        <DataTableColumnHeader column={column} title="Ghi chú" />
+      ),
       cell: ({ row }) => (
         <div
           className="text-muted-foreground text-xs max-w-[200px] truncate"
