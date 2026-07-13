@@ -71,6 +71,20 @@ describe('api client', () => {
     expect(fetchMock).toHaveBeenCalledWith('/api/health', expect.any(Object))
   })
 
+  it('treats quoted empty production API URLs as same-origin', async () => {
+    vi.stubEnv('PROD', true)
+    vi.stubEnv('VITE_API_URL', '""')
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ ok: true }),
+    })
+    vi.stubGlobal('fetch', fetchMock)
+
+    await apiJson('/api/health')
+
+    expect(fetchMock).toHaveBeenCalledWith('/api/health', expect.any(Object))
+  })
+
   it('throws typed errors for failed JSON responses', async () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
       ok: false,

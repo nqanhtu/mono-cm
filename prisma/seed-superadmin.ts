@@ -18,7 +18,11 @@ const prisma = new PrismaClient({ adapter });
 async function main() {
   console.log("Bắt đầu khởi tạo tài khoản superadmin...");
 
-  const password = process.env.SUPERADMIN_PASSWORD || "admin@123";
+  const password = process.env.SUPERADMIN_PASSWORD;
+  if (!password) {
+    throw new Error("SUPERADMIN_PASSWORD is required");
+  }
+
   const hashedPassword = await bcrypt.hash(password, 10);
 
   const superadmin = await prisma.user.upsert({
@@ -42,7 +46,6 @@ async function main() {
 
   console.log("✅ Khởi tạo tài khoản superadmin thành công:");
   console.log(`   Username: ${superadmin.username}`);
-  console.log(`   Password: ${password}`);
 }
 
 main()

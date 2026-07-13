@@ -19,7 +19,11 @@ export class ApiClientError extends Error {
 export function apiUrl(path: string) {
   if (/^https?:\/\//.test(path)) return path
 
-  const baseUrl = import.meta.env.PROD ? import.meta.env.VITE_API_URL : ''
+  const configuredBaseUrl = import.meta.env.PROD ? import.meta.env.VITE_API_URL : ''
+  const baseUrl = typeof configuredBaseUrl === 'string'
+    ? configuredBaseUrl.trim().replace(/^["']|["']$/g, '')
+    : ''
+
   if (!baseUrl) {
     return `/${path.replace(/^\/+/, '')}`
   }
