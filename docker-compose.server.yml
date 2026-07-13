@@ -1,0 +1,116 @@
+# Docker Compose for Elysia Backend (CM Server) — Multi-tenant setup
+# Image is built by GitHub Actions and pushed to GHCR.
+# VPS only pulls the image — no local build needed.
+# Traefik routes /dongnai/* → dongnai_server, /longan/* → longan_server, etc.
+#
+# How to deploy (first time):
+#   1. scp docker-compose.server.yml root@<SERVER>:/opt/mono-cm/
+#   2. scp .env.dongnai root@<SERVER>:/opt/mono-cm/
+#   3. docker login ghcr.io -u nqanhtu
+#   4. docker compose -f docker-compose.server.yml up -d
+#
+# Subsequent deploys: handled automatically by GitHub Actions
+#
+# To add a new province:
+#   1. Create .env.<province> from .env.example
+#   2. Copy the dongnai_server block below, rename to <province>_server
+#   3. Change router name, middleware name, path prefix, and env_file accordingly
+
+services:
+  # ─── Shared Redis (one instance shared by all province servers) ──────────────
+  cm-redis:
+    image: redis:7-alpine
+    container_name: cm_redis
+    restart: always
+    command: redis-server --save "" --appendonly no
+    networks:
+      - cm-net
+
+  # ─── Đồng Nai ────────────────────────────────────────────────────────────────
+  dongnai_server:
+    image: ghcr.io/nqanhtu/cm-server:latest  # built by CI, pulled by VPS
+    container_name: dongnai_server
+    restart: always
+    env_file:
+      - .env.dongnai # province-specific secrets & DB config
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      - REDIS_URL=redis://cm-redis:6379
+    depends_on:
+      - cm-redis
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=n8n_n8n-net"
+      # Router
+      - "traefik.http.routers.dongnai.rule=Host(`namnn07.zhost.store`) && PathPrefix(`/dongnai`)"
+      - "traefik.http.routers.dongnai.entrypoints=websecure"
+      - "traefik.http.routers.dongnai.tls.certresolver=myresolver"
+      # Strip /dongnai prefix before forwarding → app sees /api/..., /health, etc.
+      - "traefik.http.middlewares.dongnai-strip.stripprefix.prefixes=/dongnai"
+      - "traefik.http.routers.dongnai.middlewares=dongnai-strip"
+      # Service
+      - "traefik.http.services.dongnai.loadbalancer.server.port=3000"
+    networks:
+      - cm-net
+      - n8n_n8n-net
+  # ─── Long An ─────────────────────────────────────────────────────────────────
+  # longan_server:
+  #   image: ghcr.io/nqanhtu/cm-server:latest
+  #   container_name: longan_server
+  #   restart: always
+  #   env_file:
+  #     - .env.longan
+  #   environment:
+  #     - NODE_ENV=production
+  #     - PORT=3000
+  #     - REDIS_URL=redis://cm-redis:6379
+  #   depends_on:
+  #     - cm-redis
+  #   labels:
+  #     - "traefik.enable=true"
+  #     - "traefik.docker.network=n8n_n8n-net"
+  #     # Router
+  #     - "traefik.http.routers.longan.rule=Host(`namnn07.zhost.store`) && PathPrefix(`/longan`)"
+  #     - "traefik.http.routers.longan.entrypoints=websecure"
+  #     - "traefik.http.routers.longan.tls.certresolver=myresolver"
+  #     # Strip /longan prefix before forwarding
+  #     - "traefik.http.middlewares.longan-strip.stripprefix.prefixes=/longan"
+  #     - "traefik.http.routers.longan.middlewares=longan-strip"
+  #     # Service
+  #     - "traefik.http.services.longan.loadbalancer.server.port=3000"
+  #   networks:
+  #     - cm-net
+  #     - n8n_n8n-net
+
+  # ─── Thêm tỉnh mới: copy block trên, đổi tên tỉnh ──────────────────────────
+  # binhduong_server:
+  #   image: ghcr.io/nqanhtu/cm-server:latest
+  #   container_name: binhduong_server
+  #   restart: always
+  #   env_file:
+  #     - .env.binhduong
+  #   environment:
+  #     - NODE_ENV=production
+  #     - PORT=3000
+  #     - REDIS_URL=redis://cm-redis:6379
+  #   depends_on:
+  #     - cm-redis
+  #   labels:
+  #     - "traefik.enable=true"
+  #     - "traefik.docker.network=n8n_n8n-net"
+  #     - "traefik.http.routers.binhduong.rule=Host(`namnn07.zhost.store`) && PathPrefix(`/binhduong`)"
+  #     - "traefik.http.routers.binhduong.entrypoints=websecure"
+  #     - "traefik.http.routers.binhduong.tls.certresolver=myresolver"
+  #     - "traefik.http.middlewares.binhduong-strip.stripprefix.prefixes=/binhduong"
+  #     - "traefik.http.routers.binhduong.middlewares=binhduong-strip"
+  #     - "traefik.http.services.binhduong.loadbalancer.server.port=3000"
+  #   networks:
+  #     - cm-net
+  #     - n8n_n8n-net
+
+networks:
+  cm-net:
+    driver: bridge
+  n8n_n8n-net:
+    external: true
