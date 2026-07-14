@@ -28,9 +28,6 @@ export function useAutocompleteSuggestions() {
               // Standardize: Capitalize only the first letter, lowercase the rest
               const normalized = trimmed.charAt(0).toUpperCase() + trimmed.slice(1).toLowerCase()
               
-              // Map legacy short terms
-              if (normalized === "Hình sự") return "Hình sự sơ thẩm"
-              if (normalized === "Dân sự") return "Dân sự sơ thẩm"
               return normalized
             })
             .filter(Boolean)
