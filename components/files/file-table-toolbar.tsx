@@ -48,6 +48,9 @@ const statuses = [
 const caseTypes = [
   { label: "Hình sự sơ thẩm", value: "Hình sự sơ thẩm" },
   { label: "Dân sự sơ thẩm", value: "Dân sự sơ thẩm" },
+  { label: "Hình sự phúc thẩm", value: "Hình sự phúc thẩm" },
+  { label: "Dân sự phúc thẩm", value: "Dân sự phúc thẩm" },
+  { label: "Hôn nhân phúc thẩm", value: "Hôn nhân phúc thẩm" },
   { label: "Hành chính", value: "Hành chính" },
   { label: "Kinh tế", value: "Kinh tế" },
 ];

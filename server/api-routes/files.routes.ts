@@ -225,7 +225,17 @@ export const fileRoutes = new Elysia()
         })
       ])
 
-      const predefinedTypes = ['Hình sự', 'Dân sự', 'Hành chính', 'Kinh doanh thương mại', 'Lao động', 'Hôn nhân gia đình']
+      const predefinedTypes = [
+        'Hình sự',
+        'Dân sự',
+        'Hành chính',
+        'Kinh doanh thương mại',
+        'Lao động',
+        'Hôn nhân gia đình',
+        'Hình sự phúc thẩm',
+        'Dân sự phúc thẩm',
+        'Hôn nhân phúc thẩm'
+      ]
       const predefinedRetentions = ['10 năm', '15 năm', '20 năm', '70 năm', 'Vĩnh viễn']
 
       const typesSet = new Set([...predefinedTypes, ...distinctTypes.map(t => t.type).filter(Boolean)])

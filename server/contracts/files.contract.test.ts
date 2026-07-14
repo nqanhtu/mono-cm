@@ -550,7 +550,17 @@ describe('files contract', () => {
 
       expect(response.status).toBe(200)
       expect(await response.json()).toEqual({
-        types: ['Hình sự', 'Dân sự', 'Hành chính', 'Kinh doanh thương mại', 'Lao động', 'Hôn nhân gia đình'],
+        types: [
+          'Hình sự',
+          'Dân sự',
+          'Hành chính',
+          'Kinh doanh thương mại',
+          'Lao động',
+          'Hôn nhân gia đình',
+          'Hình sự phúc thẩm',
+          'Dân sự phúc thẩm',
+          'Hôn nhân phúc thẩm'
+        ],
         retentions: ['10 năm', '15 năm', '20 năm', '70 năm', 'Vĩnh viễn'],
         titles: ['Vụ án trộm cắp tài sản'],
         documentTitles: ['Quyết định đưa vụ án ra xét xử']
