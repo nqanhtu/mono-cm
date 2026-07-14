@@ -17,11 +17,25 @@ export function useAutocompleteSuggestions() {
     return {
       ...rawSuggestions,
       documentTitles: rawSuggestions.documentTitles || [],
-      types: (rawSuggestions.types || []).map(t => {
-        if (t === 'Hình sự') return 'Hình sự sơ thẩm'
-        if (t === 'Dân sự') return 'Dân sự sơ thẩm'
-        return t
-      })
+      types: Array.from(
+        new Set(
+          (rawSuggestions.types || [])
+            .map((t) => {
+              if (!t) return ""
+              const trimmed = t.trim()
+              if (!trimmed) return ""
+              
+              // Standardize: Capitalize only the first letter, lowercase the rest
+              const normalized = trimmed.charAt(0).toUpperCase() + trimmed.slice(1).toLowerCase()
+              
+              // Map legacy short terms
+              if (normalized === "Hình sự") return "Hình sự sơ thẩm"
+              if (normalized === "Dân sự") return "Dân sự sơ thẩm"
+              return normalized
+            })
+            .filter(Boolean)
+        )
+      )
     }
   }, [rawSuggestions])
 
