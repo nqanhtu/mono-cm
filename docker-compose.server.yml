@@ -28,7 +28,7 @@ services:
 
   # ─── Đồng Nai ────────────────────────────────────────────────────────────────
   dongnai_server:
-    image: ghcr.io/nqanhtu/cm-server:latest  # built by CI, pulled by VPS
+    image: ghcr.io/nqanhtu/cm-server:latest # built by CI, pulled by VPS
     container_name: dongnai_server
     restart: always
     env_file:
@@ -55,59 +55,33 @@ services:
       - cm-net
       - n8n_n8n-net
   # ─── Long An ─────────────────────────────────────────────────────────────────
-  # longan_server:
-  #   image: ghcr.io/nqanhtu/cm-server:latest
-  #   container_name: longan_server
-  #   restart: always
-  #   env_file:
-  #     - .env.longan
-  #   environment:
-  #     - NODE_ENV=production
-  #     - PORT=3000
-  #     - REDIS_URL=redis://cm-redis:6379
-  #   depends_on:
-  #     - cm-redis
-  #   labels:
-  #     - "traefik.enable=true"
-  #     - "traefik.docker.network=n8n_n8n-net"
-  #     # Router
-  #     - "traefik.http.routers.longan.rule=Host(`namnn07.zhost.store`) && PathPrefix(`/longan`)"
-  #     - "traefik.http.routers.longan.entrypoints=websecure"
-  #     - "traefik.http.routers.longan.tls.certresolver=myresolver"
-  #     # Strip /longan prefix before forwarding
-  #     - "traefik.http.middlewares.longan-strip.stripprefix.prefixes=/longan"
-  #     - "traefik.http.routers.longan.middlewares=longan-strip"
-  #     # Service
-  #     - "traefik.http.services.longan.loadbalancer.server.port=3000"
-  #   networks:
-  #     - cm-net
-  #     - n8n_n8n-net
-
-  # ─── Thêm tỉnh mới: copy block trên, đổi tên tỉnh ──────────────────────────
-  # binhduong_server:
-  #   image: ghcr.io/nqanhtu/cm-server:latest
-  #   container_name: binhduong_server
-  #   restart: always
-  #   env_file:
-  #     - .env.binhduong
-  #   environment:
-  #     - NODE_ENV=production
-  #     - PORT=3000
-  #     - REDIS_URL=redis://cm-redis:6379
-  #   depends_on:
-  #     - cm-redis
-  #   labels:
-  #     - "traefik.enable=true"
-  #     - "traefik.docker.network=n8n_n8n-net"
-  #     - "traefik.http.routers.binhduong.rule=Host(`namnn07.zhost.store`) && PathPrefix(`/binhduong`)"
-  #     - "traefik.http.routers.binhduong.entrypoints=websecure"
-  #     - "traefik.http.routers.binhduong.tls.certresolver=myresolver"
-  #     - "traefik.http.middlewares.binhduong-strip.stripprefix.prefixes=/binhduong"
-  #     - "traefik.http.routers.binhduong.middlewares=binhduong-strip"
-  #     - "traefik.http.services.binhduong.loadbalancer.server.port=3000"
-  #   networks:
-  #     - cm-net
-  #     - n8n_n8n-net
+  longan_server:
+    image: ghcr.io/nqanhtu/cm-server:latest
+    container_name: longan_server
+    restart: always
+    env_file:
+      - .env.longan
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      - REDIS_URL=redis://cm-redis:6379
+    depends_on:
+      - cm-redis
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=n8n_n8n-net"
+      # Router
+      - "traefik.http.routers.longan.rule=Host(`namnn07.zhost.store`) && PathPrefix(`/longan`)"
+      - "traefik.http.routers.longan.entrypoints=websecure"
+      - "traefik.http.routers.longan.tls.certresolver=myresolver"
+      # Strip /longan prefix before forwarding
+      - "traefik.http.middlewares.longan-strip.stripprefix.prefixes=/longan"
+      - "traefik.http.routers.longan.middlewares=longan-strip"
+      # Service
+      - "traefik.http.services.longan.loadbalancer.server.port=3000"
+    networks:
+      - cm-net
+      - n8n_n8n-net
 
 networks:
   cm-net:
