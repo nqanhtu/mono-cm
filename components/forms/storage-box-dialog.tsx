@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 import { useForm, type Resolver } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -32,6 +32,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { AutocompleteInput } from "@/components/ui/autocomplete-input";
+import { useAutocompleteSuggestions } from "@/lib/hooks/use-autocomplete-suggestions";
 import { toast } from "sonner";
 import type { StorageBoxDto } from "@/lib/api/types";
 import {
@@ -73,9 +75,27 @@ export function StorageBoxDialog({
   box,
 }: StorageBoxDialogProps) {
   const { agencies } = useAgencies(isOpen);
+  const { suggestions } = useAutocompleteSuggestions();
   const createStorageBox = useCreateStorageBox();
   const updateStorageBox = useUpdateStorageBox();
   const isSaving = createStorageBox.isPending || updateStorageBox.isPending;
+
+  const mergedCaseTypes = useMemo(() => {
+    const defaultTypes = [
+      "Hình sự sơ thẩm",
+      "Dân sự sơ thẩm",
+      "Hình sự phúc thẩm",
+      "Dân sự phúc thẩm",
+      "Hôn nhân phúc thẩm",
+      "Hành chính",
+      "Kinh doanh thương mại",
+      "Lao động",
+      "Gia đình và người chưa thành niên",
+    ];
+    const dbTypes = suggestions?.types || [];
+    const set = new Set([...defaultTypes, ...dbTypes]);
+    return Array.from(set);
+  }, [suggestions?.types]);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema) as Resolver<FormValues>,
@@ -173,18 +193,6 @@ export function StorageBoxDialog({
       toast.error(error instanceof Error ? error.message : "Lưu thất bại. Vui lòng kiểm tra lại");
     }
   }
-
-  const caseTypes = [
-    "Hình sự sơ thẩm",
-    "Dân sự sơ thẩm",
-    "Hình sự phúc thẩm",
-    "Dân sự phúc thẩm",
-    "Hôn nhân phúc thẩm",
-    "Hành chính",
-    "Kinh doanh thương mại",
-    "Lao động",
-    "Gia đình và người chưa thành niên",
-  ];
 
   const retentionPeriods = [
     "5 năm",
@@ -373,24 +381,15 @@ export function StorageBoxDialog({
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Loại hồ sơ</FormLabel>
-                    <Select
-                      onValueChange={field.onChange}
-                      value={field.value || "none"}
-                    >
-                      <FormControl>
-                        <SelectTrigger className="h-9">
-                          <SelectValue placeholder="Chọn loại hồ sơ" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="none">Không chọn (Trống)</SelectItem>
-                        {caseTypes.map((type) => (
-                          <SelectItem key={type} value={type}>
-                            {type}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <FormControl>
+                      <AutocompleteInput
+                        placeholder="Chọn hoặc nhập loại hồ sơ..."
+                        value={field.value || ""}
+                        suggestions={mergedCaseTypes}
+                        onValueChange={(val) => field.onChange(val ? val.trim() : null)}
+                        className="h-9 text-xs rounded-md"
+                      />
+                    </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
