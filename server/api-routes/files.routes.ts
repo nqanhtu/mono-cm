@@ -123,6 +123,22 @@ export const fileRoutes = new Elysia()
         }
       }
 
+      if (sortField === 'code') {
+        const allFiles = await db.file.findMany({
+          where,
+          include: { box: true, createdBy: { select: USER_SELECT }, updatedBy: { select: USER_SELECT } },
+        })
+        const mult = sortOrder === 'asc' ? 1 : -1
+        allFiles.sort((a, b) => {
+          const codeA = a.code ?? ''
+          const codeB = b.code ?? ''
+          return codeA.localeCompare(codeB, 'vi', { numeric: true, sensitivity: 'base' }) * mult
+        })
+        const total = allFiles.length
+        const files = allFiles.slice(offset, offset + limit)
+        return { files, total }
+      }
+
       const [files, total] = await Promise.all([
         db.file.findMany({ where, take: limit, skip: offset, orderBy, include: { box: true, createdBy: { select: USER_SELECT }, updatedBy: { select: USER_SELECT } } }),
         db.file.count({ where }),

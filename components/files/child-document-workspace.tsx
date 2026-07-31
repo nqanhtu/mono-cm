@@ -731,17 +731,21 @@ function ChildDocumentTable({ documents, canManage, isSuperAdmin, highlightedId,
             if (sortField === 'order') {
                 valA = a.order ?? 0;
                 valB = b.order ?? 0;
+                if (valA < valB) return sortDirection === 'asc' ? -1 : 1;
+                if (valA > valB) return sortDirection === 'asc' ? 1 : -1;
+                return 0;
             } else if (sortField === 'pageCount') {
                 valA = a.pageCount ?? 0;
                 valB = b.pageCount ?? 0;
+                if (valA < valB) return sortDirection === 'asc' ? -1 : 1;
+                if (valA > valB) return sortDirection === 'asc' ? 1 : -1;
+                return 0;
             } else {
-                valA = (valA as string || '').toLowerCase();
-                valB = (valB as string || '').toLowerCase();
+                const strA = (valA as string || '').trim();
+                const strB = (valB as string || '').trim();
+                const cmp = strA.localeCompare(strB, 'vi', { numeric: true, sensitivity: 'base' });
+                return sortDirection === 'asc' ? cmp : -cmp;
             }
-            
-            if (valA < valB) return sortDirection === 'asc' ? -1 : 1;
-            if (valA > valB) return sortDirection === 'asc' ? 1 : -1;
-            return 0;
         });
     }, [documents, sortField, sortDirection]);
 

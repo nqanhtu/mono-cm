@@ -8,3 +8,6 @@ api/entry.generated.js
 api/entry.generated.js.map
 .superpowers/
 
+# OS generated files
+.DS_Store
+*.DS_Store

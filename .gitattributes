@@ -1,0 +1,4 @@
+# Script shell luôn dùng xuống dòng LF, kể cả khi checkout trên Windows.
+# Máy chủ tòa án chạy Docker trên Windows: file CRLF mount vào container Linux
+# sẽ báo "not found" dù file có thật. Xem docs/BACKUP-RESTORE.md (Phụ lục A).
+*.sh text eol=lf
