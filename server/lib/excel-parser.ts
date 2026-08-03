@@ -21,28 +21,26 @@ export const parseExcelFile = async (buffer: ArrayBuffer): Promise<ImportData> =
 
     // Parse Sheet 1: Files
     const rawFiles = XLSX.utils.sheet_to_json<Record<string, unknown>>(filesSheet)
-    const files: ExtractedFile[] = rawFiles.map((row: Record<string, unknown>) => ({
-        code: row['Hồ sơ số'] as string,
-        // Title will be extracted from the complex text column if not present?
-        // Or if 'Tiêu đề' column exists, use it. In HS628 there isn't a clear "Tiêu đề" column, 
-        // it seems to be inside the column ":" (which is row[':'])
-        title: '', // Will populate from details parsing
-        type: row['Loại án'] as string,
-        year: parseYear(row['Thời gian']),
-        pageCount: typeof row['Số tờ'] === 'number' ? row['Số tờ'] : parseInt((row['Số tờ'] as string) || '0'),
-        retention: row['THBQ'] as string, // HS628 uses 'THBQ'
-        boxCode: (row['Dữ liệu ( Hộp)'] || row['Hộp số']) as string,
-        indexCode: row['MLHS'] as string,
-        note: row['Ghi chú'] as string,
-
-        details: parseDetails(row[':'] as string), // The column with header ":"
-
-        startDate: undefined, // Will be set from details
-    }))
+    const files: ExtractedFile[] = rawFiles.map((row: Record<string, unknown>) => {
+        const detailsText = (row[':'] || row['Chi tiết'] || '') as string
+        const parsedDet = parseDetails(detailsText)
+        const titleFromCol = (row['Tiêu đề'] || row['Trích yếu'] || row['Tên hồ sơ'] || '') as string
+        return {
+            code: row['Hồ sơ số'] as string,
+            title: parsedDet.summary || titleFromCol || '',
+            type: row['Loại án'] as string,
+            year: parseYear(row['Thời gian']),
+            pageCount: typeof row['Số tờ'] === 'number' ? row['Số tờ'] : parseInt((row['Số tờ'] as string) || '0'),
+            retention: (row['THBQ'] || row['Thời hạn bảo quản']) as string,
+            boxCode: (row['Dữ liệu ( Hộp)'] || row['Hộp số'] || row['Hộp']) as string,
+            indexCode: row['MLHS'] as string,
+            note: row['Ghi chú'] as string,
+            details: parsedDet,
+            startDate: undefined,
+        }
+    })
 
     // Post-process to set title and startDate from details
-
-
     files.forEach(f => {
         if (f.details) {
             const d = f.details as FileDetails; 
@@ -56,6 +54,25 @@ export const parseExcelFile = async (buffer: ArrayBuffer): Promise<ImportData> =
     })
 
     const documents: ExtractedDocument[] = []
+    if (sheetNames.length > 1) {
+        const docsSheet = workbook.Sheets[sheetNames[1]]
+        const rawDocs = XLSX.utils.sheet_to_json<Record<string, unknown>>(docsSheet)
+        rawDocs.forEach((row, index) => {
+            documents.push({
+                fileCode: row['Hồ sơ số'] ? String(row['Hồ sơ số']) : '',
+                code: row['Mục lục văn bản'] ? String(row['Mục lục văn bản']) : '',
+                title: (row['Tiêu đề'] || row['Tên văn bản'] || 'Bản kê văn bản') as string,
+                type: row['Loại án'] ? String(row['Loại án']) : undefined,
+                year: parseYear(row['Thời gian']),
+                pageCount: typeof row['Số tờ'] === 'number' ? row['Số tờ'] : parseInt((row['Số tờ'] as string) || '0'),
+                note: row['Ghi chú'] ? String(row['Ghi chú']) : undefined,
+                preservationTime: (row['Thời hạn bảo quản'] || row['THBQ']) ? String(row['Thời hạn bảo quản'] || row['THBQ']) : undefined,
+                contentIndex: row['Mục lục văn bản'] ? String(row['Mục lục văn bản']) : undefined,
+                order: index + 1
+            })
+        })
+    }
+
     const boxes: ExtractedLocation[] = []
 
     return { files, documents, boxes }
@@ -63,7 +80,7 @@ export const parseExcelFile = async (buffer: ArrayBuffer): Promise<ImportData> =
 
 function parseDetails(text: string): FileDetails {
     if (!text) return {};
-    const lines = text.split('\r\n').map(l => l.trim());
+    const lines = text.split(/\r?\n/).map(l => l.trim());
     const details: FileDetails = {};
 
     // ...

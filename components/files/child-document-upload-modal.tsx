@@ -14,7 +14,7 @@ import {
     DialogTrigger,
 } from '@/components/ui/dialog';
 import { toast } from 'sonner';
-import { UploadCloud, Loader2, FileSpreadsheet, CheckCircle2, AlertCircle, X } from 'lucide-react';
+import { UploadCloud, Loader2, FileSpreadsheet, CheckCircle2, AlertCircle, X, Download } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface ChildDocumentUploadModalProps {
@@ -169,8 +169,18 @@ export function ChildDocumentUploadModal({ fileId, trigger, onSuccess }: ChildDo
                     </div>
 
                     {/* Columns Guide */}
-                    <div className="rounded-xl bg-muted/40 p-3 text-[10px] text-muted-foreground space-y-1">
-                        <p className="font-bold text-foreground">Cấu trúc các cột trong file Excel:</p>
+                    <div className="rounded-xl bg-muted/40 p-3 text-[10px] text-muted-foreground space-y-1.5">
+                        <div className="flex items-center justify-between">
+                            <p className="font-bold text-foreground">Cấu trúc các cột trong file Excel:</p>
+                            <a 
+                                href="/templates/mau-van-ban-con.xlsx" 
+                                download="mau-van-ban-con.xlsx"
+                                className="inline-flex items-center gap-1 font-semibold text-emerald-600 dark:text-emerald-500 hover:underline"
+                            >
+                                <Download className="h-3 w-3" />
+                                Tải file mẫu (.xlsx)
+                            </a>
+                        </div>
                         <ul className="list-disc pl-4 space-y-0.5 grid grid-cols-2 gap-x-2">
                             <li><span className="font-semibold text-foreground">Hồ sơ số</span> (mã HS mẹ)</li>
                             <li><span className="font-semibold text-foreground">Mục lục văn bản</span> (ký hiệu)</li>
