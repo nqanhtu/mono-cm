@@ -2,7 +2,7 @@
 
 import { Table } from "@tanstack/react-table";
 import { SlidersHorizontal, Search, X, Settings, CalendarDays } from "lucide-react";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useRouter, useSearchParams } from '@/src/lib/router';
 import { useDebouncedCallback } from "use-debounce";
 import useSWR from "swr";
@@ -45,17 +45,18 @@ const statuses = [
   { value: "LOST", label: "Thất lạc" },
 ];
 
-const caseTypes = [
-  { label: "Hình sự sơ thẩm", value: "Hình sự sơ thẩm" },
-  { label: "Dân sự sơ thẩm", value: "Dân sự sơ thẩm" },
-  { label: "Hình sự phúc thẩm", value: "Hình sự phúc thẩm" },
-  { label: "Dân sự phúc thẩm", value: "Dân sự phúc thẩm" },
-  { label: "Hôn nhân phúc thẩm", value: "Hôn nhân phúc thẩm" },
-  { label: "Hành chính", value: "Hành chính" },
-  { label: "Kinh tế", value: "Kinh tế" },
+const defaultCaseTypes = [
+  "Hình sự sơ thẩm",
+  "Dân sự sơ thẩm",
+  "Hình sự phúc thẩm",
+  "Dân sự phúc thẩm",
+  "Hôn nhân phúc thẩm",
+  "Hành chính",
+  "Kinh tế",
 ];
 
 type UsersResponse = UserDto[] | { users?: UserDto[] };
+type SuggestionsResponse = { types?: string[]; retentions?: string[] };
 
 export function FileTableToolbar<TData>({
   table,
@@ -66,6 +67,20 @@ export function FileTableToolbar<TData>({
 }: FileTableToolbarProps<TData>) {
   const router = useRouter();
   const searchParams = useSearchParams();
+
+  const { data: suggestionsData } = useSWR<SuggestionsResponse>(
+    '/api/files/autocomplete-suggestions',
+    (url: string) => apiFetch(url).then((r) => r.json())
+  );
+
+  const caseTypesOptions = useMemo(() => {
+    const fetchedTypes = suggestionsData?.types || [];
+    const set = new Set([...fetchedTypes, ...defaultCaseTypes]);
+    return Array.from(set).map((type) => ({
+      label: type,
+      value: type,
+    }));
+  }, [suggestionsData?.types]);
 
   const advancedFilterKeys = [
     "year",
@@ -240,7 +255,7 @@ export function FileTableToolbar<TData>({
       <div className="flex flex-wrap items-center gap-2">
         <DataTableFacetedFilter
           title="Loại án"
-          options={caseTypes}
+          options={caseTypesOptions}
           value={searchParams.get("type") ? [searchParams.get("type")!] : []}
           onFilter={(values) => setUrlParam("type", values?.[0] || "all")}
         />
