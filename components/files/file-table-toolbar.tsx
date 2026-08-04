@@ -228,6 +228,7 @@ export function FileTableToolbar<TData>({
                     updatedBy: 'Người cập nhật',
                     note: 'Ghi chú',
                     actions: 'Thao tác',
+                    box: 'Hộp số',
                     defendants_civil: 'Bị cáo / Bị đơn',
                     plaintiffs_victims: 'Nguyên đơn / Bị hại'
                   }

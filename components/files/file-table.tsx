@@ -99,6 +99,7 @@ export function FileTable({
         }
       }
       return {
+        box: true,
         defendants_civil: true,
         plaintiffs_victims: true,
       }
@@ -122,6 +123,7 @@ export function FileTable({
     if (storedVisibility) setColumnVisibility(JSON.parse(storedVisibility))
     else {
       setColumnVisibility({
+        box: true,
         defendants_civil: true,
         plaintiffs_victims: true,
       })

@@ -156,6 +156,24 @@ export const getColumns = (
       },
     },
     {
+      id: "box",
+      accessorFn: (row) => row.box?.boxNumber || row.box?.code || "",
+      header: ({ column }) => (
+        <DataTableColumnHeader column={column} title="Hộp số" />
+      ),
+      cell: ({ row }) => {
+        const box = row.original.box
+        const boxLabel = box?.boxNumber || box?.code
+        if (!boxLabel) return <span className="text-muted-foreground">-</span>
+
+        return (
+          <Badge variant="outline" className="h-6 rounded-md px-2 font-mono font-semibold bg-slate-50 border-slate-200 text-slate-700 dark:bg-slate-900/40 dark:border-slate-800 dark:text-slate-300">
+            {boxLabel}
+          </Badge>
+        )
+      },
+    },
+    {
       id: "defendants_civil",
       accessorFn: (row) => [
         ...(row.defendants || []),
