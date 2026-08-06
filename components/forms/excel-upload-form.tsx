@@ -41,43 +41,17 @@ export function ExcelUploadForm({ onSuccess }: ExcelUploadFormProps) {
     }
   }
 
-  const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault()
-    e.stopPropagation()
-    setIsDragActive(false)
-    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-      const droppedFile = e.dataTransfer.files[0]
-      const fileExt = droppedFile.name.split('.').pop()?.toLowerCase()
-      if (fileExt === 'xlsx' || fileExt === 'xls') {
-        setFile(droppedFile)
-        setPreview(null)
-        if (fileInputRef.current) fileInputRef.current.value = ''
-      } else {
-        toast.error('Chỉ hỗ trợ định dạng file .xlsx, .xls')
-      }
-    }
-  }
-
-  const buildFormData = () => {
-    const formData = new FormData()
-    if (file) formData.append('file', file)
-    return formData
-  }
-
-  const handlePreview = async (event: React.FormEvent) => {
-    event.preventDefault()
-    if (!file) {
-      toast.error('Vui lòng chọn file Excel')
-      return
-    }
-
+  const runPreview = async (targetFile: File) => {
     setIsPreviewing(true)
     setPreview(null)
+
+    const formData = new FormData()
+    formData.append('file', targetFile)
 
     try {
       const response = await apiFetch('/api/upload/excel/preview', {
         method: 'POST',
-        body: buildFormData(),
+        body: formData,
       })
       const result: ApiResult<ExcelImportPreview> = await response.json()
 
@@ -88,7 +62,7 @@ export function ExcelUploadForm({ onSuccess }: ExcelUploadFormProps) {
         } else if (result.data.summary.warnings > 0) {
           toast.warning(`File có ${result.data.summary.warnings} cảnh báo, vui lòng kiểm tra trước khi nhập`)
         } else {
-          toast.success('File hợp lệ, có thể nhập dữ liệu')
+          toast.success('File hợp lệ, sẵn sàng nhập dữ liệu')
         }
         return
       }
@@ -99,6 +73,33 @@ export function ExcelUploadForm({ onSuccess }: ExcelUploadFormProps) {
     } finally {
       setIsPreviewing(false)
     }
+  }
+
+  const handleFileSelect = (selectedFile: File) => {
+    const fileExt = selectedFile.name.split('.').pop()?.toLowerCase()
+    if (fileExt === 'xlsx' || fileExt === 'xls') {
+      setFile(selectedFile)
+      setPreview(null)
+      if (fileInputRef.current) fileInputRef.current.value = ''
+      runPreview(selectedFile)
+    } else {
+      toast.error('Chỉ hỗ trợ định dạng file .xlsx, .xls')
+    }
+  }
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setIsDragActive(false)
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+      handleFileSelect(e.dataTransfer.files[0])
+    }
+  }
+
+  const buildFormData = () => {
+    const formData = new FormData()
+    if (file) formData.append('file', file)
+    return formData
   }
 
   const handleCommit = async () => {
@@ -151,6 +152,12 @@ export function ExcelUploadForm({ onSuccess }: ExcelUploadFormProps) {
           title: 'text-muted-foreground'
         }
       }
+      if (isPreviewing) {
+        return {
+          wrapper: 'border-amber-500 animate-pulse',
+          title: 'text-amber-600 dark:text-amber-500 font-bold'
+        }
+      }
       if (!preview) {
         return {
           wrapper: 'border-primary',
@@ -170,7 +177,7 @@ export function ExcelUploadForm({ onSuccess }: ExcelUploadFormProps) {
     }
 
     if (step === 3) {
-      if (!preview || preview.summary.errors > 0) {
+      if (!preview || preview.summary.errors > 0 || isPreviewing) {
         return {
           wrapper: 'border-muted opacity-50',
           title: 'text-muted-foreground'
@@ -196,7 +203,7 @@ export function ExcelUploadForm({ onSuccess }: ExcelUploadFormProps) {
 
   const steps = [
     { step: 1, title: '1. Chọn file', desc: 'Tải lên tài liệu (.xlsx, .xls)' },
-    { step: 2, title: '2. Kiểm tra', desc: 'Rà soát lỗi và xung đột dữ liệu' },
+    { step: 2, title: '2. Tự động kiểm tra', desc: 'Rà soát lỗi và xung đột dữ liệu' },
     { step: 3, title: '3. Xác nhận nhập', desc: 'Ghi dữ liệu vào hệ thống' }
   ]
 
@@ -239,34 +246,46 @@ export function ExcelUploadForm({ onSuccess }: ExcelUploadFormProps) {
         })}
       </div>
 
-      <form onSubmit={handlePreview} className="space-y-4">
+      <div className="space-y-4">
         <div
-          onDragEnter={!isCommitting ? handleDrag : undefined}
-          onDragOver={!isCommitting ? handleDrag : undefined}
-          onDragLeave={!isCommitting ? handleDrag : undefined}
-          onDrop={!isCommitting ? handleDrop : undefined}
-          onClick={() => !isCommitting && fileInputRef.current?.click()}
+          onDragEnter={!isCommitting && !isPreviewing ? handleDrag : undefined}
+          onDragOver={!isCommitting && !isPreviewing ? handleDrag : undefined}
+          onDragLeave={!isCommitting && !isPreviewing ? handleDrag : undefined}
+          onDrop={!isCommitting && !isPreviewing ? handleDrop : undefined}
+          onClick={() => !isCommitting && !isPreviewing && fileInputRef.current?.click()}
           className={cn(
             "flex flex-col items-center justify-center rounded-xl border-2 border-dashed p-8 transition-colors text-center",
-            !isCommitting ? "cursor-pointer hover:bg-muted/30" : "cursor-not-allowed opacity-60 pointer-events-none",
+            !isCommitting && !isPreviewing ? "cursor-pointer hover:bg-muted/30" : "cursor-not-allowed opacity-75 pointer-events-none",
             isDragActive 
               ? "border-primary bg-primary/[0.04] dark:bg-primary/[0.06] border-solid" 
               : "border-muted-foreground/20"
           )}
         >
-          <UploadCloud className="mb-3 h-8 w-8 text-muted-foreground/80" />
-          <p className="text-sm font-semibold text-foreground">Bấm để chọn file hoặc kéo thả tại đây</p>
-          <p className="mt-1 text-xs text-muted-foreground">Hỗ trợ định dạng .xlsx, .xls</p>
+          {isPreviewing ? (
+            <>
+              <Loader2 className="mb-3 h-8 w-8 text-primary animate-spin" />
+              <p className="text-sm font-semibold text-foreground">Đang tự động rà soát dữ liệu file Excel...</p>
+              <p className="mt-1 text-xs text-muted-foreground">Vui lòng chờ trong giây lát để hệ thống kiểm tra các dòng và cột</p>
+            </>
+          ) : (
+            <>
+              <UploadCloud className="mb-3 h-8 w-8 text-muted-foreground/80" />
+              <p className="text-sm font-semibold text-foreground">Bấm để chọn file hoặc kéo thả tại đây</p>
+              <p className="mt-1 text-xs text-muted-foreground">Hỗ trợ định dạng .xlsx, .xls</p>
+            </>
+          )}
           <input
             ref={fileInputRef}
             id="file-upload"
             type="file"
             accept=".xlsx, .xls"
             className="hidden"
-            disabled={isCommitting}
+            disabled={isCommitting || isPreviewing}
             onChange={(event) => {
-              setFile(event.target.files?.[0] || null)
-              setPreview(null)
+              const selected = event.target.files?.[0]
+              if (selected) {
+                handleFileSelect(selected)
+              }
             }}
           />
         </div>
@@ -284,7 +303,7 @@ export function ExcelUploadForm({ onSuccess }: ExcelUploadFormProps) {
               type="button"
               variant="ghost"
               size="sm"
-              disabled={isCommitting}
+              disabled={isCommitting || isPreviewing}
               onClick={() => {
                 setFile(null)
                 setPreview(null)
@@ -298,7 +317,7 @@ export function ExcelUploadForm({ onSuccess }: ExcelUploadFormProps) {
         )}
 
         {preview && (
-          <div className="space-y-3 rounded-xl border p-4 bg-muted/[0.05]">
+          <div className="space-y-4 rounded-xl border p-4 bg-muted/[0.05]">
             <div className="flex flex-wrap items-center gap-2">
               <Badge variant="secondary" className="text-xs font-semibold px-2.5 py-0.5 rounded-md">{preview.summary.files} hồ sơ</Badge>
               <Badge variant="secondary" className="text-xs font-semibold px-2.5 py-0.5 rounded-md">{preview.summary.documents} văn bản</Badge>
@@ -324,11 +343,36 @@ export function ExcelUploadForm({ onSuccess }: ExcelUploadFormProps) {
               )}
             </div>
 
-            {preview.summary.errors > 0 ? (
-              <p className="text-xs text-destructive font-medium">Cần sửa đổi các lỗi trong file trước khi thực hiện xác nhận nhập liệu.</p>
-            ) : preview.summary.warnings > 0 ? (
-              <p className="text-xs text-amber-600 dark:text-amber-400 font-medium">File có một số cảnh báo nhưng vẫn có thể nhập. Hãy kiểm tra kỹ trước khi bấm.</p>
-            ) : null}
+            {/* Fix Guidance Card for Errors */}
+            {preview.summary.errors > 0 && (
+              <div className="rounded-xl border border-red-500/30 bg-red-500/5 p-4 space-y-3">
+                <div className="flex items-center gap-2 text-destructive font-bold text-sm">
+                  <AlertCircle className="h-4 w-4 shrink-0" />
+                  <span>File Excel có {preview.summary.errors} lỗi cần sửa đổi trước khi có thể nhập</span>
+                </div>
+                <div className="text-xs text-muted-foreground space-y-1.5 pl-5 list-disc">
+                  <p><strong className="text-foreground">Thiếu thông tin bắt buộc:</strong> Rà soát các ô trống tại cột Hồ sơ số, Tiêu đề / Trích yếu, hoặc Loại án.</p>
+                  <p><strong className="text-foreground">Mã hồ sơ bị trùng:</strong> Kiểm tra các mã bị lặp lại trong file Excel hoặc đã có trên hệ thống.</p>
+                  <p><strong className="text-foreground">Năm không hợp lệ:</strong> Năm mở hồ sơ phải là số nguyên (từ 1900 đến 2200).</p>
+                </div>
+                <div className="pt-1">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => fileInputRef.current?.click()}
+                    className="h-8 text-xs font-semibold border-red-500/30 text-destructive hover:bg-red-500/10 rounded-lg"
+                  >
+                    <UploadCloud className="h-3.5 w-3.5 mr-1.5" />
+                    Sửa file & Chọn lại file khác
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            {preview.summary.errors === 0 && preview.summary.warnings > 0 && (
+              <p className="text-xs text-amber-600 dark:text-amber-400 font-medium">File có một số cảnh báo nhưng vẫn có thể nhập. Hãy kiểm tra kỹ trước khi bấm Xác nhận.</p>
+            )}
 
             {preview.issues.length > 0 ? (
               <div className="max-h-60 overflow-auto rounded-lg border">
@@ -377,39 +421,37 @@ export function ExcelUploadForm({ onSuccess }: ExcelUploadFormProps) {
               </div>
             ) : (
               <div className="text-xs text-emerald-600 dark:text-emerald-400 font-semibold bg-emerald-500/5 border border-emerald-500/10 p-3 rounded-lg">
-                File hợp lệ. Đã quét hoàn tất {preview.summary.files} dòng hồ sơ vụ án mà không phát hiện lỗi nào. Bấm nút dưới để hoàn tất.
+                File hợp lệ. Đã quét hoàn tất {preview.summary.files} dòng hồ sơ vụ án mà không phát hiện lỗi nào. Bấm nút bên dưới để hoàn tất nhập dữ liệu.
               </div>
             )}
           </div>
         )}
 
-        <div className="flex justify-end gap-3 pt-2">
-          <Button 
-            type="submit" 
-            variant="outline" 
-            disabled={isPreviewing || !file || isCommitting}
-            className="h-9.5 text-xs font-semibold rounded-lg"
-          >
-            {isPreviewing && <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />}
-            Kiểm tra file
-          </Button>
-          <Button
-            type="button"
-            disabled={!preview || preview.summary.errors > 0 || isCommitting || isPreviewing}
-            onClick={handleCommit}
-            className="h-9.5 text-xs font-semibold rounded-lg bg-primary text-primary-foreground hover:bg-primary/90"
-          >
-            {isCommitting ? (
-              <>
-                <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
-                Đang nhập...
-              </>
-            ) : (
-              'Xác nhận nhập'
-            )}
-          </Button>
+        <div className="space-y-1.5 pt-2">
+          <div className="flex justify-end gap-3">
+            <Button
+              type="button"
+              disabled={!preview || preview.summary.errors > 0 || isCommitting || isPreviewing}
+              onClick={handleCommit}
+              className="h-9.5 text-xs font-semibold rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 min-w-[140px]"
+            >
+              {isCommitting ? (
+                <>
+                  <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
+                  Đang nhập...
+                </>
+              ) : (
+                'Xác nhận nhập'
+              )}
+            </Button>
+          </div>
+          {preview && preview.summary.errors > 0 && (
+            <p className="text-[11px] text-destructive text-right font-medium">
+              (*) Cần sửa đổi {preview.summary.errors} lỗi nghiêm trọng để kích hoạt nút Xác nhận nhập
+            </p>
+          )}
         </div>
-      </form>
+      </div>
     </div>
   )
 }
