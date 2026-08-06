@@ -1,5 +1,7 @@
 export interface FileDetails {
     summary?: string;
+    hasVeViecPrefix?: boolean;
+    isVeViecEmpty?: boolean;
     judgmentDate?: string;
     judgmentNumber?: string;
     defendants?: string[];

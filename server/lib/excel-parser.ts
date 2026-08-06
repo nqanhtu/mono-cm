@@ -86,7 +86,12 @@ function parseDetails(text: string): FileDetails {
     // ...
 
     lines.forEach(line => {
-        if (line.startsWith('Về việc:')) details.summary = line.replace('Về việc:', '').trim();
+        if (line.startsWith('Về việc:')) {
+            const summaryVal = line.replace('Về việc:', '').trim();
+            details.summary = summaryVal;
+            details.hasVeViecPrefix = true;
+            details.isVeViecEmpty = !summaryVal;
+        }
         if (line.startsWith('Bị cáo:')) details.defendants = line.replace('Bị cáo:', '').trim().split(',').map(s => s.trim());
         if (line.startsWith('Nguyên đơn:')) details.plaintiffs = line.replace('Nguyên đơn:', '').trim().split(',').map(s => s.trim());
         if (line.startsWith('Bị đơn:')) details.civilDefendants = line.replace('Bị đơn:', '').trim().split(',').map(s => s.trim());
