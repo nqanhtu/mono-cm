@@ -35,11 +35,7 @@ export async function previewExcelImport(payload: ImportPayload): Promise<ExcelI
     const code = normalizeCode(file.code)
 
     if (!code) issues.push(buildIssue(row, 'Hồ sơ số', 'Thiếu mã hồ sơ'))
-    if (!normalizeCode(file.title)) {
-      issues.push(buildIssue(row, 'Tiêu đề', 'Thiếu tiêu đề hoặc trích yếu', code))
-    } else if (file.details?.hasVeViecPrefix && file.details?.isVeViecEmpty) {
-      issues.push(buildIssue(row, 'Chi tiết (cột :)', 'Dòng "Về việc:" đang để trống nội dung trích yếu vụ án', code))
-    }
+    if (!normalizeCode(file.title)) issues.push(buildIssue(row, 'Tiêu đề', 'Thiếu tiêu đề hoặc trích yếu', code))
     if (!normalizeCode(file.type)) issues.push(buildIssue(row, 'Loại án', 'Thiếu loại án', code))
     if (!Number.isInteger(file.year) || file.year < 1900 || file.year > 2200) {
       issues.push(buildIssue(row, 'Thời gian', 'Năm hồ sơ không hợp lệ', code))
