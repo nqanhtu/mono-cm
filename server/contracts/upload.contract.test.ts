@@ -46,4 +46,17 @@ describe('upload contract', () => {
       expect(response.status).toBe(400)
       expect(await response.json()).toEqual({ error: 'Missing fileId or file' })
     })
+
+    test('POST /api/upload/excel/patch-boxes without a session keeps the legacy auth error shape', async () => {
+      const app = createTestApp()
+      const formData = new FormData()
+
+      const response = await app.handle(jsonRequest('/api/upload/excel/patch-boxes', {
+        method: 'POST',
+        body: formData,
+      }))
+
+      expect(response.status).toBe(401)
+      expect(await response.json()).toEqual({ error: 'Unauthorized' })
+    })
 })

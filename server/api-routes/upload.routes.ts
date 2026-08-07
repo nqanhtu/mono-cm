@@ -28,6 +28,103 @@ export const uploadRoutes = new Elysia()
   .post('/api/upload/child-documents', async ({ request, set }) => importChildDocuments(request, set, 'upload'))
   .post('/api/files/import-child-docs', async ({ request, set }) => importChildDocuments(request, set, 'file'))
   .post('/api/import/files', async ({ request, set }) => legacyImportFiles(request, set))
+  .post('/api/upload/excel/patch-boxes', async ({ request, set }) => {
+    try {
+      const { session, denied } = await sessionOrDenied({ request, set }, 'manageFiles')
+      if (denied) return denied
+
+      const formData = await request.formData()
+      const file = formData.get('file')
+      if (!isUploadedFile(file)) return apiError(set, 'Vui lòng chọn file Excel', 400)
+
+      const payload = await parseExcelUpload(file)
+      const normalizeCode = (code: unknown) => String(code ?? '').trim()
+
+      const fileCodes = Array.from(new Set(payload.files.map((f) => normalizeCode(f.code)).filter(Boolean)))
+      const boxCodes = Array.from(new Set(payload.files.map((f) => normalizeCode(f.boxCode)).filter(Boolean)))
+
+      const existingFiles = await db.file.findMany({
+        where: { code: { in: fileCodes } },
+        select: { id: true, code: true, boxId: true },
+      })
+      const fileMap = new Map(existingFiles.map((f) => [f.code, f]))
+
+      const existingBoxes = await db.storageBox.findMany({
+        where: {
+          OR: [
+            { code: { in: boxCodes } },
+            { boxNumber: { in: boxCodes } },
+            { code: { in: boxCodes.map((c) => `H${c}`) } },
+            { boxNumber: { in: boxCodes.map((c) => `H${c}`) } },
+          ],
+        },
+        select: { id: true, code: true, boxNumber: true },
+      })
+
+      const boxMap = new Map<string, string>()
+      for (const b of existingBoxes) {
+        boxMap.set(b.code, b.id)
+        boxMap.set(b.boxNumber, b.id)
+        if (b.boxNumber.startsWith('H')) boxMap.set(b.boxNumber.slice(1), b.id)
+      }
+
+      let patchedCount = 0
+      const missingBoxesSet = new Set<string>()
+      const issues: string[] = []
+
+      for (const item of payload.files) {
+        const code = normalizeCode(item.code)
+        const boxCode = normalizeCode(item.boxCode)
+        const targetFile = fileMap.get(code)
+
+        if (!targetFile) {
+          issues.push(`Hồ sơ số ${code} không tồn tại trong hệ thống`)
+          continue
+        }
+
+        if (!boxCode) {
+          issues.push(`Hồ sơ ${code} không có Hộp số trong Excel`)
+          continue
+        }
+
+        const boxId = boxMap.get(boxCode) || boxMap.get(`H${boxCode}`)
+        if (!boxId) {
+          missingBoxesSet.add(boxCode)
+          issues.push(`Hộp ${boxCode} của hồ sơ ${code} chưa tồn tại trong cơ sở dữ liệu`)
+          continue
+        }
+
+        await db.file.update({
+          where: { id: targetFile.id },
+          data: { boxId },
+        })
+        patchedCount += 1
+      }
+
+      await createAuditLog({
+        action: 'UPDATE',
+        target: 'File',
+        userId: session?.id,
+        ipAddress: getClientIp(request),
+        detail: { action: 'Excel Box Patch', patchedCount, missingBoxes: Array.from(missingBoxesSet) },
+      })
+
+      return {
+        success: true,
+        stats: {
+          scanned: payload.files.length,
+          matchedFiles: existingFiles.length,
+          patched: patchedCount,
+          missingBoxCount: missingBoxesSet.size,
+        },
+        missingBoxes: Array.from(missingBoxesSet),
+        issues,
+      }
+    } catch (error) {
+      console.error('Patch error:', error)
+      return apiError(set, error instanceof Error ? error.message : 'Không thể vá Hộp số từ file Excel', 500)
+    }
+  })
 
 async function importExcelCommit(request: Request, set: AppSet, logPrefix: string) {
   try {
