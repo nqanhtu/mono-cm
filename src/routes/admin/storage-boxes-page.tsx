@@ -22,7 +22,11 @@ import {
   FolderOpen,
   Printer,
   QrCode,
-  Warehouse
+  Warehouse,
+  ChevronLeft,
+  ChevronRight,
+  ChevronsLeft,
+  ChevronsRight
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -79,6 +83,9 @@ export default function StorageBoxesPage() {
 
   const [search, setSearch] = useState("");
   const [yearFilter, setYearFilter] = useState("");
+  const [pageIndex, setPageIndex] = useState(0);
+  const [pageSize, setPageSize] = useState(10);
+
   const canLoadBoxes = session?.role === "SUPER_ADMIN";
   const { boxes, isLoading } = useStorageBoxes({ search, year: yearFilter }, canLoadBoxes);
   const { layout: storageLayout, isLoading: isLayoutLoading } = useStorageLayout(canLoadBoxes);
@@ -89,6 +96,14 @@ export default function StorageBoxesPage() {
   const [boxToDelete, setBoxToDelete] = useState<StorageBoxDto | null>(null);
   const [selectedBoxIds, setSelectedBoxIds] = useState<Set<string>>(new Set());
   const [labelPreviewBoxes, setLabelPreviewBoxes] = useState<StorageBoxDto[]>([]);
+
+  useEffect(() => {
+    setPageIndex(0);
+  }, [search, yearFilter]);
+
+  const totalBoxes = boxes.length;
+  const totalPages = Math.ceil(totalBoxes / pageSize) || 1;
+  const paginatedBoxes = boxes.slice(pageIndex * pageSize, (pageIndex + 1) * pageSize);
 
   // Authenticate SUPER_ADMIN
   useEffect(() => {
@@ -184,7 +199,7 @@ export default function StorageBoxesPage() {
     });
   };
 
-  const visibleBoxIds = boxes.map((box) => box.id);
+  const visibleBoxIds = paginatedBoxes.map((box) => box.id);
   const selectedVisibleBoxes = boxes.filter((box) => selectedBoxIds.has(box.id));
   const allVisibleSelected = visibleBoxIds.length > 0 && visibleBoxIds.every((id) => selectedBoxIds.has(id));
   const someVisibleSelected = visibleBoxIds.some((id) => selectedBoxIds.has(id));
@@ -333,7 +348,7 @@ export default function StorageBoxesPage() {
                       </TableCell>
                     </TableRow>
                   ) : (
-                    boxes.map((box) => {
+                    paginatedBoxes.map((box) => {
                       const filesCount = box._count?.files || 0;
                       return (
                         <TableRow key={box.id} className="hover:bg-muted/30 transition-colors group">
@@ -491,6 +506,81 @@ export default function StorageBoxesPage() {
                 </TableBody>
               </Table>
             </TableSurface>
+
+            {/* Storage Boxes Table Pagination Controls */}
+            {totalBoxes > 0 && (
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-3 rounded-xl border bg-background/90 px-4 py-3 shadow-sm text-xs mt-3">
+                <div className="text-muted-foreground font-medium">
+                  Hiển thị {pageIndex * pageSize + 1} - {Math.min((pageIndex + 1) * pageSize, totalBoxes)} trên tổng số {totalBoxes} hộp lưu trữ
+                </div>
+                <div className="flex flex-wrap items-center gap-3 sm:gap-6">
+                  <div className="flex items-center gap-2">
+                    <span className="text-muted-foreground font-medium">Số hàng mỗi trang</span>
+                    <select
+                      value={pageSize}
+                      onChange={(e) => {
+                        setPageSize(Number(e.target.value))
+                        setPageIndex(0)
+                      }}
+                      className="h-8 rounded-lg border bg-background px-2.5 font-medium text-xs focus:ring-1 focus:ring-primary"
+                    >
+                      {[10, 20, 25, 50, 100].map((size) => (
+                        <option key={size} value={size}>
+                          {size}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="font-medium tabular-nums text-foreground">
+                    Trang {pageIndex + 1} / {totalPages}
+                  </div>
+
+                  <div className="flex items-center gap-1">
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      className="h-8 w-8 rounded-lg"
+                      onClick={() => setPageIndex(0)}
+                      disabled={pageIndex === 0}
+                      title="Trang đầu"
+                    >
+                      <ChevronsLeft className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      className="h-8 w-8 rounded-lg"
+                      onClick={() => setPageIndex((p) => Math.max(0, p - 1))}
+                      disabled={pageIndex === 0}
+                      title="Trang trước"
+                    >
+                      <ChevronLeft className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      className="h-8 w-8 rounded-lg"
+                      onClick={() => setPageIndex((p) => Math.min(totalPages - 1, p + 1))}
+                      disabled={pageIndex >= totalPages - 1}
+                      title="Trang sau"
+                    >
+                      <ChevronRight className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      className="h-8 w-8 rounded-lg"
+                      onClick={() => setPageIndex(totalPages - 1)}
+                      disabled={pageIndex >= totalPages - 1}
+                      title="Trang cuối"
+                    >
+                      <ChevronsRight className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            )}
           </TabsContent>
 
           <TabsContent value="layout">

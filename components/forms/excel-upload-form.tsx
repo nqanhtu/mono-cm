@@ -10,7 +10,6 @@ import type { ExcelImportPreview } from '@/lib/validation/import'
 import { queryClient } from '@/src/lib/query-client'
 import { queryKeys } from '@/src/lib/query-keys'
 import { cn } from '@/lib/utils'
-import { ExcelBoxPatchDialog } from './excel-box-patch-dialog'
 
 interface ExcelUploadFormProps {
   onSuccess: () => void
@@ -211,7 +210,7 @@ export function ExcelUploadForm({ onSuccess }: ExcelUploadFormProps) {
   return (
     <div className="space-y-6 py-2">
       {/* Template Download Banner */}
-      <div className="flex flex-wrap items-center justify-between gap-3 bg-muted/30 border rounded-lg p-3">
+      <div className="flex items-center justify-between bg-muted/30 border rounded-lg p-3">
         <div className="flex items-center gap-2.5">
           <FileSpreadsheet className="h-5 w-5 text-emerald-600 dark:text-emerald-500 shrink-0" />
           <div>
@@ -219,17 +218,14 @@ export function ExcelUploadForm({ onSuccess }: ExcelUploadFormProps) {
             <p className="text-[11px] text-muted-foreground">Chứa thông tin hồ sơ vụ án và danh mục văn bản con</p>
           </div>
         </div>
-        <div className="flex items-center gap-2 shrink-0">
-          <ExcelBoxPatchDialog />
-          <a 
-            href="/templates/mau-ho-so-me.xlsx" 
-            download="mau-ho-so-me.xlsx"
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium bg-secondary hover:bg-secondary/80 text-secondary-foreground transition-colors shrink-0"
-          >
-            <Download className="h-3.5 w-3.5" />
-            Tải file mẫu
-          </a>
-        </div>
+        <a 
+          href="/templates/mau-ho-so-me.xlsx" 
+          download="mau-ho-so-me.xlsx"
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium bg-secondary hover:bg-secondary/80 text-secondary-foreground transition-colors shrink-0"
+        >
+          <Download className="h-3.5 w-3.5" />
+          Tải file mẫu
+        </a>
       </div>
 
       {/* Step Indicators */}
