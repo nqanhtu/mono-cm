@@ -459,6 +459,42 @@ describe('files contract', () => {
       })
     })
 
+    test('PUT /api/files/:id - fails when updated code duplicates another existing file', async () => {
+      const app = createTestApp()
+
+      setDbForTesting({
+        file: {
+          findUnique: async () => ({
+            id: 'file-1',
+            code: 'HS-001',
+            createdById: 'test-user-id',
+            isLocked: false,
+          }),
+          findFirst: async () => ({
+            id: 'file-2',
+            code: 'HS-002',
+          }),
+        },
+      })
+
+      const response = await app.handle(jsonRequest('/api/files/file-1', {
+        method: 'PUT',
+        headers: {
+          'content-type': 'application/json',
+          cookie: await sessionCookie('ADMIN'),
+        },
+        body: JSON.stringify({
+          code: 'HS-002',
+        }),
+      }))
+
+      expect(response.status).toBe(409)
+      expect(await response.json()).toEqual({
+        success: false,
+        message: 'Mã hồ sơ "HS-002" đã tồn tại trong hệ thống.',
+      })
+    })
+
     test('DELETE /api/files/:id - fails when file is locked and user is COORDINATOR', async () => {
       const app = createTestApp()
 

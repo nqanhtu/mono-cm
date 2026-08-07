@@ -349,6 +349,24 @@ export const fileRoutes = new Elysia()
       }
 
       const data = await request.json() as Record<string, any>
+
+      if (typeof data.code === 'string' && data.code.trim()) {
+        const newCode = data.code.trim()
+        if (newCode !== oldFile.code) {
+          const duplicateFile = await db.file.findFirst({
+            where: {
+              code: newCode,
+              id: { not: params.id },
+            },
+            select: { id: true },
+          })
+          if (duplicateFile) {
+            return apiError(set, `Mã hồ sơ "${newCode}" đã tồn tại trong hệ thống.`, 409)
+          }
+        }
+        data.code = newCode
+      }
+
       const fields = [
         'code', 'title', 'type', 'year', 'pageCount', 'retention', 'note',
         'judgmentNumber', 'judgmentDate', 'defendants', 'plaintiffs', 'civilDefendants', 'boxId'
