@@ -42,6 +42,7 @@ interface FileData {
     plaintiffs?: string[] | null
     civilDefendants?: string[] | null
     boxId?: string | null
+    box?: StorageBoxDto | null
 }
 
 
@@ -68,7 +69,7 @@ const parseStringToDate = (dateStr: string): Date | null => {
 export function EditFileDialog({ file, onSuccess }: EditFileDialogProps) {
     const [open, setOpen] = useState(false)
     const [isLoading, setIsLoading] = useState(false)
-    const [boxes, setBoxes] = useState<StorageBoxDto[]>([]);
+    const [boxes, setBoxes] = useState<StorageBoxDto[]>(() => (file?.box ? [file.box] : []))
     const { suggestions } = useAutocompleteSuggestions()
 
     
@@ -103,6 +104,7 @@ export function EditFileDialog({ file, onSuccess }: EditFileDialogProps) {
 
     useEffect(() => {
         if (open && file) {
+            const initialBoxId = file.boxId || file.box?.id || ''
             setFormData({
                 code: file.code || '',
                 title: file.title || '',
@@ -116,24 +118,28 @@ export function EditFileDialog({ file, onSuccess }: EditFileDialogProps) {
                 defendants: file.defendants ? file.defendants.join(', ') : '',
                 plaintiffs: file.plaintiffs ? file.plaintiffs.join(', ') : '',
                 civilDefendants: file.civilDefendants ? file.civilDefendants.join(', ') : '',
-                boxId: file.boxId || ''
+                boxId: initialBoxId
             })
+            if (file.box) {
+                setBoxes(prev => prev.some(b => b.id === file.box?.id) ? prev : [file.box!, ...prev])
+            }
         }
     }, [open, file])
 
     const handleBoxbyYear = async (year: number) => {
-        if (!year) return
         try {
-            const response = await apiFetch(`/api/admin/boxes?year=${year}`)
+            const response = await apiFetch(`/api/admin/boxes${year ? `?year=${year}` : ''}`)
+            let fetchedBoxes: StorageBoxDto[] = []
             if (response.ok) {
-                const data = await response.json()
-                setBoxes(data)
-            } else {
-                setBoxes([])
+                fetchedBoxes = await response.json()
             }
+            if (file?.box && !fetchedBoxes.some(b => b.id === file.box?.id)) {
+                fetchedBoxes = [file.box, ...fetchedBoxes]
+            }
+            setBoxes(fetchedBoxes)
         } catch (error) {
             console.error("Failed to fetch boxes", error)
-            setBoxes([])
+            setBoxes(file?.box ? [file.box] : [])
         }
     }
 
@@ -143,7 +149,12 @@ export function EditFileDialog({ file, onSuccess }: EditFileDialogProps) {
         if (open) {
             handleBoxbyYear(formData.year)
             if (prevYearRef.current !== null && prevYearRef.current !== formData.year) {
-                setFormData(prev => ({ ...prev, boxId: '' }))
+                const initialBoxId = file?.boxId || file?.box?.id || ''
+                if (formData.year !== file?.year) {
+                    setFormData(prev => ({ ...prev, boxId: '' }))
+                } else {
+                    setFormData(prev => ({ ...prev, boxId: initialBoxId }))
+                }
             }
             prevYearRef.current = formData.year
         } else {
