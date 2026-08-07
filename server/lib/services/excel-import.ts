@@ -96,13 +96,15 @@ export async function commitExcelImport(payload: ImportPayload, userId: string) 
   }
 
   const stats = await db.$transaction(async (tx) => {
+    const boxCodeMap = new Map<string, string>()
+
     for (const box of payload.boxes) {
       const filesInBox = payload.files.filter(
-        (file) => file.boxCode === box.boxNumber || file.boxCode === `H${box.boxNumber}`
+        (file) => file.boxCode === box.boxNumber || file.boxCode === `H${box.boxNumber}` || file.boxCode === box.fullCode
       )
       const agency = filesInBox[0]?.year ? await getAgencyForYear(filesInBox[0].year) : null
 
-      await tx.storageBox.upsert({
+      const upsertedBox = await tx.storageBox.upsert({
         where: { code: box.fullCode },
         update: { agencyId: agency?.id },
         create: {
@@ -115,14 +117,66 @@ export async function commitExcelImport(payload: ImportPayload, userId: string) 
           agencyId: agency?.id,
         },
       })
+
+      boxCodeMap.set(box.boxNumber, upsertedBox.code)
+      boxCodeMap.set(`H${box.boxNumber}`, upsertedBox.code)
+      boxCodeMap.set(box.fullCode, upsertedBox.code)
+    }
+
+    const rawBoxCodes = Array.from(
+      new Set(
+        payload.files
+          .map((f) => normalizeCode(f.boxCode))
+          .filter(Boolean)
+      )
+    )
+
+    if (rawBoxCodes.length > 0) {
+      const existingBoxes = await tx.storageBox.findMany({
+        where: {
+          OR: [
+            { code: { in: rawBoxCodes } },
+            { boxNumber: { in: rawBoxCodes } },
+            { code: { in: rawBoxCodes.map((c) => `H${c}`) } },
+            { boxNumber: { in: rawBoxCodes.map((c) => `H${c}`) } },
+          ],
+        },
+      })
+
+      for (const box of existingBoxes) {
+        boxCodeMap.set(box.code, box.code)
+        boxCodeMap.set(box.boxNumber, box.code)
+        if (box.boxNumber.startsWith('H')) {
+          boxCodeMap.set(box.boxNumber.slice(1), box.code)
+        }
+      }
+
+      for (const rawCode of rawBoxCodes) {
+        if (!boxCodeMap.has(rawCode)) {
+          const formattedCode = rawCode.startsWith('H') ? rawCode : `H${rawCode}`
+          const createdBox = await tx.storageBox.upsert({
+            where: { code: formattedCode },
+            update: {},
+            create: {
+              code: formattedCode,
+              boxNumber: rawCode,
+              warehouse: 'Kho A',
+              line: 'Dãy 1',
+              shelf: 'Kệ 1',
+              slot: 'Ngăn 1',
+            },
+          })
+          boxCodeMap.set(rawCode, createdBox.code)
+          boxCodeMap.set(formattedCode, createdBox.code)
+        }
+      }
     }
 
     let success = 0
 
     for (const fileData of payload.files) {
-      const matchingBox = payload.boxes.find(
-        (box) => box.boxNumber === fileData.boxCode || box.boxNumber === `H${fileData.boxCode}`
-      )
+      const rawBoxCode = normalizeCode(fileData.boxCode)
+      const targetBoxCode = boxCodeMap.get(rawBoxCode) || boxCodeMap.get(`H${rawBoxCode}`)
 
       const createdFile = await tx.file.create({
         data: {
@@ -142,7 +196,7 @@ export async function commitExcelImport(payload: ImportPayload, userId: string) 
           defendants: fileData.defendants ?? [],
           plaintiffs: fileData.plaintiffs ?? [],
           civilDefendants: fileData.civilDefendants ?? [],
-          box: matchingBox ? { connect: { code: matchingBox.fullCode } } : undefined,
+          box: targetBoxCode ? { connect: { code: targetBoxCode } } : undefined,
           documents: {
             create: payload.documents
               .filter((document) => document.fileCode === fileData.code)

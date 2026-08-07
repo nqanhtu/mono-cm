@@ -25,6 +25,7 @@ export const parseExcelFile = async (buffer: ArrayBuffer): Promise<ImportData> =
         const detailsText = (row[':'] || row['Chi tiết'] || '') as string
         const parsedDet = parseDetails(detailsText)
         const titleFromCol = (row['Tiêu đề'] || row['Trích yếu'] || row['Tên hồ sơ'] || '') as string
+        const rawBoxCode = row['Dữ liệu ( Hộp)'] ?? row['Hộp số'] ?? row['Hộp'] ?? row['Mã hộp'] ?? row['Mã Hộp'] ?? row['Hộp lưu trữ'] ?? ''
         return {
             code: row['Hồ sơ số'] as string,
             title: parsedDet.summary || titleFromCol || '',
@@ -32,7 +33,7 @@ export const parseExcelFile = async (buffer: ArrayBuffer): Promise<ImportData> =
             year: parseYear(row['Thời gian']),
             pageCount: typeof row['Số tờ'] === 'number' ? row['Số tờ'] : parseInt((row['Số tờ'] as string) || '0'),
             retention: (row['THBQ'] || row['Thời hạn bảo quản']) as string,
-            boxCode: (row['Dữ liệu ( Hộp)'] || row['Hộp số'] || row['Hộp']) as string,
+            boxCode: String(rawBoxCode).trim(),
             indexCode: row['MLHS'] as string,
             note: row['Ghi chú'] as string,
             details: parsedDet,
