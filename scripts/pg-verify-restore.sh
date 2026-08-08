@@ -62,7 +62,7 @@ mkdir -p "$WORKDIR"
 log ""
 log "=== [1/6] Đọc thông tin database nguồn ==="
 
-SRC_VER=$(docker run --rm -e U="$SOURCE_URL" postgres:17-alpine \
+SRC_VER=$(docker run --rm -e U="$SOURCE_URL" postgres:18-alpine \
   sh -c 'psql "$U" -tAc "SHOW server_version"' 2>/dev/null | tr -d ' ') \
   || fail "Không kết nối được tới database nguồn. Kiểm tra lại SOURCE_URL."
 

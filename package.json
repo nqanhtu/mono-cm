@@ -14,6 +14,7 @@
     "db:export": "bun prisma/scripts/export-staging.ts",
     "db:import": "bun prisma/scripts/import-to-client.ts",
     "db:verify": "bun prisma/scripts/verify-migration.ts",
+    "db:sync": "bun prisma/scripts/sync-prod-to-dev.ts",
     "test:frontend": "vitest run",
     "test:server": "bun test server/",
     "lint": "eslint .",

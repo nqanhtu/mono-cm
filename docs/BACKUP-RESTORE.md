@@ -15,11 +15,11 @@ Hệ thống có **hai nơi** cần backup, với mục đích hoàn toàn khác
           TRUNG TÂM                                TÒA ÁN (mỗi tỉnh một máy)
 ┌──────────────────────────────┐            ┌────────────────────────────────┐
 │ VPS Backend 103.152.164.153  │            │ Windows Server + Docker Desktop│
-│   dongnai_server             │            │   PostgreSQL 17                │
+│   dongnai_server             │            │   PostgreSQL 18                │
 │   longan_server              │            │   dongnai_city ◀── DỮ LIỆU THẬT│
 │                              │            │                                │
 │ VPS DB 160.30.160.49         │  bàn giao  │ C:\mono-cm\backups\            │
-│   PostgreSQL 17              │ ─────────▶ │      ▲                         │
+│   PostgreSQL 18              │ ─────────▶ │      ▲                         │
 │   dongnai_city (dàn dựng)    │  qua mạng  │      │ Task Scheduler 02:00    │
 │   longan_city  (dàn dựng)    │  (Phần E)  │      └── pg-backup.sh          │
 │                              │            │      │                         │
@@ -48,14 +48,14 @@ Bản dump nằm cùng ổ đĩa với database **không được tính là back
 
 ## Quy ước bắt buộc: thống nhất phiên bản PostgreSQL
 
-**Toàn hệ thống dùng cùng một major version.** Tài liệu này lấy mốc **PostgreSQL 17**; nếu đơn vị chốt phiên bản khác thì thay đồng loạt trong mọi lệnh bên dưới (`postgres:17-alpine` → `postgres:<major>-alpine`).
+**Toàn hệ thống dùng cùng một major version.** Tài liệu này lấy mốc **PostgreSQL 18**; nếu đơn vị chốt phiên bản khác thì thay đồng loạt trong mọi lệnh bên dưới (`postgres:18-alpine` → `postgres:<major>-alpine`).
 
-Đây không phải quy định hình thức: `pg_restore` **không nạp được** bản dump sinh ra từ server **mới hơn**. Trung tâm chạy PG 17 mà một tòa án cài PG 15 thì gói bàn giao sẽ hỏng đúng ở bước cuối — khi đã tới nơi và đã hẹn lịch với đơn vị.
+Đây không phải quy định hình thức: `pg_restore` **không nạp được** bản dump sinh ra từ server **mới hơn**. Trung tâm chạy PG 18 mà một tòa án cài PG 15 thì gói bàn giao sẽ hỏng đúng ở bước cuối — khi đã tới nơi và đã hẹn lịch với đơn vị.
 
 Kiểm tra ở **cả hai đầu** trước mỗi lần bàn giao, hai số major phải bằng nhau:
 
 ```bash
-docker run --rm postgres:17-alpine psql "postgresql://postgres:MẬT_KHẨU@ĐỊA_CHỈ:5432/postgres" -tAc "SHOW server_version"
+docker run --rm postgres:18-alpine psql "postgresql://postgres:MẬT_KHẨU@ĐỊA_CHỈ:5432/postgres" -tAc "SHOW server_version"
 ```
 
 Lệch phiên bản thì dừng lại, xử lý xong mới bàn giao. Không có cách "lách" an toàn.
@@ -66,14 +66,14 @@ Lệch phiên bản thì dừng lại, xử lý xong mới bàn giao. Không có
 
 ### A1. Xác nhận phiên bản PostgreSQL
 
-Chạy lệnh ở mục [Quy ước bắt buộc](#quy-ước-bắt-buộc-thống-nhất-phiên-bản-postgresql) với địa chỉ `160.30.160.49` và ghi lại số major. Tag image dùng để dump phải **bằng hoặc mới hơn** phiên bản server; toàn bộ tài liệu dùng `postgres:17-alpine`.
+Chạy lệnh ở mục [Quy ước bắt buộc](#quy-ước-bắt-buộc-thống-nhất-phiên-bản-postgresql) với địa chỉ `160.30.160.49` và ghi lại số major. Tag image dùng để dump phải **bằng hoặc mới hơn** phiên bản server; toàn bộ tài liệu dùng `postgres:18-alpine`.
 
 ### A2. Tạo user riêng cho backup
 
 Không dùng user ứng dụng (`dn_city`) và cũng không dùng `postgres` để chạy backup định kỳ. Kết nối bằng `postgres` rồi chạy, **trên từng database**:
 
 ```bash
-docker run --rm -it postgres:17-alpine psql "postgresql://postgres:MẬT_KHẨU@160.30.160.49:5432/dongnai_city"
+docker run --rm -it postgres:18-alpine psql "postgresql://postgres:MẬT_KHẨU@160.30.160.49:5432/dongnai_city"
 ```
 
 ```sql
@@ -136,7 +136,7 @@ Script làm những việc sau, không cần chỉnh gì thêm:
 ### A5. Chạy thử
 
 ```bash
-docker run --rm --env-file /opt/mono-cm/.env.backup -v /opt/mono-cm/backups:/backups -v /opt/mono-cm/scripts:/scripts:ro postgres:17-alpine /scripts/pg-backup.sh
+docker run --rm --env-file /opt/mono-cm/.env.backup -v /opt/mono-cm/backups:/backups -v /opt/mono-cm/scripts:/scripts:ro postgres:18-alpine /scripts/pg-backup.sh
 ```
 
 Kết quả mong đợi: mỗi database in một dòng `[OK]` kèm dung lượng. Kiểm tra lại:
@@ -154,7 +154,7 @@ crontab -e
 Thêm dòng (02:00 mỗi ngày, giờ hệ thống của VPS):
 
 ```
-0 2 * * * /usr/bin/docker run --rm --env-file /opt/mono-cm/.env.backup -v /opt/mono-cm/backups:/backups -v /opt/mono-cm/scripts:/scripts:ro postgres:17-alpine /scripts/pg-backup.sh >> /var/log/pg-backup.log 2>&1
+0 2 * * * /usr/bin/docker run --rm --env-file /opt/mono-cm/.env.backup -v /opt/mono-cm/backups:/backups -v /opt/mono-cm/scripts:/scripts:ro postgres:18-alpine /scripts/pg-backup.sh >> /var/log/pg-backup.log 2>&1
 ```
 
 Xác nhận đã nhận lịch:
@@ -196,13 +196,13 @@ Nếu VPS chưa có `mail`, thay bằng một lệnh `curl` gửi vào webhook T
 Chạy **bắt buộc** trước mỗi lần: deploy có migration, sửa dữ liệu hàng loạt, nâng cấp PostgreSQL, hoặc thao tác trực tiếp bằng SQL trên production.
 
 ```bash
-docker run --rm --env-file /opt/mono-cm/.env.backup -v /opt/mono-cm/backups:/backups -v /opt/mono-cm/scripts:/scripts:ro postgres:17-alpine /scripts/pg-backup.sh
+docker run --rm --env-file /opt/mono-cm/.env.backup -v /opt/mono-cm/backups:/backups -v /opt/mono-cm/scripts:/scripts:ro postgres:18-alpine /scripts/pg-backup.sh
 ```
 
 Chỉ một database:
 
 ```bash
-docker run --rm --env-file /opt/mono-cm/.env.backup -v /opt/mono-cm/backups:/backups postgres:17-alpine sh -c 'pg_dump -d dongnai_city -Fc --no-owner --no-privileges -f /backups/dongnai_city-truoc-migration.dump'
+docker run --rm --env-file /opt/mono-cm/.env.backup -v /opt/mono-cm/backups:/backups postgres:18-alpine sh -c 'pg_dump -d dongnai_city -Fc --no-owner --no-privileges -f /backups/dongnai_city-truoc-migration.dump'
 ```
 
 ---
@@ -216,13 +216,13 @@ docker run --rm --env-file /opt/mono-cm/.env.backup -v /opt/mono-cm/backups:/bac
 **Bước 1 — Tạo database trống, đặt chủ sở hữu là user của ứng dụng**
 
 ```bash
-docker run --rm --env-file /opt/mono-cm/.env.backup postgres:17-alpine sh -c 'PGUSER=postgres PGPASSWORD=MẬT_KHẨU_POSTGRES createdb -O dn_city dongnai_city_restore'
+docker run --rm --env-file /opt/mono-cm/.env.backup postgres:18-alpine sh -c 'PGUSER=postgres PGPASSWORD=MẬT_KHẨU_POSTGRES createdb -O dn_city dongnai_city_restore'
 ```
 
 **Bước 2 — Nạp dữ liệu, kết nối bằng chính user của ứng dụng**
 
 ```bash
-docker run --rm --env-file /opt/mono-cm/.env.backup -v /opt/mono-cm/backups:/backups postgres:17-alpine sh -c 'PGUSER=dn_city PGPASSWORD=MẬT_KHẨU_DN_CITY pg_restore -d dongnai_city_restore --no-owner --no-privileges -j 4 /backups/dongnai_city-20260728T020000Z.dump'
+docker run --rm --env-file /opt/mono-cm/.env.backup -v /opt/mono-cm/backups:/backups postgres:18-alpine sh -c 'PGUSER=dn_city PGPASSWORD=MẬT_KHẨU_DN_CITY pg_restore -d dongnai_city_restore --no-owner --no-privileges -j 4 /backups/dongnai_city-20260728T020000Z.dump'
 ```
 
 > **Quan trọng:** hai bước trên phải chạy bằng user `dn_city` (lấy trong `.env.dongnai`), không phải `postgres`. Vì `--no-owner` khiến mọi bảng thuộc về **user đang thực hiện restore** — nếu restore bằng `postgres` thì ứng dụng sẽ nhận `permission denied for table ...` ngay khi khởi động. Với mỗi tỉnh, thay `dn_city` bằng user tương ứng.
@@ -230,7 +230,7 @@ docker run --rm --env-file /opt/mono-cm/.env.backup -v /opt/mono-cm/backups:/bac
 **Bước 3 — Cập nhật thống kê** (bỏ qua thì truy vấn sẽ chậm bất thường sau restore)
 
 ```bash
-docker run --rm --env-file /opt/mono-cm/.env.backup postgres:17-alpine sh -c 'PGUSER=dn_city PGPASSWORD=MẬT_KHẨU_DN_CITY psql -d dongnai_city_restore -c "ANALYZE"'
+docker run --rm --env-file /opt/mono-cm/.env.backup postgres:18-alpine sh -c 'PGUSER=dn_city PGPASSWORD=MẬT_KHẨU_DN_CITY psql -d dongnai_city_restore -c "ANALYZE"'
 ```
 
 **Bước 4 — Kiểm chứng** (xem [Phần D](#phần-d--kiểm-chứng-bản-restore))
@@ -242,7 +242,7 @@ docker stop dongnai_server
 ```
 
 ```bash
-docker run --rm --env-file /opt/mono-cm/.env.backup postgres:17-alpine sh -c 'PGUSER=postgres PGPASSWORD=MẬT_KHẨU_POSTGRES psql -d postgres -c "ALTER DATABASE dongnai_city RENAME TO dongnai_city_old" -c "ALTER DATABASE dongnai_city_restore RENAME TO dongnai_city"'
+docker run --rm --env-file /opt/mono-cm/.env.backup postgres:18-alpine sh -c 'PGUSER=postgres PGPASSWORD=MẬT_KHẨU_POSTGRES psql -d postgres -c "ALTER DATABASE dongnai_city RENAME TO dongnai_city_old" -c "ALTER DATABASE dongnai_city_restore RENAME TO dongnai_city"'
 ```
 
 ```bash
@@ -264,19 +264,19 @@ docker stop dongnai_server
 **Vẫn phải dump hiện trạng trước** — kể cả khi dữ liệu đang hỏng, đó là bằng chứng để điều tra sau:
 
 ```bash
-docker run --rm --env-file /opt/mono-cm/.env.backup -v /opt/mono-cm/backups:/backups postgres:17-alpine sh -c 'pg_dump -d dongnai_city -Fc --no-owner --no-privileges -f /backups/dongnai_city-TRUOC-KHI-RESTORE.dump'
+docker run --rm --env-file /opt/mono-cm/.env.backup -v /opt/mono-cm/backups:/backups postgres:18-alpine sh -c 'pg_dump -d dongnai_city -Fc --no-owner --no-privileges -f /backups/dongnai_city-TRUOC-KHI-RESTORE.dump'
 ```
 
 Xoá và tạo lại database (`--force` tự ngắt các kết nối còn treo):
 
 ```bash
-docker run --rm --env-file /opt/mono-cm/.env.backup postgres:17-alpine sh -c 'PGUSER=postgres PGPASSWORD=MẬT_KHẨU_POSTGRES dropdb --force dongnai_city && PGUSER=postgres PGPASSWORD=MẬT_KHẨU_POSTGRES createdb -O dn_city dongnai_city'
+docker run --rm --env-file /opt/mono-cm/.env.backup postgres:18-alpine sh -c 'PGUSER=postgres PGPASSWORD=MẬT_KHẨU_POSTGRES dropdb --force dongnai_city && PGUSER=postgres PGPASSWORD=MẬT_KHẨU_POSTGRES createdb -O dn_city dongnai_city'
 ```
 
 Nạp lại, cập nhật thống kê, bật app:
 
 ```bash
-docker run --rm --env-file /opt/mono-cm/.env.backup -v /opt/mono-cm/backups:/backups postgres:17-alpine sh -c 'export PGUSER=dn_city PGPASSWORD=MẬT_KHẨU_DN_CITY; pg_restore -d dongnai_city --no-owner --no-privileges -j 4 /backups/dongnai_city-20260728T020000Z.dump && psql -d dongnai_city -c "ANALYZE"'
+docker run --rm --env-file /opt/mono-cm/.env.backup -v /opt/mono-cm/backups:/backups postgres:18-alpine sh -c 'export PGUSER=dn_city PGPASSWORD=MẬT_KHẨU_DN_CITY; pg_restore -d dongnai_city --no-owner --no-privileges -j 4 /backups/dongnai_city-20260728T020000Z.dump && psql -d dongnai_city -c "ANALYZE"'
 ```
 
 ```bash
@@ -290,13 +290,13 @@ docker start dongnai_server && curl -s https://namnn07.zhost.store/dongnai/healt
 Xem danh sách đối tượng trong file dump:
 
 ```bash
-docker run --rm -v /opt/mono-cm/backups:/backups postgres:17-alpine pg_restore --list /backups/dongnai_city-20260728T020000Z.dump | grep 'TABLE DATA'
+docker run --rm -v /opt/mono-cm/backups:/backups postgres:18-alpine pg_restore --list /backups/dongnai_city-20260728T020000Z.dump | grep 'TABLE DATA'
 ```
 
 Nạp lại đúng bảng đó (bảng phải đang **rỗng**, nếu không sẽ đụng khoá chính):
 
 ```bash
-docker run --rm --env-file /opt/mono-cm/.env.backup -v /opt/mono-cm/backups:/backups postgres:17-alpine sh -c 'PGUSER=dn_city PGPASSWORD=MẬT_KHẨU_DN_CITY pg_restore -d dongnai_city --data-only -t "BorrowSlip" --no-owner /backups/dongnai_city-20260728T020000Z.dump'
+docker run --rm --env-file /opt/mono-cm/.env.backup -v /opt/mono-cm/backups:/backups postgres:18-alpine sh -c 'PGUSER=dn_city PGPASSWORD=MẬT_KHẨU_DN_CITY pg_restore -d dongnai_city --data-only -t "BorrowSlip" --no-owner /backups/dongnai_city-20260728T020000Z.dump'
 ```
 
 > Lưu ý ràng buộc khoá ngoại: khôi phục `BorrowSlip` mà thiếu `File` tương ứng sẽ báo lỗi. Nếu phải khôi phục nhiều bảng liên quan, làm theo cách C1 rồi copy dữ liệu sang thì an toàn hơn.
@@ -312,7 +312,7 @@ Một bản backup chưa từng được restore thử thì chưa phải là bac
 Câu lệnh dưới đếm **chính xác** số dòng của mọi bảng (không dùng số ước lượng của `pg_stat`). Chạy trên **cả** database gốc và database vừa restore:
 
 ```bash
-docker run --rm --env-file /opt/mono-cm/.env.backup postgres:17-alpine psql -d dongnai_city_restore -Atc "SELECT table_name || '=' || (xpath('/row/c/text()', query_to_xml(format('SELECT count(*) AS c FROM %I.%I', table_schema, table_name), false, true, '')))[1]::text FROM information_schema.tables WHERE table_schema = 'public' AND table_type = 'BASE TABLE' ORDER BY table_name"
+docker run --rm --env-file /opt/mono-cm/.env.backup postgres:18-alpine psql -d dongnai_city_restore -Atc "SELECT table_name || '=' || (xpath('/row/c/text()', query_to_xml(format('SELECT count(*) AS c FROM %I.%I', table_schema, table_name), false, true, '')))[1]::text FROM information_schema.tables WHERE table_schema = 'public' AND table_type = 'BASE TABLE' ORDER BY table_name"
 ```
 
 Đưa hai kết quả vào file rồi `diff` — phải giống nhau **tuyệt đối**, trừ khi database gốc vẫn đang có người dùng ghi thêm.
@@ -351,7 +351,7 @@ Con số ở bước 3 chính là **thời gian phục hồi thực tế** của
 
 Phần này dành cho lần cài đặt đầu tiên tại mỗi tòa án: đưa database từ trung tâm về máy chủ của đơn vị, rồi bật backup tại chỗ.
 
-**Môi trường giả định ở tòa án:** Windows Server, Docker Desktop, PostgreSQL 17. Nếu một tòa án dùng môi trường khác, xem [Phụ lục D](#phụ-lục-d--đối-chiếu-lệnh-giữa-các-môi-trường).
+**Môi trường giả định ở tòa án:** Windows Server, Docker Desktop, PostgreSQL 18. Nếu một tòa án dùng môi trường khác, xem [Phụ lục D](#phụ-lục-d--đối-chiếu-lệnh-giữa-các-môi-trường).
 
 **Chuẩn bị trước khi đi:** đọc [Quy ước bắt buộc](#quy-ước-bắt-buộc-thống-nhất-phiên-bản-postgresql) và xác nhận phiên bản PostgreSQL ở tòa án **trước** ngày bàn giao, không phải lúc đã tới nơi.
 
@@ -360,7 +360,7 @@ Phần này dành cho lần cài đặt đầu tiên tại mỗi tòa án: đưa
 Dump **riêng** database của tòa án đó. Không gửi nhầm database của tỉnh khác — đây là hồ sơ tòa án, gửi nhầm là sự cố lộ dữ liệu.
 
 ```bash
-docker run --rm --env-file /opt/mono-cm/.env.backup -v /opt/mono-cm/handover:/out postgres:17-alpine sh -c 'pg_dump -d dongnai_city -Fc --no-owner --no-privileges -f /out/dongnai_city-bangiao.dump'
+docker run --rm --env-file /opt/mono-cm/.env.backup -v /opt/mono-cm/handover:/out postgres:18-alpine sh -c 'pg_dump -d dongnai_city -Fc --no-owner --no-privileges -f /out/dongnai_city-bangiao.dump'
 ```
 
 Tạo mã kiểm tra để đầu nhận đối chiếu:
@@ -414,7 +414,7 @@ So chuỗi in ra với nội dung file `.sha256` — phải **giống hệt**. K
 Xác nhận phiên bản PostgreSQL tại chỗ khớp với trung tâm:
 
 ```powershell
-docker run --rm postgres:17-alpine psql "postgresql://postgres:MẬT_KHẨU@host.docker.internal:5432/postgres" -tAc "SHOW server_version"
+docker run --rm postgres:18-alpine psql "postgresql://postgres:MẬT_KHẨU@host.docker.internal:5432/postgres" -tAc "SHOW server_version"
 ```
 
 > **Địa chỉ database dùng ở tòa án — chọn đúng một trong hai:**
@@ -428,13 +428,13 @@ docker run --rm postgres:17-alpine psql "postgresql://postgres:MẬT_KHẨU@host
 Tạo role ứng dụng và database trống thuộc sở hữu của role đó:
 
 ```powershell
-docker run --rm -e PGHOST=host.docker.internal -e PGUSER=postgres -e PGPASSWORD=MẬT_KHẨU_POSTGRES postgres:17-alpine psql -d postgres -c "CREATE ROLE dn_city LOGIN PASSWORD 'MẬT_KHẨU_ỨNG_DỤNG'" -c "CREATE DATABASE dongnai_city OWNER dn_city"
+docker run --rm -e PGHOST=host.docker.internal -e PGUSER=postgres -e PGPASSWORD=MẬT_KHẨU_POSTGRES postgres:18-alpine psql -d postgres -c "CREATE ROLE dn_city LOGIN PASSWORD 'MẬT_KHẨU_ỨNG_DỤNG'" -c "CREATE DATABASE dongnai_city OWNER dn_city"
 ```
 
 Nạp dữ liệu, **kết nối bằng chính user `dn_city`**:
 
 ```powershell
-docker run --rm -e PGHOST=host.docker.internal -e PGUSER=dn_city -e PGPASSWORD=MẬT_KHẨU_ỨNG_DỤNG -v C:\mono-cm\handover:/in postgres:17-alpine pg_restore -d dongnai_city --no-owner --no-privileges -j 4 /in/dongnai_city-bangiao.dump
+docker run --rm -e PGHOST=host.docker.internal -e PGUSER=dn_city -e PGPASSWORD=MẬT_KHẨU_ỨNG_DỤNG -v C:\mono-cm\handover:/in postgres:18-alpine pg_restore -d dongnai_city --no-owner --no-privileges -j 4 /in/dongnai_city-bangiao.dump
 ```
 
 > Đây là chỗ dễ sai nhất của cả quy trình. `--no-owner` khiến mọi bảng thuộc về **user đang chạy lệnh restore**. Restore bằng `postgres` cho tiện thì ứng dụng sẽ báo `permission denied for table ...` ngay khi khởi động, và lỗi này chỉ lộ ra lúc mở phần mềm chứ không lộ lúc restore.
@@ -442,7 +442,7 @@ docker run --rm -e PGHOST=host.docker.internal -e PGUSER=dn_city -e PGPASSWORD=M
 Cập nhật thống kê:
 
 ```powershell
-docker run --rm -e PGHOST=host.docker.internal -e PGUSER=dn_city -e PGPASSWORD=MẬT_KHẨU_ỨNG_DỤNG postgres:17-alpine psql -d dongnai_city -c "ANALYZE"
+docker run --rm -e PGHOST=host.docker.internal -e PGUSER=dn_city -e PGPASSWORD=MẬT_KHẨU_ỨNG_DỤNG postgres:18-alpine psql -d dongnai_city -c "ANALYZE"
 ```
 
 ### E5. Kiểm chứng tại chỗ
@@ -450,7 +450,7 @@ docker run --rm -e PGHOST=host.docker.internal -e PGUSER=dn_city -e PGPASSWORD=M
 Đếm số bản ghi mọi bảng và đối chiếu với con số trung tâm đã gửi kèm:
 
 ```powershell
-docker run --rm -e PGHOST=host.docker.internal -e PGUSER=dn_city -e PGPASSWORD=MẬT_KHẨU_ỨNG_DỤNG postgres:17-alpine psql -d dongnai_city -Atc "SELECT table_name || '=' || (xpath('/row/c/text()', query_to_xml(format('SELECT count(*) AS c FROM %I.%I', table_schema, table_name), false, true, '')))[1]::text FROM information_schema.tables WHERE table_schema = 'public' AND table_type = 'BASE TABLE' ORDER BY table_name"
+docker run --rm -e PGHOST=host.docker.internal -e PGUSER=dn_city -e PGPASSWORD=MẬT_KHẨU_ỨNG_DỤNG postgres:18-alpine psql -d dongnai_city -Atc "SELECT table_name || '=' || (xpath('/row/c/text()', query_to_xml(format('SELECT count(*) AS c FROM %I.%I', table_schema, table_name), false, true, '')))[1]::text FROM information_schema.tables WHERE table_schema = 'public' AND table_type = 'BASE TABLE' ORDER BY table_name"
 ```
 
 Phải đủ 15 bảng và số liệu khớp tuyệt đối. Sau đó trỏ ứng dụng vào database mới, đăng nhập và mở thử: danh sách hồ sơ, chi tiết một hồ sơ có tài liệu con, một phiếu mượn, sơ đồ kho.
@@ -491,7 +491,7 @@ Chuột phải file → Properties → Security, gỡ quyền đọc của `User
 **Bước 3 — Chạy thử**
 
 ```powershell
-docker run --rm --env-file C:\mono-cm\.env.backup -v C:\mono-cm\backups:/backups -v C:\mono-cm\scripts:/scripts:ro postgres:17-alpine /scripts/pg-backup.sh
+docker run --rm --env-file C:\mono-cm\.env.backup -v C:\mono-cm\backups:/backups -v C:\mono-cm\scripts:/scripts:ro postgres:18-alpine /scripts/pg-backup.sh
 ```
 
 Phải thấy dòng `[OK]` kèm dung lượng, và file `.dump` xuất hiện trong `C:\mono-cm\backups\`.
@@ -499,7 +499,7 @@ Phải thấy dòng `[OK]` kèm dung lượng, và file `.dump` xuất hiện tr
 **Bước 4 — Đặt lịch chạy hằng ngày**
 
 ```powershell
-schtasks /Create /TN "mono-cm backup" /SC DAILY /ST 02:00 /RU SYSTEM /RL HIGHEST /TR "docker run --rm --env-file C:\mono-cm\.env.backup -v C:\mono-cm\backups:/backups -v C:\mono-cm\scripts:/scripts:ro postgres:17-alpine /scripts/pg-backup.sh"
+schtasks /Create /TN "mono-cm backup" /SC DAILY /ST 02:00 /RU SYSTEM /RL HIGHEST /TR "docker run --rm --env-file C:\mono-cm\.env.backup -v C:\mono-cm\backups:/backups -v C:\mono-cm\scripts:/scripts:ro postgres:18-alpine /scripts/pg-backup.sh"
 ```
 
 Sau đó mở **Task Scheduler** → tìm task vừa tạo → Properties → tab **Settings** → tích **"Run task as soon as possible after a scheduled start is missed"**. Không có tuỳ chọn này thì hôm nào máy tắt lúc 02:00 là mất luôn bản backup ngày đó, và không ai biết.
@@ -582,7 +582,7 @@ BACKUP_KEEP_DAYS=30
 Backup một lần cho nhanh:
 
 ```bash
-docker run --rm -e U="postgresql://user:pass@ep-abc-123.us-east-2.aws.neon.tech/neondb?sslmode=require" -v "$PWD:/w" postgres:17-alpine sh -c 'pg_dump -d "$U" -Fc --no-owner --no-privileges -f /w/neon-$(date -u +%Y%m%dT%H%M%SZ).dump'
+docker run --rm -e U="postgresql://user:pass@ep-abc-123.us-east-2.aws.neon.tech/neondb?sslmode=require" -v "$PWD:/w" postgres:18-alpine sh -c 'pg_dump -d "$U" -Fc --no-owner --no-privileges -f /w/neon-$(date -u +%Y%m%dT%H%M%SZ).dump'
 ```
 
 > Dòng `[CẢNH BÁO] Không dump được globals (roles)` khi chạy script trên Neon là **bình thường**. Neon không cho tài khoản thường đọc danh sách role toàn server. Bản dump database vẫn hợp lệ.
@@ -600,7 +600,7 @@ Kết quả khi đạt:
 ```
 === [1/6] Đọc thông tin database nguồn ===
 Phiên bản nguồn : 17.2 (major 17)
-Bộ công cụ dùng : postgres:17-alpine
+Bộ công cụ dùng : postgres:18-alpine
 ...
 ┌────────────────────────────────────────────────┐
 │  ĐẠT — bản backup restore được, dữ liệu khớp   │
@@ -702,19 +702,311 @@ Phần E viết cho Windows + Docker Desktop. Nếu một tòa án dùng môi tr
 |---|---|---|---|
 | Địa chỉ DB | `PGHOST=host.docker.internal` | `PGHOST=<IP>` hoặc tên container | `PGHOST=localhost` |
 | Gắn thư mục | `-v C:\mono-cm\backups:/backups` | `-v /opt/mono-cm/backups:/backups` | không cần |
-| Gọi công cụ | `docker run ... postgres:17-alpine pg_restore` | như cột trái | `pg_restore` trực tiếp |
+| Gọi công cụ | `docker run ... postgres:18-alpine pg_restore` | như cột trái | `pg_restore` trực tiếp |
 | Truyền mật khẩu | `-e PGPASSWORD=...` | `--env-file` | biến môi trường hoặc `~/.pgpass` |
 | Đặt lịch | Task Scheduler (`schtasks`) | `crontab -e` | `crontab -e` hoặc systemd timer |
 | Kiểm tra hash | `Get-FileHash -Algorithm SHA256` | `sha256sum` | `sha256sum` |
 | Chép ra ngoài | `robocopy` | `rclone copy` | `rclone copy` / `rsync` |
 
-Với PostgreSQL cài trực tiếp, bỏ toàn bộ phần `docker run ... postgres:17-alpine` và giữ nguyên phần lệnh phía sau. Ví dụ:
+Với PostgreSQL cài trực tiếp, bỏ toàn bộ phần `docker run ... postgres:18-alpine` và giữ nguyên phần lệnh phía sau. Ví dụ:
 
 ```bash
 pg_restore -h localhost -U dn_city -d dongnai_city --no-owner --no-privileges -j 4 dongnai_city-bangiao.dump
 ```
 
 Yêu cầu duy nhất giữ nguyên ở mọi môi trường: **phiên bản bộ công cụ `pg_dump`/`pg_restore` phải bằng hoặc mới hơn phiên bản server**, và **restore phải chạy bằng user ứng dụng**.
+
+---
+
+
+
+---
+
+## Phần G — Migrate dữ liệu production về DB dev/test (local)
+
+Dùng khi dev cần chạy thử với dữ liệu thật: debug bug khó tái hiện, kiểm tra performance, test migration schema trước khi deploy lên prod.
+
+> **Quy tắc an toàn:**
+> - Không bao giờ để `DATABASE_URL` trong `.env` trỏ về production khi đang dev.
+> - Script `import-to-client.ts` **xóa sạch** DB đích trước khi nạp — đảm bảo DB đích là DB dev riêng.
+> - Với dữ liệu nhạy cảm (tên bị cáo, bên tranh chấp…), cân nhắc ẩn danh hóa trước khi chia cho team.
+
+### G1. Chuẩn bị
+
+**Yêu cầu trên máy dev:**
+- `bun` đã cài
+- Đã clone repo và chạy `bun install`
+- PostgreSQL local đang chạy (hoặc Docker)
+
+**Tạo DB dev trống** (nếu chưa có):
+
+```bash
+# PostgreSQL local / Docker
+createdb -U postgres dev_cm_local
+# Hoặc qua Docker:
+docker run --rm -e PGPASSWORD=postgres postgres:18-alpine \
+  createdb -h host.docker.internal -U postgres dev_cm_local
+```
+
+**Đặt biến môi trường** — tạo file `.env.dev` (không commit):
+
+```bash
+# .env.dev — chỉ dùng trên máy local, không commit
+SOURCE_DB_URL=postgresql://<user>:<pass>@<prod_host>:5432/<prod_db>
+DEV_DB_URL=postgresql://postgres:postgres@localhost:5432/dev_cm_local
+```
+
+### G2. Bước 1 — Chạy migration schema trước
+
+Schema phải khớp với code hiện tại **trước** khi nạp dữ liệu. Không làm bước này thì `import-to-client.ts` sẽ lỗi FK constraint hoặc thiếu cột.
+
+```bash
+DATABASE_URL="postgresql://postgres:postgres@localhost:5432/dev_cm_local" \
+  bunx prisma migrate deploy
+```
+
+Kết quả mong đợi: `All migrations have been successfully applied.`
+
+> Nếu báo `Database schema is up to date!` — bình thường, tiếp tục.
+> Nếu báo lỗi, dừng lại và fix migration trước khi tiếp.
+
+### G3. Bước 2 — Export dữ liệu từ production
+
+```bash
+bun prisma/scripts/export-staging.ts \
+  --url="postgresql://<user>:<pass>@<prod_host>:5432/<prod_db>"
+```
+
+Script tạo thư mục `./backups/<timestamp>/` với ~15 file JSON, theo thứ tự tier (đảm bảo FK không bị vi phạm khi import). Output mẫu:
+
+```
+Exporting to local: ./backups/2026-08-07T03-30-00/
+
+--- Tier 0: No FK ---
+  [ok] 00_users.json (12 records)
+  [ok] 01_agency_history.json (3 records)
+  ...
+--- Tier 3: Depends on Tier 2 ---
+  [ok] 04_borrow_slip_events.json (47 records)
+
+Export done! Total: 1842 records
+Backup saved to: ./backups/2026-08-07T03-30-00/
+```
+
+Ghi lại đường dẫn thư mục (dùng ở bước tiếp).
+
+### G4. Bước 3 — Import vào DB dev
+
+```bash
+bun prisma/scripts/import-to-client.ts \
+  --url="postgresql://postgres:postgres@localhost:5432/dev_cm_local" \
+  --from="./backups/2026-08-07T03-30-00"
+```
+
+Script sẽ:
+1. Xóa sạch dữ liệu cũ trong DB dev (theo thứ tự child → parent)
+2. Nạp lại theo thứ tự tier (Tier 0 → Tier 3), giữ nguyên mọi FK
+
+> ⚠️ `AuditLog` và `UserAccessLog` có thể có số lượng lớn. Nếu chỉ cần dữ liệu nghiệp vụ, có thể bỏ các file `02_audit_logs.json` / `02_user_access_logs.json` trước khi import — script sẽ tự bỏ qua file không có.
+
+### G5. Bước 4 — Xác nhận kết quả
+
+So sánh số bản ghi giữa prod và dev:
+
+```bash
+bun prisma/scripts/verify-migration.ts \
+  --source="postgresql://<user>:<pass>@<prod_host>:5432/<prod_db>" \
+  --dest="postgresql://postgres:postgres@localhost:5432/dev_cm_local"
+```
+
+Kết quả mong đợi:
+
+```
+So sánh hai DB:
+  SOURCE (prod): postgresql://***@prod_host:5432/prod_db
+  DEST   (dev) : postgresql://***@localhost:5432/dev_cm_local
+
+Table              |   SOURCE |     DEST | OK?
+-------------------+---------+---------+-----
+User               |       12 |       12 |  ✓
+AgencyHistory      |        3 |        3 |  ✓
+...
+TOTAL              |     1842 |     1842 |
+
+┌────────────────────────────────────┐
+│  ✅  ĐẠT — source và dest khớp nhau  │
+└────────────────────────────────────┘
+```
+
+Nếu có bảng lệch, chạy lại bước G4 — thường do timeout hoặc constraint lỗi bị bỏ qua.
+
+### G6. Cập nhật `.env` local
+
+Sau khi verify đạt, trỏ `.env` local về DB dev:
+
+```bash
+# .env (local only — không commit)
+DATABASE_URL=postgresql://postgres:postgres@localhost:5432/dev_cm_local
+```
+
+Kiểm tra app hoạt động:
+
+```bash
+bun run dev:server
+```
+
+### G7. Chạy lại bất cứ lúc nào — script đồng bộ tự động
+
+Thay vì chạy 4 lệnh thủ công mỗi lần, dùng script `sync-prod-to-dev.ts` — **một lệnh duy nhất** làm đủ 5 bước:
+
+```
+Bước 1 → kiểm tra kết nối cả hai DB
+Bước 2 → export dữ liệu từ SOURCE ra thư mục tạm
+Bước 3 → prisma migrate deploy trên DEST (đồng bộ schema)
+Bước 4 → xóa data cũ + import data mới vào DEST (giữ FK order)
+Bước 5 → so sánh số bản ghi SOURCE vs DEST
+```
+
+Thư mục tạm được tự dọn sau khi chạy xong — không để lại rác.
+
+**Thiết lập một lần:**
+
+```bash
+# 1. Copy template
+cp .env.sync.example .env.sync
+
+# 2. Điền URL thật vào .env.sync (file này đã được .gitignore)
+#    SOURCE_DB_URL=postgresql://<user>:<pass>@<prod_host>:5432/<prod_db>
+#    DEV_DB_URL=postgresql://postgres:postgres@localhost:5432/dev_cm_local
+
+# 3. Tạo DB dev nếu chưa có
+createdb -U postgres dev_cm_local
+```
+
+**Sau đó, mỗi khi cần data mới từ prod:**
+
+```bash
+bun run db:sync
+```
+
+Hoặc truyền URL thẳng không qua file:
+
+```bash
+bun run db:sync \
+  --source="postgresql://<prod_url>" \
+  --dest="postgresql://postgres:postgres@localhost:5432/dev_cm_local"
+```
+
+**Output mẫu khi thành công:**
+
+```
+╔══════════════════════════════════════════════════════╗
+║       sync-prod-to-dev — đồng bộ data từ prod        ║
+╚══════════════════════════════════════════════════════╝
+  SOURCE: postgresql://***@prod_host:5432/prod_db
+  DEST  : postgresql://***@localhost:5432/dev_cm_local
+
+🔌  Bước 1/5 — Kiểm tra kết nối...
+  ✓  SOURCE (prod): postgresql://***@prod_host:5432/prod_db
+  ✓  DEST   (dev) : postgresql://***@localhost:5432/dev_cm_local
+
+📤  Bước 2/5 — Export dữ liệu từ SOURCE...
+  --- Tier 0 ---
+  [ok] 00_users.json (12 records)
+  ...
+  Export xong: 1842 records
+
+🔧  Bước 3/5 — Đồng bộ schema (prisma migrate deploy)...
+  ✓  Schema up to date
+
+📥  Bước 4/5 — Import vào DEST...
+  ✓  Cleared
+  ...
+  ✓  Import xong
+
+🔍  Bước 5/5 — Kiểm tra số bản ghi SOURCE vs DEST...
+  ✓  User: 12
+  ✓  File: 856
+  ...
+
+╔══════════════════════════════════════════════════════╗
+║  ✅  ĐỒNG BỘ THÀNH CÔNG  (18.3s)                     ║
+╚══════════════════════════════════════════════════════╝
+```
+
+**Các flag tùy chọn:**
+
+| Flag | Tác dụng |
+|------|----------|
+| `--dry-run` | Chỉ test kết nối, không thay đổi data — dùng để kiểm tra URL trước |
+| `--skip-verify` | Bỏ qua bước so sánh số bản ghi (nhanh hơn ~2s) |
+| `--keep-backup` | Giữ lại thư mục tạm `.sync-tmp/<timestamp>/` để kiểm tra thủ công |
+
+Ví dụ:
+
+```bash
+# Kiểm tra URL có đúng không, không đụng data
+bun run db:sync --dry-run
+
+# Sync nhanh, bỏ verify
+bun run db:sync --skip-verify
+
+# Sync + giữ lại file JSON để debug
+bun run db:sync --keep-backup
+```
+
+### G8. Scripts và npm scripts
+
+| Script | Mô tả |
+|--------|-------|
+| `bun run db:sync` | **Sync một lệnh** — prod → dev (khuyến nghị dùng hàng ngày) |
+| `bun run db:export` | Chỉ export từ prod ra file JSON |
+| `bun run db:import` | Chỉ import từ file JSON vào DB đích |
+| `bun run db:verify` | Kiểm tra / so sánh số bản ghi |
+| `bun run db:migrate` | Chạy prisma migrate deploy |
+
+### G9. Kết nối Backend Local vào Database Remote qua SSH Tunnel
+
+Dùng khi muốn chạy Backend dưới máy local (`bun run dev:server`), nhưng đọc/ghi trực tiếp từ Database Remote trên server thông qua SSH Tunnel (khi DB không mở IP public).
+
+> **Quy tắc về `.env`:**
+> - **Server Production (VPS):** `DATABASE_URL` giữ nguyên (kết nối trực tiếp vì IP server đã được whitelist).
+> - **Máy Local (Dev):** Cập nhật `DATABASE_URL` trong file `.env` local trỏ về `127.0.0.1:<PORT_TUNNEL>`.
+
+**Các bước thực hiện:**
+
+1. **Mở SSH Tunnel ở Terminal máy local (chạy ngầm với `-f`):**
+   ```bash
+   ssh -f -N -L 15432:127.0.0.1:5432 -p 8686 root@160.30.160.49
+   ```
+   *(Cờ `-f` giúp SSH chạy ngầm không chiếm màn hình Terminal. Cổng `15432` trên máy local sẽ map trực tiếp tới cổng `5432` của DB server trên remote)*
+
+2. **Cập nhật file `.env` ở máy local:**
+   ```env
+   # .env (local only)
+   DATABASE_URL="postgresql://<db_user>:<db_pass>@127.0.0.1:15432/<db_name>"
+   ```
+
+3. **Khởi động Backend local:**
+   ```bash
+   bun run dev:server
+   ```
+
+> **Mẹo — Nếu bị lỗi `Address already in use` (cổng 15432 đang bị chiếm):**
+>
+> 1. Xem tiến trình nào đang chiếm port 15432:
+>    ```bash
+>    lsof -i :15432
+>    ```
+> 2. Giải phóng / tắt tiến trình đang chiếm port 15432:
+>    ```bash
+>    # macOS / Linux (tắt 1 dòng)
+>    kill -9 $(lsof -t -i:15432)
+>    ```
+
+
+
+
 
 ---
 

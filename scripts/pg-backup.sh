@@ -13,7 +13,7 @@
 #     --env-file /opt/mono-cm/.env.backup \
 #     -v /opt/mono-cm/backups:/backups \
 #     -v /opt/mono-cm/scripts:/scripts:ro \
-#     postgres:17-alpine /scripts/pg-backup.sh
+#     postgres:18-alpine /scripts/pg-backup.sh
 #
 # Hướng dẫn đầy đủ: docs/BACKUP-RESTORE.md
 set -eu
