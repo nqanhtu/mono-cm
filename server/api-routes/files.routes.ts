@@ -207,7 +207,7 @@ export const fileRoutes = new Elysia()
       if (denied) return denied
       const now = new Date()
       const [total, borrowed, overdue, byType] = await Promise.all([
-        db.file.count(),
+        db.file.count({ where: { NOT: { status: 'ARCHIVED' } } }),
         db.file.count({ where: { status: 'BORROWED' } }),
         db.borrowSlip.count({ where: { OR: [{ status: 'OVERDUE' }, { status: { in: ['BORROWING', 'PARTIAL_RETURN'] }, dueDate: { lt: now } }] } }),
         db.file.groupBy({ by: ['type'], _count: true }),
@@ -441,11 +441,16 @@ export const fileRoutes = new Elysia()
 
       const file = await db.file.findUnique({ where: { id: params.id }, include: { borrowItems: { select: { id: true, status: true } } } })
       if (!file) return apiError(set, 'Không tìm thấy hồ sơ', 404)
+      if (file.status === 'ARCHIVED') {
+        return apiError(set, 'Hồ sơ đã được lưu trữ trước đó.', 409)
+      }
       if (file.status === 'BORROWED' || file.borrowItems.some((item) => item.status === 'BORROWING')) {
         return apiError(set, 'Không thể lưu trữ hồ sơ đang được mượn.', 409)
       }
 
-      await db.file.update({ where: { id: params.id }, data: { status: 'ARCHIVED', isLocked: true } })
+      // Giải phóng mã hồ sơ gốc để có thể dùng lại cho hồ sơ mới, đồng thời giữ vết mã cũ trong archivedCode
+      const archivedCode = `${file.code}#ARCHIVED-${params.id}`
+      await db.file.update({ where: { id: params.id }, data: { code: archivedCode, status: 'ARCHIVED', isLocked: true } })
       await createAuditLog({
         action: 'UPDATE',
         target: 'File',
@@ -453,7 +458,7 @@ export const fileRoutes = new Elysia()
         userId: session!.id,
         ipAddress: getClientIp(request),
         macAddress: request.headers.get('x-mac-address') || undefined,
-        detail: { code: file.code, title: file.title, status: 'ARCHIVED', action: 'SOFT_DELETE' },
+        detail: { code: file.code, archivedCode, title: file.title, status: 'ARCHIVED', action: 'SOFT_DELETE' },
       })
       return { success: true, message: 'Đã lưu trữ hồ sơ' }
     } catch (error) {

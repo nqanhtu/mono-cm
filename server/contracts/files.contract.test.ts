@@ -264,7 +264,7 @@ describe('files contract', () => {
         ],
       })
       expect(fileCountCalls).toEqual([
-        undefined,
+        { where: { NOT: { status: 'ARCHIVED' } } },
         { where: { status: 'BORROWED' } },
       ])
       expect(borrowSlipCountCalls).toHaveLength(1)
@@ -521,22 +521,23 @@ describe('files contract', () => {
       })
     })
 
-    test('DELETE /api/files/:id - succeeds when file is locked and user is SUPER_ADMIN', async () => {
+    test('DELETE /api/files/:id - succeeds when file is locked and user is SUPER_ADMIN, and frees up the original code', async () => {
       const app = createTestApp()
+      const updateCalls: unknown[] = []
 
       setDbForTesting({
         file: {
           findUnique: async () => ({
             id: 'file-1',
             code: 'HS-001',
+            status: 'IN_STOCK',
             isLocked: true,
             borrowItems: [],
           }),
-          update: async () => ({
-            id: 'file-1',
-            code: 'HS-001',
-            status: 'ARCHIVED',
-          }),
+          update: async (args: unknown) => {
+            updateCalls.push(args)
+            return { id: 'file-1', code: 'HS-001#ARCHIVED-file-1', status: 'ARCHIVED' }
+          },
         },
         auditLog: {
           create: async () => ({ id: 'audit-1' }),
@@ -552,6 +553,39 @@ describe('files contract', () => {
       expect(await response.json()).toEqual({
         success: true,
         message: 'Đã lưu trữ hồ sơ',
+      })
+      expect(updateCalls).toEqual([
+        {
+          where: { id: 'file-1' },
+          data: { code: 'HS-001#ARCHIVED-file-1', status: 'ARCHIVED', isLocked: true },
+        },
+      ])
+    })
+
+    test('DELETE /api/files/:id - fails when file is already archived', async () => {
+      const app = createTestApp()
+
+      setDbForTesting({
+        file: {
+          findUnique: async () => ({
+            id: 'file-1',
+            code: 'HS-001#ARCHIVED-file-1',
+            status: 'ARCHIVED',
+            isLocked: true,
+            borrowItems: [],
+          }),
+        },
+      })
+
+      const response = await app.handle(jsonRequest('/api/files/file-1', {
+        method: 'DELETE',
+        headers: { cookie: await sessionCookie('SUPER_ADMIN') },
+      }))
+
+      expect(response.status).toBe(409)
+      expect(await response.json()).toEqual({
+        success: false,
+        message: 'Hồ sơ đã được lưu trữ trước đó.',
       })
     })
 
