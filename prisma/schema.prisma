@@ -88,6 +88,7 @@ model StorageBox {
   storageBoxLabels StorageBoxLabel[]
 
   @@index([warehouse, line, shelf, slot])
+  @@index([agencyId])
 }
 
 model StorageBoxLabel {
@@ -98,6 +99,8 @@ model StorageBoxLabel {
   label        String
   storageBoxId String?
   storageBox   StorageBox? @relation(fields: [storageBoxId], references: [id])
+
+  @@index([storageBoxId])
 }
 
 model StorageLayout {
@@ -153,6 +156,13 @@ model File {
   createdBy   User?   @relation("FileCreator", fields: [createdById], references: [id])
   updatedById String?
   updatedBy   User?   @relation("FileUpdater", fields: [updatedById], references: [id])
+
+  @@index([createdAt])
+  @@index([status])
+  @@index([type])
+  @@index([year])
+  @@index([boxId])
+  @@index([createdById, createdAt])
 }
 
 model FileIndex {
@@ -189,8 +199,11 @@ model Document {
   updatedById String?
   updatedBy   User?   @relation("DocumentUpdater", fields: [updatedById], references: [id])
 
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([fileId, order])
+  @@index([createdById, createdAt])
 }
 
 // ==========================================
@@ -229,6 +242,10 @@ model BorrowSlip {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@index([createdAt])
+  @@index([status, dueDate])
+  @@index([lenderId])
 }
 
 model BorrowItem {
@@ -245,6 +262,7 @@ model BorrowItem {
   condition    String? // Tình trạng khi trả
 
   @@unique([borrowSlipId, fileId])
+  @@index([fileId, status])
 }
 
 model BorrowSlipEvent {
@@ -260,6 +278,8 @@ model BorrowSlipEvent {
   creator   User?   @relation(fields: [creatorId], references: [id])
 
   createdAt DateTime @default(now())
+
+  @@index([borrowSlipId])
 }
 
 // ==========================================
@@ -279,6 +299,10 @@ model AuditLog {
   user   User?   @relation(fields: [userId], references: [id])
 
   createdAt DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([action, createdAt])
+  @@index([userId, createdAt])
 }
 
 enum AuditAction {
