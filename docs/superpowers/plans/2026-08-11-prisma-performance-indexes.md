@@ -130,11 +130,12 @@ Run:
 ```bash
 git show HEAD:prisma/schema.prisma > /tmp/old-schema.prisma
 bunx prisma migrate diff \
-  --from-schema-datamodel /tmp/old-schema.prisma \
-  --to-schema-datamodel prisma/schema.prisma \
+  --from-schema /tmp/old-schema.prisma \
+  --to-schema prisma/schema.prisma \
   --script > "$MIG_DIR/migration.sql"
 ```
 Không cần kết nối DB (so sánh hai datamodel thuần).
+> Lưu ý (Prisma 7.8.0): flag là `--from-schema`/`--to-schema` (bản cũ `--from-schema-datamodel`/`--to-schema-datamodel` đã bị gỡ). Ngữ nghĩa y hệt.
 
 - [ ] **Step 3: Kiểm tra migration.sql — phải đúng 18 CREATE INDEX, không có lệnh phá huỷ**
 
