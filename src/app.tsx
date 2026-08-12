@@ -10,6 +10,7 @@ import { queryClient } from '@/src/lib/query-client'
 import { MainLayout } from '@/src/layouts/main-layout'
 import { LoginRoute, PermissionRoute, ProtectedRoute } from '@/src/routes/guards'
 import { RouteErrorBoundary } from '@/src/routes/route-error-boundary'
+import { NetworkStatusBanner } from '@/src/components/common/network-status-banner'
 import type { Permission } from '@/lib/rbac'
 
 const Home = lazy(() => import('@/src/routes/files/files-page'))
@@ -61,6 +62,7 @@ export function App() {
       <BrowserRouter>
         <SessionProvider>
           <RouteErrorBoundary>
+            <NetworkStatusBanner />
             <Suspense fallback={<RouteSpinner />}>
               <Routes>
                 <Route path="/login" element={<LoginRoute><LoginPage /></LoginRoute>} />
