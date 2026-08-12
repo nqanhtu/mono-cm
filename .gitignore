@@ -12,3 +12,5 @@ backups/
 .DS_Store
 *.DS_Store
 *.xlsx
+.worktrees/
+
