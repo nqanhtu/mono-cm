@@ -28,15 +28,7 @@ export function useNetworkStatus(): UseNetworkStatusReturn {
       clearTimeout(timeoutId);
 
       if (response.ok || response.status === 304 || response.status === 404) {
-        setStatus((prev) => {
-          if (prev === 'offline') {
-            setTimeout(() => {
-              setStatus('online');
-            }, 2500);
-            return 'reconnected';
-          }
-          return 'online';
-        });
+        setStatus((prev) => (prev === 'offline' ? 'reconnected' : 'online'));
       } else {
         setStatus('offline');
       }
@@ -46,6 +38,17 @@ export function useNetworkStatus(): UseNetworkStatusReturn {
       setIsChecking(false);
     }
   }, []);
+
+  // Tự động chuyển từ reconnected sang online sau 2.5s với cleanup timer
+  useEffect(() => {
+    if (status !== 'reconnected') return;
+
+    const timer = setTimeout(() => {
+      setStatus('online');
+    }, 2500);
+
+    return () => clearTimeout(timer);
+  }, [status]);
 
   useEffect(() => {
     const handleOnline = () => {

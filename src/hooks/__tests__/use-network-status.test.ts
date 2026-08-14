@@ -147,4 +147,56 @@ describe('useNetworkStatus', () => {
 
     expect(globalThis.fetch).toHaveBeenCalledTimes(1);
   });
+
+  it('không gọi checkPing khi visibilitychange kích hoạt nhưng tab bị ẩn (document.hidden = true)', async () => {
+    vi.mocked(globalThis.fetch).mockResolvedValue(new Response(null, { status: 200 }));
+
+    renderHook(() => useNetworkStatus());
+
+    act(() => {
+      window.dispatchEvent(new Event('offline'));
+    });
+
+    const originalHidden = document.hidden;
+    Object.defineProperty(document, 'hidden', { value: true, configurable: true });
+
+    await act(async () => {
+      document.dispatchEvent(new Event('visibilitychange'));
+    });
+
+    expect(globalThis.fetch).not.toHaveBeenCalled();
+
+    Object.defineProperty(document, 'hidden', { value: originalHidden, configurable: true });
+  });
+
+  it('hủy timer 2.5s chuyển sang online nếu trình duyệt chuyển offline khi đang reconnected', async () => {
+    vi.mocked(globalThis.fetch).mockResolvedValueOnce(new Response(null, { status: 200 }));
+
+    const { result } = renderHook(() => useNetworkStatus());
+
+    // Trigger offline
+    act(() => {
+      window.dispatchEvent(new Event('offline'));
+    });
+
+    // Trigger online -> reconnected
+    await act(async () => {
+      window.dispatchEvent(new Event('online'));
+    });
+    expect(result.current.status).toBe('reconnected');
+
+    // Trigger offline before 2.5s timer expires
+    act(() => {
+      window.dispatchEvent(new Event('offline'));
+    });
+    expect(result.current.status).toBe('offline');
+
+    // Advance timer past 2.5s
+    act(() => {
+      vi.advanceTimersByTime(3000);
+    });
+
+    // Should stay offline, NOT be forced back to online by a leaked timer
+    expect(result.current.status).toBe('offline');
+  });
 });
