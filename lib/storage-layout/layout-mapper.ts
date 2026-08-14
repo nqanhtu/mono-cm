@@ -196,8 +196,13 @@ export function getStorageLayoutSignature(layout: StorageLayoutData) {
 }
 
 export function filterBoxesForStorageLayoutSearch(boxes: StorageBoxDto[], search: StorageLayoutSearch) {
-  const code = search.code.trim().toLowerCase();
-  const fond = search.fond.trim().toLowerCase();
+  // Normalize the (untrusted, user-typed) search terms to NFC: Vietnamese
+  // text can arrive as NFC or NFD (visually identical, different bytes).
+  // box.code / box.agency.name come from the API, which is guaranteed NFC
+  // by the write-time normalization in server/lib/db.ts, so they don't need
+  // normalizing again here.
+  const code = search.code.trim().normalize("NFC").toLowerCase();
+  const fond = search.fond.trim().normalize("NFC").toLowerCase();
   const caseType = search.caseType.trim();
   const documentNumber = search.documentNumber.trim();
   const docNumber = Number(documentNumber);

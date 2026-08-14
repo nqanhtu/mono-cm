@@ -5,6 +5,7 @@ import { db } from '@/lib/db'
 import { jsonError } from '@/lib/http'
 import { toInt } from '@/lib/request'
 import { getSession } from '@/lib/session'
+import { findUserIdsByFullName } from '@/lib/vi-search'
 
 export const auditRoutes = new Elysia()
   .get('/api/audit', async ({ request, set, query }) => {
@@ -19,6 +20,16 @@ export const auditRoutes = new Elysia()
     const to = query.to ? new Date(String(query.to)) : undefined
     const limit = toInt(query.limit, 20) ?? 20
     const offset = toInt(query.offset, 0) ?? 0
+
+    let fullNameUserIds: string[] = []
+    if (q) {
+      try {
+        fullNameUserIds = await findUserIdsByFullName(q)
+      } catch (err) {
+        console.error('Error querying fullName with raw SQL:', err)
+      }
+    }
+
     const where: Prisma.AuditLogWhereInput = {
       AND: [
         q ? {
@@ -28,6 +39,7 @@ export const auditRoutes = new Elysia()
             { ipAddress: { contains: q, mode: 'insensitive' } },
             { user: { username: { contains: q, mode: 'insensitive' } } },
             { user: { fullName: { contains: q, mode: 'insensitive' } } },
+            ...(fullNameUserIds.length ? [{ userId: { in: fullNameUserIds } }] : []),
           ],
         } : {},
         action ? { action: { equals: action as AuditAction } } : {},

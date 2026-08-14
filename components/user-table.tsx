@@ -72,6 +72,18 @@ export default function UserTable({ users, isLoading, onEdit, onDelete, onToggle
     getFilteredRowModel: getFilteredRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
     getSortedRowModel: getSortedRowModel(),
+    // Normalize the (untrusted, user-typed) filter value to NFC: Vietnamese
+    // text can arrive as NFC or NFD (visually identical, different bytes).
+    // Row values come from the API, which is guaranteed NFC by the
+    // write-time normalization in server/lib/db.ts, so they don't need
+    // normalizing again here.
+    globalFilterFn: (row, columnId, filterValue) => {
+      const value = row.getValue(columnId)
+      if (value == null) return false
+      return String(value)
+        .toLowerCase()
+        .includes(String(filterValue).normalize('NFC').toLowerCase())
+    },
   })
 
   return (

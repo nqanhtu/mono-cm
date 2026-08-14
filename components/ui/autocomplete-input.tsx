@@ -51,7 +51,12 @@ export function AutocompleteInput({
   }
 
   const filteredSuggestions = React.useMemo(() => {
-    const cleanInput = inputValue.trim().toLowerCase()
+    // Normalize the (untrusted, user-typed) input to NFC: Vietnamese text
+    // can arrive as NFC or NFD (visually identical, different bytes).
+    // Suggestion labels come from the API, which is guaranteed NFC by the
+    // write-time normalization in server/lib/db.ts, so they don't need
+    // normalizing again here.
+    const cleanInput = inputValue.trim().normalize("NFC").toLowerCase()
     if (!cleanInput) return normalizedSuggestions
     return normalizedSuggestions.filter((item) =>
       item.label.toLowerCase().includes(cleanInput)

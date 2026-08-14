@@ -7,6 +7,7 @@ import { getClientIp, toInt } from '@/lib/request'
 import { sessionOrDenied, USER_SELECT } from '@/api-routes/_shared'
 import { createAuditLog } from '@/lib/services/audit-log'
 import { createFileQrToken, verifyFileQrToken } from '@/lib/services/qr-token'
+import { findFileIdsMatchingParty, findFileIdsMatchingText } from '@/lib/vi-search'
 
 export const fileRoutes = new Elysia()
   .get('/api/files', async ({ request, set, query }) => {
@@ -38,51 +39,38 @@ export const fileRoutes = new Elysia()
     let partyFileIds: string[] | undefined = undefined
     if (party) {
       try {
-        const matchingFiles = await db.$queryRaw<{ id: string }[]>`
-          SELECT id FROM "File" 
-          WHERE EXISTS (SELECT 1 FROM unnest(defendants) AS x WHERE x ILIKE ${'%' + party + '%'})
-             OR EXISTS (SELECT 1 FROM unnest(plaintiffs) AS x WHERE x ILIKE ${'%' + party + '%'})
-             OR EXISTS (SELECT 1 FROM unnest("civilDefendants") AS x WHERE x ILIKE ${'%' + party + '%'})
-        `
-        partyFileIds = matchingFiles.map(f => f.id)
+        partyFileIds = await findFileIdsMatchingParty(party)
       } catch (err) {
         console.error('Error querying party with raw SQL:', err)
       }
     }
 
-    let qPartyFileIds: string[] | undefined = undefined
+    let qFileIds: string[] | undefined = undefined
     if (q) {
       try {
-        const matchingFiles = await db.$queryRaw<{ id: string }[]>`
-          SELECT id FROM "File" 
-          WHERE EXISTS (SELECT 1 FROM unnest(defendants) AS x WHERE x ILIKE ${'%' + q + '%'})
-             OR EXISTS (SELECT 1 FROM unnest(plaintiffs) AS x WHERE x ILIKE ${'%' + q + '%'})
-             OR EXISTS (SELECT 1 FROM unnest("civilDefendants") AS x WHERE x ILIKE ${'%' + q + '%'})
-        `
-        qPartyFileIds = matchingFiles.map(f => f.id)
+        qFileIds = await findFileIdsMatchingText(q)
       } catch (err) {
-        console.error('Error querying q party with raw SQL:', err)
+        console.error('Error querying q with raw SQL:', err)
       }
     }
 
     const where: Prisma.FileWhereInput = {
       AND: [
-        q ? {
-          OR: [
-            { code: { contains: q, mode: 'insensitive' } },
-            { title: { contains: q, mode: 'insensitive' } },
-            { judgmentNumber: { contains: q, mode: 'insensitive' } },
-            { indexCode: { contains: q, mode: 'insensitive' } },
-            ...(qPartyFileIds !== undefined 
-              ? [{ id: { in: qPartyFileIds } }] 
-              : [
+        q ? (
+          qFileIds !== undefined
+            ? { id: { in: qFileIds } }
+            : {
+                OR: [
+                  { code: { contains: q, mode: 'insensitive' } },
+                  { title: { contains: q, mode: 'insensitive' } },
+                  { judgmentNumber: { contains: q, mode: 'insensitive' } },
+                  { indexCode: { contains: q, mode: 'insensitive' } },
                   { defendants: { has: q } },
                   { plaintiffs: { has: q } },
                   { civilDefendants: { has: q } },
-                ]
-            )
-          ],
-        } : {},
+                ],
+              }
+        ) : {},
         type && type !== 'all' ? { type: { equals: type } } : {},
         year ? { year: { equals: year } } : {},
         status && status !== 'all' ? { status: { equals: status } } : { NOT: { status: 'ARCHIVED' } },

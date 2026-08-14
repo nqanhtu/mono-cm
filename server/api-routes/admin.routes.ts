@@ -11,6 +11,7 @@ import { createPostgresBackup } from '@/lib/services/database-backup'
 import { restorePostgresBackup } from '@/lib/services/database-restore'
 import { uploadBackupToBlob, cleanExpiredBlobs } from '@/lib/services/vercel-blob'
 import type { UserAccessEvent } from '@/generated/prisma/client'
+import { findUserIdsByFullName, normalizeNFC } from '@/lib/vi-search'
 
 const DEFAULT_STORAGE_LAYOUT_ID = 'default'
 
@@ -200,8 +201,11 @@ function matchesStorageLayoutSearch(
   },
   query: StorageLayoutQuery
 ) {
-  const code = (query.code || '').trim().toLowerCase()
-  const fond = (query.fond || '').trim().toLowerCase()
+  // box.code / box.agency.name come from the DB, which is guaranteed NFC by
+  // the write-time normalization in server/lib/db.ts — only the (untrusted,
+  // user-typed) query values need normalizing here.
+  const code = normalizeNFC(query.code || '').trim().toLowerCase()
+  const fond = normalizeNFC(query.fond || '').trim().toLowerCase()
   const caseType = (query.caseType || '').trim()
   const documentNumber = (query.documentNumber || '').trim()
   if (code && !box.code.toLowerCase().includes(code)) return false
@@ -651,6 +655,15 @@ export const adminRoutes = new Elysia()
     const limit = toInt(query.limit, 20) ?? 20
     const offset = toInt(query.offset, 0) ?? 0
 
+    let fullNameUserIds: string[] = []
+    if (q) {
+      try {
+        fullNameUserIds = await findUserIdsByFullName(q)
+      } catch (err) {
+        console.error('Error querying fullName with raw SQL:', err)
+      }
+    }
+
     const searchWhere: Prisma.UserAccessLogWhereInput = q ? {
       OR: [
         { ipAddress: { contains: q, mode: 'insensitive' } },
@@ -660,6 +673,7 @@ export const adminRoutes = new Elysia()
         { browserName: { contains: q, mode: 'insensitive' } },
         { user: { username: { contains: q, mode: 'insensitive' } } },
         { user: { fullName: { contains: q, mode: 'insensitive' } } },
+        ...(fullNameUserIds.length ? [{ userId: { in: fullNameUserIds } }] : []),
       ],
     } : {}
 

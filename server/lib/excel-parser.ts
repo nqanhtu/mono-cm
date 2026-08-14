@@ -81,7 +81,11 @@ export const parseExcelFile = async (buffer: ArrayBuffer): Promise<ImportData> =
 
 function parseDetails(text: string): FileDetails {
     if (!text) return {};
-    const lines = text.split(/\r?\n/).map(l => l.trim());
+    // Excel cells can hold Vietnamese text as NFC or NFD (visually identical,
+    // different bytes). Normalize before matching the hardcoded Vietnamese
+    // prefixes below, otherwise a startsWith() check silently fails and the
+    // field is dropped instead of just being un-searchable.
+    const lines = text.normalize('NFC').split(/\r?\n/).map(l => l.trim());
     const details: FileDetails = {};
 
     // ...
@@ -163,13 +167,17 @@ function parseYear(dateStr: unknown): number {
 }
 
 function normalizeUserRole(roleStr: string): string {
+    // Normalize to NFC before matching the hardcoded Vietnamese role labels
+    // below, otherwise an NFD-encoded cell value silently fails every
+    // .includes() check and the import falls through to an unrecognized role.
+    roleStr = roleStr.normalize('NFC')
     const normalized = roleStr.trim().toUpperCase()
     if (['SUPER_ADMIN', 'SUPERADMIN'].includes(normalized)) return 'SUPER_ADMIN'
     if (['ADMIN'].includes(normalized)) return 'ADMIN'
     if (['COORDINATOR'].includes(normalized)) return 'COORDINATOR'
     if (['VIEWER'].includes(normalized)) return 'VIEWER'
     if (['BASIC_VIEWER', 'BASICVIEWER'].includes(normalized)) return 'BASIC_VIEWER'
-    
+
     const vnLower = roleStr.trim().toLowerCase()
     if (vnLower.includes('quản trị toàn hệ thống') || vnLower.includes('quản trị hệ thống') || vnLower.includes('super admin')) return 'SUPER_ADMIN'
     if (vnLower.includes('quản trị') || vnLower.includes('admin')) return 'ADMIN'
@@ -197,7 +205,7 @@ export const parseUsersExcel = async (buffer: ArrayBuffer): Promise<ExtractedUse
         
         let status = true
         if (statusStr) {
-            const normalizedStatus = String(statusStr).trim().toLowerCase()
+            const normalizedStatus = String(statusStr).normalize('NFC').trim().toLowerCase()
             if (['bị khóa', 'khóa', 'inactive', 'false', '0'].includes(normalizedStatus)) {
                 status = false
             }
