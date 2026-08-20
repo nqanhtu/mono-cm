@@ -161,4 +161,51 @@ describe('BatchAssignBoxDialog', () => {
 
     expect(onClose).toHaveBeenCalled()
   })
+
+  it('renders list of selected files with current box and allows removing a file', async () => {
+    const onClose = vi.fn()
+    const onRemoveFile = vi.fn()
+
+    const files = [
+      { id: 'file-1', code: 'HS-001', title: 'Vụ án trộm cắp', box: { code: 'BOX-OLD' } },
+      { id: 'file-2', code: 'HS-002', title: 'Vụ án lừa đảo', box: null },
+    ] as unknown as FileWithBox[]
+
+    render(
+      <BatchAssignBoxDialog
+        isOpen={true}
+        onClose={onClose}
+        selectedFiles={files}
+        onRemoveFile={onRemoveFile}
+      />
+    )
+
+    // Check files are listed
+    expect(screen.getByText('HS-001')).toBeInTheDocument()
+    expect(screen.getByText('Vụ án trộm cắp')).toBeInTheDocument()
+    expect(screen.getByText('BOX-OLD')).toBeInTheDocument()
+    expect(screen.getByText('HS-002')).toBeInTheDocument()
+    expect(screen.getByText('Chưa vào hộp')).toBeInTheDocument()
+
+    // Click remove button for file-1
+    const removeButtons = screen.getAllByRole('button', { name: /Loại bỏ/i })
+    fireEvent.click(removeButtons[0])
+
+    expect(onRemoveFile).toHaveBeenCalledWith('file-1')
+  })
+
+  it('renders empty message when no files are selected and hides remove button when onRemoveFile is not provided', () => {
+    const onClose = vi.fn()
+
+    render(
+      <BatchAssignBoxDialog
+        isOpen={true}
+        onClose={onClose}
+        selectedFiles={[]}
+      />
+    )
+
+    expect(screen.getByText('Chưa có hồ sơ nào được chọn')).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /Loại bỏ/i })).not.toBeInTheDocument()
+  })
 })

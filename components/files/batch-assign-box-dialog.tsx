@@ -1,5 +1,5 @@
 import * as React from 'react'
-import { Archive, Check, ChevronsUpDown, Loader2, MapPin, Clock, FolderArchive, Layers } from 'lucide-react'
+import { Archive, Check, ChevronsUpDown, Loader2, MapPin, Clock, FolderArchive, Layers, X } from 'lucide-react'
 import { toast } from 'sonner'
 
 import {
@@ -35,6 +35,7 @@ interface BatchAssignBoxDialogProps {
   isOpen: boolean
   onClose: () => void
   selectedFiles: FileWithBox[]
+  onRemoveFile?: (fileId: string) => void
   onSuccess?: () => void
 }
 
@@ -42,6 +43,7 @@ export function BatchAssignBoxDialog({
   isOpen,
   onClose,
   selectedFiles,
+  onRemoveFile,
   onSuccess,
 }: BatchAssignBoxDialogProps) {
   const [selectedBoxId, setSelectedBoxId] = React.useState<string>('')
@@ -120,6 +122,62 @@ export function BatchAssignBoxDialog({
         </DialogHeader>
 
         <div className="space-y-4 py-2">
+          {/* Danh sách hồ sơ sẽ chuyển */}
+          <div className="space-y-1.5">
+            <div className="flex items-center justify-between text-xs">
+              <span className="font-semibold text-foreground">
+                Danh sách hồ sơ ({selectedFiles.length})
+              </span>
+              <span className="text-muted-foreground text-[11px]">
+                Bấm <span className="font-semibold text-destructive">✕</span> để loại bớt hồ sơ
+              </span>
+            </div>
+            <div className="max-h-40 overflow-y-auto rounded-lg border bg-slate-50/50 p-1.5 space-y-1 dark:bg-slate-900/40 dark:border-slate-800">
+              {selectedFiles.length === 0 ? (
+                <p className="text-xs text-muted-foreground text-center py-4">Chưa có hồ sơ nào được chọn</p>
+              ) : (
+                selectedFiles.map((file) => (
+                  <div
+                    key={file.id}
+                    className="flex items-center justify-between gap-2 rounded-md border bg-background px-2.5 py-1.5 text-xs shadow-2xs dark:border-slate-800"
+                  >
+                    <div className="flex items-center gap-2 min-w-0 flex-1">
+                      <span className="font-mono font-bold text-primary shrink-0">
+                        {file.code || 'Chưa có mã'}
+                      </span>
+                      <span className="truncate text-slate-700 dark:text-slate-300">
+                        {file.title}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-1.5 shrink-0">
+                      <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-4 text-muted-foreground">
+                        {file.box?.code ? (
+                          <>
+                            Hộp: <span>{file.box.code}</span>
+                          </>
+                        ) : (
+                          'Chưa vào hộp'
+                        )}
+                      </Badge>
+                      {onRemoveFile && (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          aria-label={`Loại bỏ ${file.code || file.title}`}
+                          onClick={() => onRemoveFile(file.id)}
+                          className="size-5 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-full"
+                        >
+                          <X className="size-3" />
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+
           <div className="space-y-1.5">
             <label className="text-xs font-semibold text-foreground">
               Hộp lưu trữ đích <span className="text-destructive">*</span>
