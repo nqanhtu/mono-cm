@@ -57,6 +57,7 @@ export default function UserTable({ users, isLoading, onEdit, onDelete, onToggle
   const table = useReactTable({
     data: users,
     columns,
+    getRowId: (row) => row.id,
     state: {
       sorting,
       columnVisibility,

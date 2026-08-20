@@ -76,6 +76,7 @@ export default function BorrowTable({
   const table = useReactTable({
     data: borrowSlips,
     columns,
+    getRowId: (row) => row.id,
     state: {
       sorting,
       columnVisibility,
