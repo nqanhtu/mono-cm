@@ -694,4 +694,103 @@ describe('files contract', () => {
         documentTitles: ['Quyết định đưa vụ án ra xét xử']
       })
     })
+
+    test('POST /api/files/batch-assign-box succeeds with SUPER_ADMIN and updates boxId and retention', async () => {
+      const app = createTestApp()
+      const box = {
+        id: 'box-1',
+        code: 'BOX-001',
+        retention: 'Vĩnh viễn',
+      }
+      let updateManyArgs: unknown = null
+      let auditLogArgs: unknown = null
+
+      setDbForTesting({
+        storageBox: {
+          findUnique: async (args: { where: { id: string } }) => {
+            if (args.where.id === 'box-1') return box
+            return null
+          },
+        },
+        file: {
+          updateMany: async (args: unknown) => {
+            updateManyArgs = args
+            return { count: 2 }
+          },
+        },
+        auditLog: {
+          create: async (args: unknown) => {
+            auditLogArgs = args
+            return { id: 'audit-1' }
+          },
+        },
+      })
+
+      const response = await app.handle(postJson('/api/files/batch-assign-box', {
+        fileIds: ['file-1', 'file-2'],
+        boxId: 'box-1',
+      }, {
+        headers: { cookie: await sessionCookie('SUPER_ADMIN') },
+      }))
+
+      expect(response.status).toBe(200)
+      const data = await response.json()
+      expect(data).toEqual({
+        success: true,
+        message: 'Đã chuyển thành công 2 hồ sơ vào hộp BOX-001',
+        count: 2,
+      })
+      expect(updateManyArgs).toMatchObject({
+        where: { id: { in: ['file-1', 'file-2'] } },
+        data: {
+          boxId: 'box-1',
+          retention: 'Vĩnh viễn',
+        },
+      })
+      expect(auditLogArgs).toMatchObject({
+        data: {
+          action: 'UPDATE',
+          target: 'File',
+          targetId: 'batch_assign_box',
+        },
+      })
+    })
+
+    test('POST /api/files/batch-assign-box rejects non-admin users with 403', async () => {
+      const app = createTestApp()
+      const response = await app.handle(postJson('/api/files/batch-assign-box', {
+        fileIds: ['file-1'],
+        boxId: 'box-1',
+      }, {
+        headers: { cookie: await sessionCookie('VIEWER') },
+      }))
+      expect(response.status).toBe(403)
+    })
+
+    test('POST /api/files/batch-assign-box returns 400 when fileIds is empty or missing', async () => {
+      const app = createTestApp()
+      const response = await app.handle(postJson('/api/files/batch-assign-box', {
+        fileIds: [],
+        boxId: 'box-1',
+      }, {
+        headers: { cookie: await sessionCookie('ADMIN') },
+      }))
+      expect(response.status).toBe(400)
+    })
+
+    test('POST /api/files/batch-assign-box returns 404 when boxId does not exist', async () => {
+      const app = createTestApp()
+      setDbForTesting({
+        storageBox: {
+          findUnique: async () => null,
+        },
+      })
+      const response = await app.handle(postJson('/api/files/batch-assign-box', {
+        fileIds: ['file-1'],
+        boxId: 'box-nonexistent',
+      }, {
+        headers: { cookie: await sessionCookie('ADMIN') },
+      }))
+      expect(response.status).toBe(404)
+    })
 })

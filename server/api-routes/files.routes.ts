@@ -192,6 +192,72 @@ export const fileRoutes = new Elysia()
       return { success: false, error: 'Failed to create file' }
     }
   })
+  .post('/api/files/batch-assign-box', async ({ request, set }) => {
+    try {
+      const { session, denied } = await sessionOrDenied({ request, set }, 'manageFiles')
+      if (denied) return denied
+
+      const body = await request.json() as { fileIds?: string[]; boxId?: string }
+      const fileIds = Array.isArray(body?.fileIds) ? body.fileIds.filter(id => typeof id === 'string' && id.trim()) : []
+      const boxId = typeof body?.boxId === 'string' ? body.boxId.trim() : ''
+
+      if (fileIds.length === 0) {
+        return apiError(set, 'Vui lòng chọn ít nhất một hồ sơ', 400)
+      }
+      if (!boxId) {
+        return apiError(set, 'Vui lòng chọn hộp lưu trữ đích', 400)
+      }
+
+      const box = await db.storageBox.findUnique({
+        where: { id: boxId },
+        select: { id: true, code: true, retention: true },
+      })
+      if (!box) {
+        return apiError(set, 'Hộp lưu trữ không tồn tại', 404)
+      }
+
+      const updateData: Record<string, any> = {
+        boxId: box.id,
+        updatedById: session!.id,
+      }
+      if (box.retention) {
+        updateData.retention = box.retention
+      }
+
+      const result = await db.file.updateMany({
+        where: { id: { in: fileIds } },
+        data: updateData,
+      })
+
+      await createAuditLog({
+        action: 'UPDATE',
+        target: 'File',
+        targetId: 'batch_assign_box',
+        userId: session!.id,
+        ipAddress: getClientIp(request),
+        detail: {
+          boxId: box.id,
+          boxCode: box.code,
+          count: result.count,
+          fileIds,
+        },
+      })
+
+      return {
+        success: true,
+        message: `Đã chuyển thành công ${result.count} hồ sơ vào hộp ${box.code}`,
+        count: result.count,
+      }
+    } catch (error) {
+      console.error('Error in batch assign box:', error)
+      return apiError(set, 'Không thể chuyển hồ sơ vào hộp lưu trữ', 500)
+    }
+  }, {
+    detail: {
+      tags: ['Files'],
+      summary: 'Batch assign files to a storage box',
+    },
+  })
   .get('/api/files/stats', async ({ request, set }) => {
     try {
       const { denied } = await sessionOrDenied({ request, set }, 'viewFiles')
