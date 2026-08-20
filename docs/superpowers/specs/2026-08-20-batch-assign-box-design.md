@@ -1,123 +1,67 @@
-# Thiết kế Tính năng Chuyển hàng loạt hồ sơ vào hộp lưu trữ
+# Thiết kế Tính năng Chuyển hàng loạt hồ sơ vào hộp lưu trữ & Chọn hồ sơ đa trang
 
-**Ngày tạo:** 2026-08-20  
-**Trạng thái:** Chờ phê duyệt (Pending Approval)
+**Ngày cập nhật:** 2026-08-20  
+**Trạng thái:** Đã phê duyệt (Approved)
 
 ---
 
 ## 1. Tổng quan & Mục tiêu
 
-Tính năng cho phép người dùng có quyền quản lý hồ sơ (`SUPER_ADMIN`, `ADMIN`) chọn nhiều hồ sơ cùng lúc trong bảng danh sách hồ sơ (`FileTable`) và chuyển toàn bộ vào một hộp lưu trữ (`StorageBox`) xác định thông qua một thao tác duy nhất.
-
-Đồng thời, hệ thống sẽ tự động đồng bộ thời hạn bảo quản (`retention`) của các hồ sơ được chọn theo thời hạn bảo quản của hộp lưu trữ (nếu hộp có quy định).
+Nâng cấp cơ chế chọn hồ sơ và chuyển hộp lưu trữ:
+1. **Lưu vết chọn hồ sơ xuyên suốt nhiều trang (Cross-page Selection):** Cho phép người dùng chọn các hồ sơ ở nhiều trang khác nhau (khi dùng phân trang máy chủ). Trạng thái chọn và đối tượng hồ sơ được tích lũy toàn cục.
+2. **Hiển thị danh sách kiểm tra hồ sơ (Verification List) trong Modal:** Trong hộp thoại chuyển vào hộp, hiển thị danh sách trực quan các hồ sơ sẽ được chuyển kèm thông tin hộp hiện tại, cho phép xóa/bỏ bớt từng hồ sơ trực tiếp trong modal.
+3. **Đồng bộ thời hạn bảo quản:** Tự động đồng bộ thời hạn bảo quản (`retention`) của các hồ sơ theo hộp lưu trữ đích.
 
 ---
 
 ## 2. Kiến trúc & Thiết kế chi tiết
 
-### 2.1. Backend API
-
-* **Endpoint:** `POST /api/files/batch-assign-box`
-* **Xác thực & Phân quyền:**
-  - Yêu cầu người dùng đăng nhập.
-  - Phân quyền: `canManageFiles` (`SUPER_ADMIN`, `ADMIN`). Trả về 403 Forbidden nếu không đủ quyền.
-* **Payload đầu vào (JSON):**
-  ```json
-  {
-    "fileIds": ["string"],
-    "boxId": "string"
-  }
-  ```
-* **Quy tắc nghiệp vụ & Xử lý cơ sở dữ liệu:**
-  1. Validate: `fileIds` phải là mảng chuỗi không rỗng; `boxId` phải là chuỗi hợp lệ.
-  2. Kiểm tra sự tồn tại của hộp lưu trữ `storageBox` trong CSDL qua `boxId`. Nếu không tìm thấy, trả về lỗi 404.
-  3. Chuẩn bị dữ liệu cập nhật (`data`):
-     - `boxId: box.id`
-     - Nếu `box.retention` có giá trị không rỗng: `retention: box.retention`
-     - `updatedById: session.id`
-     - `updatedAt: new Date()`
-  4. Thực thi cập nhật cơ sở dữ liệu qua Prisma:
-     - `db.file.updateMany({ where: { id: { in: fileIds } }, data })`
-  5. Ghi nhật ký hệ thống (`AuditLog`):
-     - `action: "UPDATE"`
-     - `target: "File"`
-     - `targetId: "batch_assign_box"`
-     - `userId: session.id`
-     - `detail: { boxId: box.id, boxCode: box.code, count: result.count, fileIds }`
-* **Response:**
-  ```json
-  {
-    "success": true,
-    "message": "Đã chuyển thành công X hồ sơ vào hộp BOX-01",
-    "count": 5
-  }
-  ```
+### 2.1. Quản lý trạng thái chọn đa trang (`FileTable`)
+* **State:**
+  - `selectedFilesMap: Map<string, FileWithBox>` (hoặc `Record<string, FileWithBox>`): Lưu trữ toàn bộ các object hồ sơ đã chọn từ bất kỳ trang nào.
+  - `rowSelection: Record<string, boolean>`: Đồng bộ giữa TanStack Table và `selectedFilesMap`.
+* **Hành vi:**
+  - Khi tick chọn / bỏ chọn 1 dòng: Thêm / xóa `file.id` và `file` object trong `selectedFilesMap`.
+  - Khi tick chọn / bỏ chọn "Tất cả dòng của trang":
+    - Chọn tất cả: Thêm toàn bộ các hồ sơ của trang hiện tại vào `selectedFilesMap`.
+    - Bỏ chọn tất cả: Xóa toàn bộ các hồ sơ của trang hiện tại khỏi `selectedFilesMap`.
+  - Thanh công cụ hành động:
+    - Hiển thị tổng số hồ sơ đã chọn: `selectedFilesMap.size` (không bị reset về 0 khi chuyển trang).
+    - Các nút hành động (*In bìa*, *Tạo phiếu mượn*, *Chuyển vào hộp*, *Lưu trữ*) nhận danh sách đầy đủ: `Array.from(selectedFilesMap.values())`.
+  - Nút "Bỏ chọn": Xóa trắng `selectedFilesMap` và `rowSelection`.
 
 ---
 
-### 2.2. Frontend UI & Components
-
-#### 2.2.1. Thanh công cụ tác vụ hàng loạt (`FileTable`)
-* Vị trí: [file-table.tsx](file:///Users/tunguyen/Projects/mono-cm/components/files/file-table.tsx)
-* Điều kiện hiển thị: `selectedRows.length > 0` và `canManageFiles === true`.
-* Bổ sung nút **"Chuyển vào hộp"** (icon `Archive` từ `lucide-react`) với kích thước `size="sm"`, `variant="outline"`.
-* Khi click: Mở hộp thoại `BatchAssignBoxDialog`.
-
-#### 2.2.2. Component `BatchAssignBoxDialog` (`components/files/batch-assign-box-dialog.tsx`)
+### 2.2. Modal `BatchAssignBoxDialog` với Danh sách Kiểm tra
 * **Props:**
   - `isOpen: boolean`
   - `onClose: () => void`
   - `selectedFiles: FileWithBox[]`
+  - `onRemoveFile?: (fileId: string) => void`
   - `onSuccess?: () => void`
-* **Giao diện & Chức năng:**
-  - **Tiêu đề:** *"Chuyển {selectedFiles.length} hồ sơ vào hộp lưu trữ"*
-  - **Mô tả:** *"Chọn hộp lưu trữ đích để chuyển các hồ sơ đã chọn vào."*
-  - **Bộ chọn hộp lưu trữ (Combobox / Searchable Select):**
-    - Tải danh sách hộp qua hook `useStorageBoxes` hoặc tìm kiếm trực tiếp.
-    - Hỗ trợ gõ tìm kiếm theo: Mã hộp, Vị trí (Kho, Dãy, Kệ, Ô), Loại án, Năm.
-    - Hiển thị từng mục trong danh sách: `Mã hộp` - `Kho / Dãy / Kệ / Ô` - `Thời hạn bảo quản`.
-  - **Thẻ thông tin tóm tắt hộp được chọn (Preview Card):**
-    - Khi người dùng chọn 1 hộp trong danh sách, hiển thị card thông tin trực quan:
-      - Mã hộp & Số hộp (Badge nổi bật).
-      - Vị trí vật lý: `Kho > Dãy > Kệ > Ô`.
-      - Loại án & Phông lưu trữ.
-      - Thời hạn bảo quản: Hiển thị giá trị kèm ghi chú *"Thời hạn bảo quản của các hồ sơ sẽ tự động đồng bộ theo hộp"*.
-      - Số lượng hồ sơ hiện có trong hộp: Ví dụ `12 hồ sơ`.
-  - **Thao tác:**
-    - Nút "Hủy": Đóng modal.
-    - Nút "Xác nhận chuyển": Gửi request `POST /api/files/batch-assign-box`. Hiển thị trạng thái đang xử lý (loading spinner / disabled).
-
-#### 2.2.3. Xử lý sau khi thành công
-* Đóng modal.
-* Hiển thị thông báo Toast thành công (`toast.success(...)`).
-* Bỏ chọn các dòng đã chọn (`table.resetRowSelection()`).
-* Invalidate các query liên quan qua `queryClient`:
-  - `queryKeys.files.all`
-  - `queryKeys.files.stats`
-  - `queryKeys.boxes.all`
-* Gọi `onRefresh?.()`.
+* **Giao diện:**
+  1. **Khung chọn hộp lưu trữ:** Combobox tìm kiếm hộp kèm thẻ thông tin chi tiết của hộp (Kho, Dãy, Kệ, Ô, Loại án, Thời hạn bảo quản).
+  2. **Danh sách hồ sơ sẽ chuyển ({selectedFiles.length}):**
+     - Vùng cuộn (Scrollable area, `max-h-48`) hiển thị danh sách hồ sơ:
+       - **Mã hồ sơ** (`font-mono font-semibold`).
+       - **Tiêu đề hồ sơ** (`truncate`).
+       - **Vị trí/Hộp hiện tại:** Badge nhỏ (ví dụ: `Hộp: BOX-01` hoặc `Chưa vào hộp`).
+       - **Nút xóa (icon `X`):** Bấm để loại bỏ hồ sơ khỏi danh sách chuyển (và đồng bộ bỏ chọn ở bảng chính).
+  3. **Hành động:**
+     - Nút "Hủy".
+     - Nút "Xác nhận chuyển": Gửi request `POST /api/files/batch-assign-box` với toàn bộ `fileIds` còn lại trong danh sách.
 
 ---
 
-## 3. Kế hoạch kiểm thử (Verification Plan)
+## 3. Kế hoạch kiểm thử
 
-### 3.1. Backend Contract & Integration Tests
-* File: `server/contracts/files.contract.test.ts` hoặc `server/contracts/batch-assign-box.contract.test.ts`
-* Các test case:
-  1. `POST /api/files/batch-assign-box` - Thành công cập nhật `boxId` và `retention` cho danh sách hồ sơ khi có quyền `SUPER_ADMIN`/`ADMIN`.
-  2. `POST /api/files/batch-assign-box` - Từ chối khi không có quyền (403 Forbidden).
-  3. `POST /api/files/batch-assign-box` - Trả về lỗi 400 khi thiếu `fileIds` hoặc `fileIds` rỗng.
-  4. `POST /api/files/batch-assign-box` - Trả về lỗi 404 khi `boxId` không tồn tại.
-  5. Kiểm tra bản ghi `AuditLog` được tạo chính xác với thông tin hộp và số lượng hồ sơ.
-
-### 3.2. Frontend Tests
-* File: `components/files/batch-assign-box-dialog.test.tsx`
-* Các test case:
-  1. Render modal với danh sách hồ sơ đã chọn và danh sách hộp lưu trữ.
-  2. Tìm kiếm và chọn hộp lưu trữ -> Thẻ thông tin hộp hiển thị đúng thông tin.
-  3. Bấm xác nhận chuyển -> Gọi đúng API và kích hoạt callback `onSuccess`.
-  4. Kiểm tra nút "Chuyển vào hộp" trong `FileTable` hiển thị đúng khi chọn dòng và ẩn khi không chọn.
-
-### 3.3. Kiểm tra hồi quy toàn diện
-* Chạy `bun run test:frontend`
-* Chạy `bun run lint`
+1. **Unit Test chọn đa trang trong `FileTable`:**
+   - Chọn 2 hồ sơ ở trang 1.
+   - Chuyển sang trang 2, chọn tiếp 1 hồ sơ ở trang 2.
+   - Kiểm tra thanh công cụ hiển thị "3 hồ sơ đã chọn".
+   - Mở modal chuyển hộp, kiểm tra có đầy đủ 3 hồ sơ từ cả 2 trang.
+   - Chuyển về trang 1, kiểm tra 2 hồ sơ trang 1 vẫn được tick chọn.
+2. **Unit Test Modal `BatchAssignBoxDialog`:**
+   - Render danh sách hồ sơ được chuyển.
+   - Bấm nút `X` để loại 1 hồ sơ -> số lượng giảm và gọi callback `onRemoveFile`.
+   - Bấm xác nhận -> gửi đúng danh sách `fileIds` đã lọc.
