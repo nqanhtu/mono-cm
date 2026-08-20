@@ -38,6 +38,10 @@ export const queryKeys = {
     files: (params?: string) => ['reports', 'files', params || ''] as const,
     contributions: (params: { userId?: string; from?: string; to?: string }) => 
       ['reports', 'contributions', params.userId || '', params.from || '', params.to || ''] as const,
+    caseMatrix: (params: { fromYear?: number; toYear?: number; type?: string }) =>
+      ['reports', 'cases-matrix', String(params.fromYear || ''), String(params.toYear || ''), params.type || ''] as const,
+    caseDrilldown: (params: { year?: number; type?: string }) =>
+      ['reports', 'cases-drilldown', String(params.year || ''), params.type || ''] as const,
   },
   backup: {
     schedule: ['backup', 'schedule'] as const,

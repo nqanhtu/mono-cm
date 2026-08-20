@@ -1,7 +1,14 @@
 import { useQuery } from '@tanstack/react-query'
 
 import { apiJson } from '@/lib/api/client'
-import type { BorrowItemDto, BorrowSlipDto, FileDto, UserContributionsResponse } from '@/lib/api/types'
+import type {
+  BorrowItemDto,
+  BorrowSlipDto,
+  CaseDrilldownResponse,
+  CaseMatrixResponse,
+  FileDto,
+  UserContributionsResponse,
+} from '@/lib/api/types'
 import { queryKeys } from '@/src/lib/query-keys'
 
 type RecentBorrowSlip = BorrowSlipDto & {
@@ -56,5 +63,42 @@ export function useUserContributions(params: { userId?: string; from?: string; t
     isLoading: query.isLoading,
     isError: query.error,
     refetch: query.refetch,
+  }
+}
+
+export function useCaseMatrix(params: { fromYear?: number; toYear?: number; type?: string }) {
+  const searchParams = new URLSearchParams()
+  if (params.fromYear) searchParams.append('fromYear', String(params.fromYear))
+  if (params.toYear) searchParams.append('toYear', String(params.toYear))
+  if (params.type) searchParams.append('type', params.type)
+
+  const query = useQuery({
+    queryKey: queryKeys.reports.caseMatrix(params),
+    queryFn: () => apiJson<CaseMatrixResponse>(`/api/reports/cases-matrix?${searchParams.toString()}`),
+  })
+
+  return {
+    data: query.data,
+    isLoading: query.isLoading,
+    isError: query.error,
+    refetch: query.refetch,
+  }
+}
+
+export function useCaseDrilldown(params: { year?: number | null; type?: string | null; enabled?: boolean }) {
+  const searchParams = new URLSearchParams()
+  if (params.year) searchParams.append('year', String(params.year))
+  if (params.type) searchParams.append('type', params.type)
+
+  const query = useQuery({
+    queryKey: queryKeys.reports.caseDrilldown({ year: params.year || undefined, type: params.type || undefined }),
+    queryFn: () => apiJson<CaseDrilldownResponse>(`/api/reports/cases-matrix/drilldown?${searchParams.toString()}`),
+    enabled: Boolean(params.enabled && params.year && params.type),
+  })
+
+  return {
+    data: query.data,
+    isLoading: query.isLoading,
+    isError: query.error,
   }
 }

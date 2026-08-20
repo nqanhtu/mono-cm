@@ -209,3 +209,28 @@ export type UserContributionsResponse = {
   username: string
   contributions: DailyContribution[]
 }
+
+export type CaseMatrixItem = {
+  type: string
+  countsByYear: Record<string, number>
+  total: number
+}
+
+export type CaseMatrixResponse = {
+  years: number[]
+  types: string[]
+  matrix: CaseMatrixItem[]
+  yearTotals: Record<string, number>
+  grandTotal: number
+  totalPageCount: number
+  topType: { type: string; count: number } | null
+  peakYear: { year: number; count: number } | null
+}
+
+export type CaseDrilldownResponse = {
+  files: FileDto[]
+  total: number
+  year: number
+  type: string
+}
+
