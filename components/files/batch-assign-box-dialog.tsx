@@ -124,7 +124,7 @@ export function BatchAssignBoxDialog({
             <label className="text-xs font-semibold text-foreground">
               Hộp lưu trữ đích <span className="text-destructive">*</span>
             </label>
-            <Popover open={isComboboxOpen} onOpenChange={setIsComboboxOpen}>
+            <Popover modal={true} open={isComboboxOpen} onOpenChange={setIsComboboxOpen}>
               <PopoverTrigger asChild>
                 <Button
                   variant="outline"
@@ -148,10 +148,15 @@ export function BatchAssignBoxDialog({
                   <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                 </Button>
               </PopoverTrigger>
-              <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
+              <PopoverContent
+                className="w-[--radix-popover-trigger-width] p-0"
+                align="start"
+                onWheel={(e) => e.stopPropagation()}
+                onTouchMove={(e) => e.stopPropagation()}
+              >
                 <Command>
                   <CommandInput placeholder="Gõ mã hộp, kho, kệ, loại án..." />
-                  <CommandList className="max-h-60">
+                  <CommandList className="max-h-60 overflow-y-auto">
                     <CommandEmpty>Không tìm thấy hộp lưu trữ phù hợp.</CommandEmpty>
                     <CommandGroup>
                       {boxes.map((box) => (
