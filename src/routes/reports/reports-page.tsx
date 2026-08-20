@@ -5,6 +5,7 @@ import { Download, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ReportDashboard } from "@/components/reports/report-dashboard";
 import { UserContributionsReport } from "@/components/reports/user-contributions-report";
+import { CaseStatsReport } from "@/components/reports/case-stats-report";
 import { apiFetch } from "@/lib/api/client";
 import { toast } from "sonner";
 import { PrintActionButton } from "@/components/common/print-action-button";
@@ -13,7 +14,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export default function Reports() {
   const [isExporting, setIsExporting] = useState(false);
-  const [activeTab, setActiveTab] = useState<string>("borrows");
+  const [activeTab, setActiveTab] = useState<string>("cases");
 
   const exportReport = async (format: "xlsx" | "csv") => {
     setIsExporting(true);
@@ -43,7 +44,7 @@ export default function Reports() {
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between w-full">
           <div>
             <h1 className="text-xl font-bold text-foreground">Báo cáo & Thống kê</h1>
-            <p className="text-xs text-muted-foreground">Theo dõi hiệu suất hoạt động kho hồ sơ.</p>
+            <p className="text-xs text-muted-foreground">Theo dõi số lượng hồ sơ án và hiệu suất hoạt động lưu trữ.</p>
           </div>
           {activeTab === "borrows" && (
             <div className="flex items-center gap-2">
@@ -62,10 +63,14 @@ export default function Reports() {
       }
     >
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full flex flex-col gap-4">
-        <TabsList className="grid grid-cols-2 max-w-[400px]">
+        <TabsList className="grid grid-cols-3 max-w-[560px]">
+          <TabsTrigger value="cases">Thống kê hồ sơ án</TabsTrigger>
           <TabsTrigger value="borrows">Giao dịch Mượn trả</TabsTrigger>
           <TabsTrigger value="contributions">Thống kê đóng góp</TabsTrigger>
         </TabsList>
+        <TabsContent value="cases" className="mt-0">
+          <CaseStatsReport />
+        </TabsContent>
         <TabsContent value="borrows" className="mt-0">
           <ReportDashboard />
         </TabsContent>
