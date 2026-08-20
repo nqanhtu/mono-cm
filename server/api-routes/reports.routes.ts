@@ -71,7 +71,7 @@ export const reportRoutes = new Elysia()
     try {
       const { session, denied } = await sessionOrDenied({ request, set }, 'viewReports')
       if (denied) return denied
-      const type = query.type === 'borrows' || query.type === 'audit' ? query.type : 'files'
+      const type = query.type === 'borrows' || query.type === 'audit' || query.type === 'case-matrix' ? query.type : 'files'
       const format = query.format === 'xlsx' ? 'xlsx' : 'csv'
       const rows = await loadReportRows(type, query)
 
@@ -196,6 +196,187 @@ export const reportRoutes = new Elysia()
       return { error: 'Internal Server Error' }
     }
   })
+  .get('/api/reports/cases-matrix', async ({ request, set, query }) => {
+    try {
+      const { denied } = await sessionOrDenied({ request, set }, 'viewReports')
+      if (denied) return denied
+
+      const fromYearNum = query.fromYear ? parseInt(String(query.fromYear), 10) : undefined
+      const toYearNum = query.toYear ? parseInt(String(query.toYear), 10) : undefined
+      const typeFilter = query.type ? String(query.type) : undefined
+
+      const where: Prisma.FileWhereInput = {
+        AND: [
+          fromYearNum ? { year: { gte: fromYearNum } } : {},
+          toYearNum ? { year: { lte: toYearNum } } : {},
+          typeFilter ? { type: { equals: typeFilter } } : {},
+        ],
+      }
+
+      const files = await db.file.findMany({
+        where,
+        select: {
+          type: true,
+          year: true,
+          pageCount: true,
+        },
+      })
+
+      // Determine year range
+      let years: number[] = []
+      if (fromYearNum && toYearNum) {
+        for (let y = fromYearNum; y <= toYearNum; y++) {
+          years.push(y)
+        }
+      } else {
+        const foundYears = new Set<number>()
+        files.forEach((f) => {
+          if (typeof f.year === 'number') foundYears.add(f.year)
+        })
+        if (foundYears.size > 0) {
+          years = Array.from(foundYears).sort((a, b) => a - b)
+        } else {
+          const currentYear = new Date().getFullYear()
+          for (let y = currentYear - 5; y <= currentYear; y++) {
+            years.push(y)
+          }
+        }
+      }
+
+      // Collect distinct types
+      const typesSet = new Set<string>()
+      files.forEach((f) => {
+        if (f.type) typesSet.add(f.type)
+      })
+
+      const predefinedTypes = [
+        'Dân sự sơ thẩm',
+        'Hình sự sơ thẩm',
+        'Hôn nhân gia đình',
+        'Hành chính',
+        'Kinh doanh thương mại',
+        'Lao động',
+        'Dân sự phúc thẩm',
+        'Hình sự phúc thẩm',
+      ]
+      
+      // Preserve predefined order first, then add any additional types
+      const orderedTypes: string[] = []
+      predefinedTypes.forEach((t) => {
+        if (typesSet.has(t)) {
+          orderedTypes.push(t)
+          typesSet.delete(t)
+        }
+      })
+      typesSet.forEach((t) => orderedTypes.push(t))
+
+      // If no files or specific filter, make sure types array is reasonable
+      const types = orderedTypes.length > 0 ? orderedTypes : (typeFilter ? [typeFilter] : predefinedTypes)
+
+      // Initialize structures
+      const matrixMap: Record<string, Record<number, number>> = {}
+      const yearTotals: Record<number, number> = {}
+      years.forEach((y) => {
+        yearTotals[y] = 0
+      })
+
+      types.forEach((t) => {
+        matrixMap[t] = {}
+        years.forEach((y) => {
+          matrixMap[t][y] = 0
+        })
+      })
+
+      let grandTotal = 0
+      let totalPageCount = 0
+
+      files.forEach((f) => {
+        grandTotal += 1
+        totalPageCount += f.pageCount || 0
+        const y = f.year
+        const t = f.type
+        if (y && matrixMap[t] && typeof matrixMap[t][y] === 'number') {
+          matrixMap[t][y] += 1
+          yearTotals[y] = (yearTotals[y] || 0) + 1
+        }
+      })
+
+      const matrix = types.map((t) => {
+        let typeTotal = 0
+        const countsByYear: Record<string, number> = {}
+        years.forEach((y) => {
+          const count = matrixMap[t]?.[y] || 0
+          countsByYear[String(y)] = count
+          typeTotal += count
+        })
+        return {
+          type: t,
+          countsByYear,
+          total: typeTotal,
+        }
+      })
+
+      // Top type
+      let topType: { type: string; count: number } | null = null
+      matrix.forEach((m) => {
+        if (!topType || m.total > topType.count) {
+          topType = { type: m.type, count: m.total }
+        }
+      })
+
+      // Peak year
+      let peakYear: { year: number; count: number } | null = null
+      years.forEach((y) => {
+        const count = yearTotals[y] || 0
+        if (!peakYear || count > peakYear.count) {
+          peakYear = { year: y, count }
+        }
+      })
+
+      return {
+        years,
+        types,
+        matrix,
+        yearTotals,
+        grandTotal,
+        totalPageCount,
+        topType: grandTotal > 0 ? topType : null,
+        peakYear: grandTotal > 0 ? peakYear : null,
+      }
+    } catch (error) {
+      console.error('Error fetching cases matrix:', error)
+      return jsonError(set, 'Internal Server Error', 500)
+    }
+  })
+  .get('/api/reports/cases-matrix/drilldown', async ({ request, set, query }) => {
+    try {
+      const { denied } = await sessionOrDenied({ request, set }, 'viewReports')
+      if (denied) return denied
+
+      const year = query.year ? parseInt(String(query.year), 10) : undefined
+      const type = query.type ? String(query.type) : undefined
+
+      if (!year || !type) {
+        return jsonError(set, 'Thiếu thông tin năm hoặc loại án', 400)
+      }
+
+      const files = await db.file.findMany({
+        where: {
+          year,
+          type,
+        },
+        include: {
+          box: true,
+        },
+        orderBy: { code: 'asc' },
+      })
+
+      return { files, total: files.length, year, type }
+    } catch (error) {
+      console.error('Error fetching case drilldown:', error)
+      return jsonError(set, 'Internal Server Error', 500)
+    }
+  })
 
 function buildFileReportWhere(query: Record<string, string | undefined>): Prisma.FileWhereInput {
   return {
@@ -220,7 +401,114 @@ function buildBorrowReportWhere(query: Record<string, string | undefined>): Pris
   }
 }
 
-async function loadReportRows(type: 'files' | 'borrows' | 'audit', query: Record<string, string | undefined>) {
+async function loadReportRows(type: 'files' | 'borrows' | 'audit' | 'case-matrix', query: Record<string, string | undefined>) {
+  if (type === 'case-matrix') {
+    const fromYearNum = query.fromYear ? parseInt(String(query.fromYear), 10) : undefined
+    const toYearNum = query.toYear ? parseInt(String(query.toYear), 10) : undefined
+
+    const where: Prisma.FileWhereInput = {
+      AND: [
+        fromYearNum ? { year: { gte: fromYearNum } } : {},
+        toYearNum ? { year: { lte: toYearNum } } : {},
+      ],
+    }
+
+    const files = await db.file.findMany({
+      where,
+      select: { type: true, year: true },
+    })
+
+    let years: number[] = []
+    if (fromYearNum && toYearNum) {
+      for (let y = fromYearNum; y <= toYearNum; y++) {
+        years.push(y)
+      }
+    } else {
+      const foundYears = new Set<number>()
+      files.forEach((f) => {
+        if (typeof f.year === 'number') foundYears.add(f.year)
+      })
+      if (foundYears.size > 0) {
+        years = Array.from(foundYears).sort((a, b) => a - b)
+      } else {
+        const currentYear = new Date().getFullYear()
+        for (let y = currentYear - 5; y <= currentYear; y++) {
+          years.push(y)
+        }
+      }
+    }
+
+    const typesSet = new Set<string>()
+    files.forEach((f) => {
+      if (f.type) typesSet.add(f.type)
+    })
+
+    const predefinedTypes = [
+      'Dân sự sơ thẩm',
+      'Hình sự sơ thẩm',
+      'Hôn nhân gia đình',
+      'Hành chính',
+      'Kinh doanh thương mại',
+      'Lao động',
+      'Dân sự phúc thẩm',
+      'Hình sự phúc thẩm',
+    ]
+
+    const orderedTypes: string[] = []
+    predefinedTypes.forEach((t) => {
+      if (typesSet.has(t)) {
+        orderedTypes.push(t)
+        typesSet.delete(t)
+      }
+    })
+    typesSet.forEach((t) => orderedTypes.push(t))
+    const types = orderedTypes.length > 0 ? orderedTypes : predefinedTypes
+
+    const matrixMap: Record<string, Record<number, number>> = {}
+    const yearTotals: Record<number, number> = {}
+    years.forEach((y) => {
+      yearTotals[y] = 0
+    })
+    types.forEach((t) => {
+      matrixMap[t] = {}
+      years.forEach((y) => {
+        matrixMap[t][y] = 0
+      })
+    })
+
+    let grandTotal = 0
+    files.forEach((f) => {
+      grandTotal += 1
+      const y = f.year
+      const t = f.type
+      if (y && matrixMap[t] && typeof matrixMap[t][y] === 'number') {
+        matrixMap[t][y] += 1
+        yearTotals[y] = (yearTotals[y] || 0) + 1
+      }
+    })
+
+    const rows: Array<Record<string, unknown>> = types.map((t) => {
+      const row: Record<string, unknown> = { 'Loại hồ sơ án': t }
+      let rowTotal = 0
+      years.forEach((y) => {
+        const count = matrixMap[t]?.[y] || 0
+        row[String(y)] = count
+        rowTotal += count
+      })
+      row['Tổng cộng'] = rowTotal
+      return row
+    })
+
+    const summaryRow: Record<string, unknown> = { 'Loại hồ sơ án': 'Tổng cộng theo năm' }
+    years.forEach((y) => {
+      summaryRow[String(y)] = yearTotals[y] || 0
+    })
+    summaryRow['Tổng cộng'] = grandTotal
+    rows.push(summaryRow)
+
+    return rows
+  }
+
   if (type === 'files') {
     const files = await db.file.findMany({ where: buildFileReportWhere(query), include: { box: true }, orderBy: { createdAt: 'desc' } })
     return files.map((file) => ({
