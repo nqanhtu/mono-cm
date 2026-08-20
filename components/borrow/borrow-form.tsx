@@ -7,13 +7,6 @@ import { Calendar, FileStack, Plus, Trash2, Printer, Loader2, FileText } from "l
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
 import type { BorrowItemDto, BorrowSlipDto, FileDto, UserDto } from "@/lib/api/types";
 import { toast } from "sonner";
 import { Field, FieldLabel, FieldGroup } from "../ui/field";
@@ -37,11 +30,14 @@ interface BorrowFormProps {
 export default function BorrowForm({ onSuccess, onCancel, initialData, slipId, initialFiles = [] }: BorrowFormProps) {
   const { session } = useSession();
   const [users, setUsers] = useState<UserDto[]>([]);
-  const [isLoadingUsers, setIsLoadingUsers] = useState(false);
+  const [, setIsLoadingUsers] = useState(false);
 
   // Form State
-  const [selectedUserId, setSelectedUserId] = useState<string>("");
+  const [borrowerName, setBorrowerName] = useState(initialData?.borrowerName || "");
+  const [borrowerUnit, setBorrowerUnit] = useState(initialData?.borrowerUnit || "");
   const [borrowerTitle, setBorrowerTitle] = useState(initialData?.borrowerTitle || "");
+  const [showUserSuggestions, setShowUserSuggestions] = useState(false);
+
   /* Initialize dates with lazy initialization to avoid "setState in effect" warning */
   const [borrowDate, setBorrowDate] = useState<string>(() => {
     return initialData ? new Date(initialData.borrowDate).toISOString().split("T")[0] : new Date().toISOString().split("T")[0];
@@ -68,14 +64,6 @@ export default function BorrowForm({ onSuccess, onCancel, initialData, slipId, i
   const [showSuggestions, setShowSuggestions] = useState(false);
 
   useEffect(() => {
-    if (initialData && users.length > 0 && !selectedUserId) {
-      // Try to find the user by name since we only stored string name
-      const found = users.find(u => u.fullName === initialData.borrowerName);
-      if (found) setSelectedUserId(found.id);
-    }
-  }, [users, initialData, selectedUserId]);
-
-  useEffect(() => {
     const fetchUsers = async () => {
       setIsLoadingUsers(true);
       try {
@@ -92,6 +80,16 @@ export default function BorrowForm({ onSuccess, onCancel, initialData, slipId, i
     };
     fetchUsers();
   }, []);
+
+  const filteredUsers = users.filter((u) => {
+    if (!borrowerName.trim()) return true;
+    const q = borrowerName.toLowerCase().trim();
+    return (
+      u.fullName.toLowerCase().includes(q) ||
+      u.username.toLowerCase().includes(q) ||
+      (u.unit && u.unit.toLowerCase().includes(q))
+    );
+  });
 
   useEffect(() => {
     const fetchSuggestions = async () => {
@@ -186,18 +184,24 @@ export default function BorrowForm({ onSuccess, onCancel, initialData, slipId, i
     return (await response.json()) as BorrowSlipWithDetails;
   };
 
+  const handleSelectUser = (user: UserDto) => {
+    setBorrowerName(user.fullName);
+    setBorrowerUnit(user.unit || "");
+    setShowUserSuggestions(false);
+  };
+
   const handlePrintDraft = () => {
-    if (!selectedUser || selectedFiles.length === 0) {
+    if (!borrowerName.trim() || selectedFiles.length === 0) {
       toast.error("Chưa đủ dữ liệu in phiếu", {
-        description: "Vui lòng chọn người mượn và ít nhất 1 hồ sơ",
+        description: "Vui lòng nhập tên người mượn và chọn ít nhất 1 hồ sơ",
       });
       return;
     }
 
     const draft = buildBorrowSlipDraft({
-      borrowerName: selectedUser.fullName,
-      borrowerUnit: selectedUser.unit,
-      borrowerTitle,
+      borrowerName: borrowerName.trim(),
+      borrowerUnit: borrowerUnit.trim(),
+      borrowerTitle: borrowerTitle.trim(),
       reason,
       borrowDate,
       dueDate,
@@ -221,11 +225,11 @@ export default function BorrowForm({ onSuccess, onCancel, initialData, slipId, i
   };
 
   const handleSubmit = async () => {
-    if (!selectedUserId) {
+    if (!borrowerName.trim()) {
       toast.error("Thiếu thông tin", {
-        description: "Vui lòng chọn người mượn",
+        description: "Vui lòng nhập tên người mượn",
       });
-      window.document.getElementById('borrower-select')?.focus();
+      window.document.getElementById('borrower-name')?.focus();
       return;
     }
 
@@ -242,9 +246,9 @@ export default function BorrowForm({ onSuccess, onCancel, initialData, slipId, i
       const method = slipId ? 'PUT' : 'POST';
       const body = {
         id: slipId,
-        borrowerName: selectedUser?.fullName || "Không xác định",
-        borrowerUnit: selectedUser?.unit || "",
-        borrowerTitle: borrowerTitle,
+        borrowerName: borrowerName.trim(),
+        borrowerUnit: borrowerUnit.trim(),
+        borrowerTitle: borrowerTitle.trim(),
         reason: reason,
         dueDate: new Date(dueDate),
         fileIds: selectedFiles.map((f) => f.id),
@@ -287,8 +291,6 @@ export default function BorrowForm({ onSuccess, onCancel, initialData, slipId, i
     }
   };
 
-  const selectedUser = users.find((u) => u.id === selectedUserId);
-
   return (
     <div className="flex gap-8 h-[600px]">
       {/* Left: Form Inputs */}
@@ -302,27 +304,49 @@ export default function BorrowForm({ onSuccess, onCancel, initialData, slipId, i
       >
         <FieldGroup>
           <Field>
-            <FieldLabel htmlFor="borrower-select">Người mượn</FieldLabel>
-            <Select
-              value={selectedUserId}
-              onValueChange={setSelectedUserId}
-              disabled={isLoadingUsers}
-            >
-              <SelectTrigger id="borrower-select">
-                <SelectValue
-                  placeholder={
-                    isLoadingUsers ? "Đang tải..." : "Chọn người dùng..."
-                  }
-                />
-              </SelectTrigger>
-              <SelectContent>
-                {users.map((user) => (
-                  <SelectItem key={user.id} value={user.id}>
-                    {user.fullName} {user.unit ? `- ${user.unit}` : ""}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <FieldLabel htmlFor="borrower-name">Người mượn</FieldLabel>
+            <div className="relative">
+              <Input
+                id="borrower-name"
+                value={borrowerName}
+                onChange={(e) => {
+                  setBorrowerName(e.target.value);
+                  setShowUserSuggestions(true);
+                }}
+                onFocus={() => setShowUserSuggestions(true)}
+                onBlur={() => setTimeout(() => setShowUserSuggestions(false), 200)}
+                placeholder="Nhập tên người mượn hoặc chọn từ gợi ý..."
+                autoComplete="off"
+              />
+              {showUserSuggestions && filteredUsers.length > 0 && (
+                <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-slate-200 rounded-lg shadow-lg z-50 max-h-60 overflow-auto">
+                  {filteredUsers.map((user) => (
+                    <div
+                      key={user.id}
+                      className="p-2 hover:bg-slate-50 cursor-pointer border-b border-slate-100 last:border-0"
+                      onClick={() => handleSelectUser(user)}
+                    >
+                      <div className="font-medium text-sm text-slate-800">
+                        {user.fullName} {user.unit ? `- ${user.unit}` : ""}
+                      </div>
+                      <div className="text-xs text-slate-500">@{user.username}</div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </Field>
+
+          <Field>
+            <FieldLabel htmlFor="borrower-unit">
+              Đơn vị / Phòng ban (Optional)
+            </FieldLabel>
+            <Input
+              id="borrower-unit"
+              value={borrowerUnit}
+              onChange={(e) => setBorrowerUnit(e.target.value)}
+              placeholder="Ví dụ: Tòa Hình sự, Viện Kiểm sát, Đoàn Luật sư..."
+            />
           </Field>
 
           <Field>
@@ -333,7 +357,7 @@ export default function BorrowForm({ onSuccess, onCancel, initialData, slipId, i
               id="borrower-title"
               value={borrowerTitle}
               onChange={(e) => setBorrowerTitle(e.target.value)}
-              placeholder="Ví dụ: Thẩm phán, Thư ký..."
+              placeholder="Ví dụ: Thẩm phán, Thư ký, Luật sư..."
             />
           </Field>
 
@@ -385,7 +409,7 @@ export default function BorrowForm({ onSuccess, onCancel, initialData, slipId, i
               type="button"
               variant="outline"
               onClick={handlePrintDraft}
-              disabled={!selectedUserId || selectedFiles.length === 0}
+              disabled={!borrowerName.trim() || selectedFiles.length === 0}
             >
               <Printer className="w-4 h-4" /> In phiếu
             </Button>
@@ -401,7 +425,7 @@ export default function BorrowForm({ onSuccess, onCancel, initialData, slipId, i
             <Button
               type="submit"
               disabled={
-                isSubmitting || selectedFiles.length === 0 || !selectedUserId
+                isSubmitting || selectedFiles.length === 0 || !borrowerName.trim()
               }
             >
               {isSubmitting ? (
@@ -412,7 +436,7 @@ export default function BorrowForm({ onSuccess, onCancel, initialData, slipId, i
             </Button>
           </Field>
         </FieldGroup>
-      </form >
+      </form>
 
       {/* Right: Selected Files List */}
       < div className="max-w-md w-full flex flex-col gap-4 border-l border-slate-100 pl-8" >
