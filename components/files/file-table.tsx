@@ -14,7 +14,7 @@ import {
 } from '@tanstack/react-table'
 
 import { toast } from "sonner"
-import { FolderOpen } from 'lucide-react'
+import { FolderOpen, Archive } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 import {
@@ -48,6 +48,7 @@ import { queryClient } from '@/src/lib/query-client'
 import { queryKeys } from '@/src/lib/query-keys'
 import { TableSurface } from '@/components/common/data-page-shell'
 import { PrintFileCoversDialog } from './print-file-covers-dialog'
+import { BatchAssignBoxDialog } from './batch-assign-box-dialog'
 
 interface FileTableProps {
   files: FileWithBox[]
@@ -86,6 +87,7 @@ export function FileTable({
   const [borrowFiles, setBorrowFiles] = React.useState<FileWithBox[]>([]);
   const [isPrintModalOpen, setIsPrintModalOpen] = React.useState(false);
   const [printFiles, setPrintFiles] = React.useState<FileWithBox[]>([]);
+  const [isAssignBoxModalOpen, setIsAssignBoxModalOpen] = React.useState(false);
   const [columnVisibility, setColumnVisibility] =
     React.useState<VisibilityState>(() => {
       if (typeof window !== 'undefined') {
@@ -202,6 +204,7 @@ export function FileTable({
   const table = useReactTable({
     data: files,
     columns,
+    getRowId: (row) => row.id,
     pageCount: isManual ? Math.ceil(total / pageSize) : undefined,
     state: {
       sorting: activeSorting,
@@ -299,6 +302,17 @@ export function FileTable({
                   >
                     In bìa
                   </Button>
+                  {canManageFiles && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => setIsAssignBoxModalOpen(true)}
+                      className="h-7 rounded-md bg-background text-xs font-semibold"
+                    >
+                      <Archive className="mr-1.5 size-3.5" />
+                      Chuyển vào hộp
+                    </Button>
+                  )}
                   {canBorrow && (
                     <Button
                       size="sm"
@@ -493,6 +507,19 @@ export function FileTable({
         isOpen={isPrintModalOpen}
         onClose={() => setIsPrintModalOpen(false)}
         files={printFiles}
+      />
+
+      <BatchAssignBoxDialog
+        isOpen={isAssignBoxModalOpen}
+        onClose={() => setIsAssignBoxModalOpen(false)}
+        selectedFiles={selectedFiles}
+        onSuccess={() => {
+          table.resetRowSelection()
+          queryClient.invalidateQueries({ queryKey: queryKeys.files.all })
+          queryClient.invalidateQueries({ queryKey: queryKeys.files.stats })
+          queryClient.invalidateQueries({ queryKey: queryKeys.boxes.all })
+          onRefresh?.()
+        }}
       />
 
       <AlertDialog open={isBulkDeleteDialogOpen} onOpenChange={setIsBulkDeleteDialogOpen}>
