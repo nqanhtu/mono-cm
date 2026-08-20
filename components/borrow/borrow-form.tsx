@@ -30,7 +30,6 @@ interface BorrowFormProps {
 export default function BorrowForm({ onSuccess, onCancel, initialData, slipId, initialFiles = [] }: BorrowFormProps) {
   const { session } = useSession();
   const [users, setUsers] = useState<UserDto[]>([]);
-  const [, setIsLoadingUsers] = useState(false);
 
   // Form State
   const [borrowerName, setBorrowerName] = useState(initialData?.borrowerName || "");
@@ -65,7 +64,6 @@ export default function BorrowForm({ onSuccess, onCancel, initialData, slipId, i
 
   useEffect(() => {
     const fetchUsers = async () => {
-      setIsLoadingUsers(true);
       try {
         const res = await apiFetch('/api/users?purpose=borrower');
         if (res.ok) {
@@ -74,8 +72,6 @@ export default function BorrowForm({ onSuccess, onCancel, initialData, slipId, i
         }
       } catch (e) {
         console.error(e);
-      } finally {
-        setIsLoadingUsers(false);
       }
     };
     fetchUsers();

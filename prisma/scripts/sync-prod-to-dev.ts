@@ -388,7 +388,7 @@ function migrateSchema(url: string) {
     } else {
       console.error("  ✗  migrate deploy failed:");
       console.error(out);
-      throw new Error("Schema migration failed");
+      throw new Error("Schema migration failed", { cause: e });
     }
   }
 }
@@ -556,7 +556,7 @@ async function main() {
 
   // URL thực sự dùng để kết nối SOURCE (có thể đã được patch qua tunnel)
   let effectiveSourceUrl = sourceUrl!;
-  let effectivedestUrl = destUrl!;
+  const effectivedestUrl = destUrl!;
   // Cleanup function — đóng tunnel khi exit
   const cleanup = (label: string) => {
     if (tunnelProc && !tunnelProc.killed) {

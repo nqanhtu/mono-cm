@@ -44,16 +44,26 @@ function CreateBorrowContent() {
         // For this prototype, I'll pass a known ID or handle it in the action.
 
         try {
+            const borrowerName = (formData.get('borrowerName') as string)?.trim()
+            const borrowerUnit = (formData.get('borrowerUnit') as string)?.trim() || undefined
+            const borrowerTitle = (formData.get('borrowerTitle') as string)?.trim() || undefined
+            const reason = (formData.get('reason') as string)?.trim() || undefined
+
+            if (!borrowerName) {
+                toast.error('Vui lòng nhập tên người mượn')
+                return
+            }
+
             const response = await apiFetch('/api/borrow', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({
-                    borrowerName: formData.get('borrowerName') as string,
-                    borrowerUnit: formData.get('borrowerUnit') as string,
-                    borrowerTitle: formData.get('borrowerTitle') as string,
-                    reason: formData.get('reason') as string,
+                    borrowerName,
+                    borrowerUnit,
+                    borrowerTitle,
+                    reason,
                     dueDate: date,
                     fileIds
                 }),
@@ -62,9 +72,9 @@ function CreateBorrowContent() {
 
             if (res.success) {
                 toast.success('Tạo phiếu mượn thành công')
-                router.push('/')
+                router.push('/borrow')
             } else {
-                toast.error(res.message)
+                toast.error(res.message || 'Có lỗi xảy ra khi tạo phiếu mượn')
             }
         } catch {
             toast.error('Lỗi hệ thống')
@@ -79,34 +89,53 @@ function CreateBorrowContent() {
                 <CardHeader>
                     <CardTitle>Lập Phiếu Mượn</CardTitle>
                     <CardDescription>
-                        Đang tạo phiếu cho {fileIds.length} hồ sơ.
+                        {fileIds.length > 0
+                            ? `Đang tạo phiếu cho ${fileIds.length} hồ sơ.`
+                            : 'Chưa có hồ sơ nào được chọn.'}
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
                     <form onSubmit={onSubmit} className="space-y-4">
                         <div className="space-y-2">
                             <Label htmlFor="borrowerName">Người mượn</Label>
-                            <Input id="borrowerName" name="borrowerName" required placeholder="Họ và tên" />
+                            <Input
+                                id="borrowerName"
+                                name="borrowerName"
+                                required
+                                placeholder="Họ và tên người mượn..."
+                            />
                         </div>
 
                         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                             <div className="space-y-2">
-                                <Label htmlFor="borrowerUnit">Đơn vị / Phòng ban</Label>
-                                <Input id="borrowerUnit" name="borrowerUnit" placeholder="Tòa Hình sự..." />
+                                <Label htmlFor="borrowerUnit">Đơn vị / Phòng ban (Tùy chọn)</Label>
+                                <Input
+                                    id="borrowerUnit"
+                                    name="borrowerUnit"
+                                    placeholder="Tòa Hình sự, Viện Kiểm sát..."
+                                />
                             </div>
                             <div className="space-y-2">
-                                <Label htmlFor="borrowerTitle">Chức danh</Label>
-                                <Input id="borrowerTitle" name="borrowerTitle" placeholder="Thẩm phán..." />
+                                <Label htmlFor="borrowerTitle">Chức danh (Tùy chọn)</Label>
+                                <Input
+                                    id="borrowerTitle"
+                                    name="borrowerTitle"
+                                    placeholder="Thẩm phán, Thư ký, Luật sư..."
+                                />
                             </div>
                         </div>
 
                         <div className="space-y-2">
                             <Label htmlFor="reason">Lý do mượn</Label>
-                            <Textarea id="reason" name="reason" placeholder="Nghiên cứu hồ sơ vụ án..." />
+                            <Textarea
+                                id="reason"
+                                name="reason"
+                                placeholder="Nghiên cứu hồ sơ vụ án..."
+                            />
                         </div>
 
                         <div className="space-y-2 flex flex-col">
-                            <Label>Hạn trả</Label>
+                            <Label>Hạn trả (Dự kiến)</Label>
                             <Popover>
                                 <PopoverTrigger asChild>
                                     <Button
@@ -134,7 +163,11 @@ function CreateBorrowContent() {
                             </Popover>
                         </div>
 
-                        <Button type="submit" className="w-full" disabled={isLoading}>
+                        <Button
+                            type="submit"
+                            className="w-full"
+                            disabled={isLoading || fileIds.length === 0}
+                        >
                             {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                             Tạo phiếu
                         </Button>
