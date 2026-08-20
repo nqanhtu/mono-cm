@@ -63,9 +63,9 @@ const CASE_COLORS = [
 export function CaseStatsReport() {
   const currentYear = new Date().getFullYear()
 
-  // Preset states
-  const [preset, setPreset] = useState<'all' | '5' | '10' | 'custom'>('5')
-  const [fromYear, setFromYear] = useState<number>(currentYear - 4)
+  // Preset states: default to 'all' so all archived case files show immediately
+  const [preset, setPreset] = useState<'all' | '5' | '10' | 'custom'>('all')
+  const [fromYear, setFromYear] = useState<number>(2010)
   const [toYear, setToYear] = useState<number>(currentYear)
   const [isExporting, setIsExporting] = useState(false)
 
@@ -79,18 +79,6 @@ export function CaseStatsReport() {
     year: null,
     type: null,
   })
-
-  // Handle preset change
-  const handlePresetChange = (nextPreset: 'all' | '5' | '10' | 'custom') => {
-    setPreset(nextPreset)
-    if (nextPreset === '5') {
-      setFromYear(currentYear - 4)
-      setToYear(currentYear)
-    } else if (nextPreset === '10') {
-      setFromYear(currentYear - 9)
-      setToYear(currentYear)
-    }
-  }
 
   // Query parameters
   const queryParams = useMemo(() => {
@@ -108,14 +96,29 @@ export function CaseStatsReport() {
   const topType = data?.topType
   const peakYear = data?.peakYear
 
-  // Generate Year options for dropdowns (e.g., 2000 to currentYear + 1)
+  // Handle preset change
+  const handlePresetChange = (nextPreset: 'all' | '5' | '10' | 'custom') => {
+    setPreset(nextPreset)
+    const latestYear = years.length > 0 ? years[years.length - 1] : currentYear
+    if (nextPreset === '5') {
+      setFromYear(Math.max(1970, latestYear - 4))
+      setToYear(latestYear)
+    } else if (nextPreset === '10') {
+      setFromYear(Math.max(1970, latestYear - 9))
+      setToYear(latestYear)
+    }
+  }
+
+  // Generate Year options for dropdowns (e.g., from 1970 to currentYear + 1)
   const yearOptions = useMemo(() => {
     const opts: number[] = []
-    for (let y = currentYear + 1; y >= 1990; y--) {
+    const startYear = years.length > 0 ? Math.min(1975, years[0]) : 1975
+    const endYear = currentYear + 1
+    for (let y = endYear; y >= startYear; y--) {
       opts.push(y)
     }
     return opts
-  }, [currentYear])
+  }, [currentYear, years])
 
   // Transform matrix data for Recharts BarChart
   const chartData = useMemo(() => {

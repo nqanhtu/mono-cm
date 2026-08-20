@@ -203,13 +203,13 @@ export const reportRoutes = new Elysia()
 
       const fromYearNum = query.fromYear ? parseInt(String(query.fromYear), 10) : undefined
       const toYearNum = query.toYear ? parseInt(String(query.toYear), 10) : undefined
-      const typeFilter = query.type ? String(query.type) : undefined
+      const typeFilter = query.type ? String(query.type).trim() : undefined
 
       const where: Prisma.FileWhereInput = {
         AND: [
           fromYearNum ? { year: { gte: fromYearNum } } : {},
           toYearNum ? { year: { lte: toYearNum } } : {},
-          typeFilter ? { type: { equals: typeFilter } } : {},
+          typeFilter ? { type: { contains: typeFilter, mode: 'insensitive' } } : {},
         ],
       }
 
@@ -222,6 +222,9 @@ export const reportRoutes = new Elysia()
         },
       })
 
+      const isValidYear = (y: number | null | undefined): y is number =>
+        typeof y === 'number' && y >= 1950 && y <= 2050
+
       // Determine year range
       let years: number[] = []
       if (fromYearNum && toYearNum) {
@@ -231,7 +234,7 @@ export const reportRoutes = new Elysia()
       } else {
         const foundYears = new Set<number>()
         files.forEach((f) => {
-          if (typeof f.year === 'number') foundYears.add(f.year)
+          if (isValidYear(f.year)) foundYears.add(f.year)
         })
         if (foundYears.size > 0) {
           years = Array.from(foundYears).sort((a, b) => a - b)
@@ -243,15 +246,19 @@ export const reportRoutes = new Elysia()
         }
       }
 
-      // Collect distinct types
+      // Collect distinct normalized types
       const typesSet = new Set<string>()
       files.forEach((f) => {
-        if (f.type) typesSet.add(f.type)
+        const norm = (f.type || '').trim() || 'Chưa phân loại'
+        typesSet.add(norm)
       })
 
-      const predefinedTypes = [
+      const predefinedOrder = [
         'Dân sự sơ thẩm',
+        'Hôn nhân sơ thẩm',
         'Hình sự sơ thẩm',
+        'Dân sự',
+        'Hình sự',
         'Hôn nhân gia đình',
         'Hành chính',
         'Kinh doanh thương mại',
@@ -260,18 +267,17 @@ export const reportRoutes = new Elysia()
         'Hình sự phúc thẩm',
       ]
       
-      // Preserve predefined order first, then add any additional types
       const orderedTypes: string[] = []
-      predefinedTypes.forEach((t) => {
+      predefinedOrder.forEach((t) => {
         if (typesSet.has(t)) {
           orderedTypes.push(t)
           typesSet.delete(t)
         }
       })
+      // Add any remaining types found in database
       typesSet.forEach((t) => orderedTypes.push(t))
 
-      // If no files or specific filter, make sure types array is reasonable
-      const types = orderedTypes.length > 0 ? orderedTypes : (typeFilter ? [typeFilter] : predefinedTypes)
+      const types = orderedTypes.length > 0 ? orderedTypes : (typeFilter ? [typeFilter] : predefinedOrder)
 
       // Initialize structures
       const matrixMap: Record<string, Record<number, number>> = {}
@@ -294,8 +300,8 @@ export const reportRoutes = new Elysia()
         grandTotal += 1
         totalPageCount += f.pageCount || 0
         const y = f.year
-        const t = f.type
-        if (y && matrixMap[t] && typeof matrixMap[t][y] === 'number') {
+        const t = (f.type || '').trim() || 'Chưa phân loại'
+        if (isValidYear(y) && matrixMap[t] && typeof matrixMap[t][y] === 'number') {
           matrixMap[t][y] += 1
           yearTotals[y] = (yearTotals[y] || 0) + 1
         }
@@ -354,7 +360,7 @@ export const reportRoutes = new Elysia()
       if (denied) return denied
 
       const year = query.year ? parseInt(String(query.year), 10) : undefined
-      const type = query.type ? String(query.type) : undefined
+      const type = query.type ? String(query.type).trim() : undefined
 
       if (!year || !type) {
         return jsonError(set, 'Thiếu thông tin năm hoặc loại án', 400)
@@ -363,7 +369,11 @@ export const reportRoutes = new Elysia()
       const files = await db.file.findMany({
         where: {
           year,
-          type,
+          OR: [
+            { type: { equals: type, mode: 'insensitive' } },
+            { type: { startsWith: `${type} ` } },
+            { type: { startsWith: type } },
+          ],
         },
         include: {
           box: true,
@@ -418,6 +428,9 @@ async function loadReportRows(type: 'files' | 'borrows' | 'audit' | 'case-matrix
       select: { type: true, year: true },
     })
 
+    const isValidYear = (y: number | null | undefined): y is number =>
+      typeof y === 'number' && y >= 1950 && y <= 2050
+
     let years: number[] = []
     if (fromYearNum && toYearNum) {
       for (let y = fromYearNum; y <= toYearNum; y++) {
@@ -426,7 +439,7 @@ async function loadReportRows(type: 'files' | 'borrows' | 'audit' | 'case-matrix
     } else {
       const foundYears = new Set<number>()
       files.forEach((f) => {
-        if (typeof f.year === 'number') foundYears.add(f.year)
+        if (isValidYear(f.year)) foundYears.add(f.year)
       })
       if (foundYears.size > 0) {
         years = Array.from(foundYears).sort((a, b) => a - b)
@@ -440,12 +453,16 @@ async function loadReportRows(type: 'files' | 'borrows' | 'audit' | 'case-matrix
 
     const typesSet = new Set<string>()
     files.forEach((f) => {
-      if (f.type) typesSet.add(f.type)
+      const norm = (f.type || '').trim() || 'Chưa phân loại'
+      typesSet.add(norm)
     })
 
-    const predefinedTypes = [
+    const predefinedOrder = [
       'Dân sự sơ thẩm',
+      'Hôn nhân sơ thẩm',
       'Hình sự sơ thẩm',
+      'Dân sự',
+      'Hình sự',
       'Hôn nhân gia đình',
       'Hành chính',
       'Kinh doanh thương mại',
@@ -455,14 +472,14 @@ async function loadReportRows(type: 'files' | 'borrows' | 'audit' | 'case-matrix
     ]
 
     const orderedTypes: string[] = []
-    predefinedTypes.forEach((t) => {
+    predefinedOrder.forEach((t) => {
       if (typesSet.has(t)) {
         orderedTypes.push(t)
         typesSet.delete(t)
       }
     })
     typesSet.forEach((t) => orderedTypes.push(t))
-    const types = orderedTypes.length > 0 ? orderedTypes : predefinedTypes
+    const types = orderedTypes.length > 0 ? orderedTypes : predefinedOrder
 
     const matrixMap: Record<string, Record<number, number>> = {}
     const yearTotals: Record<number, number> = {}
@@ -480,8 +497,8 @@ async function loadReportRows(type: 'files' | 'borrows' | 'audit' | 'case-matrix
     files.forEach((f) => {
       grandTotal += 1
       const y = f.year
-      const t = f.type
-      if (y && matrixMap[t] && typeof matrixMap[t][y] === 'number') {
+      const t = (f.type || '').trim() || 'Chưa phân loại'
+      if (isValidYear(y) && matrixMap[t] && typeof matrixMap[t][y] === 'number') {
         matrixMap[t][y] += 1
         yearTotals[y] = (yearTotals[y] || 0) + 1
       }
