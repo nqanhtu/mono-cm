@@ -45,6 +45,11 @@ const statuses = [
   { value: "LOST", label: "Thất lạc" },
 ];
 
+const storageBoxStatusOptions = [
+  { value: "false", label: "Chưa có hộp" },
+  { value: "true", label: "Đã có hộp" },
+];
+
 const defaultCaseTypes = [
   "Hình sự sơ thẩm",
   "Dân sự sơ thẩm",
@@ -98,6 +103,7 @@ export function FileTableToolbar<TData>({
     "q",
     "type",
     "status",
+    "hasBox",
     ...advancedFilterKeys,
     "createdById",
   ].some((key) => !!searchParams.get(key)) || table.getState().columnFilters.length > 0;
@@ -122,6 +128,11 @@ export function FileTableToolbar<TData>({
     searchParams.get("q") ? { key: "q", label: "Tìm kiếm", value: searchParams.get("q")! } : null,
     searchParams.get("type") ? { key: "type", label: "Loại án", value: searchParams.get("type")! } : null,
     searchParams.get("status") ? { key: "status", label: "Trạng thái", value: statuses.find((status) => status.value === searchParams.get("status"))?.label || searchParams.get("status")! } : null,
+    searchParams.get("hasBox") ? {
+      key: "hasBox",
+      label: "Hộp lưu trữ",
+      value: storageBoxStatusOptions.find((o) => o.value === searchParams.get("hasBox"))?.label || searchParams.get("hasBox")!
+    } : null,
     searchParams.get("createdById") ? { key: "createdById", label: "Điều phối", value: coordinatorOptions.find((option) => option.value === searchParams.get("createdById"))?.label || "Đã chọn" } : null,
     searchParams.get("year") ? { key: "year", label: "Năm", value: searchParams.get("year")! } : null,
     searchParams.get("judgmentNumber") ? { key: "judgmentNumber", label: "Số án", value: searchParams.get("judgmentNumber")! } : null,
@@ -158,6 +169,7 @@ export function FileTableToolbar<TData>({
       "q",
       "type",
       "status",
+      "hasBox",
       "year",
       "judgmentNumber",
       "party",
@@ -266,6 +278,13 @@ export function FileTableToolbar<TData>({
           options={statuses}
           value={searchParams.get("status") ? [searchParams.get("status")!] : []}
           onFilter={(values) => setUrlParam("status", values?.[0] || "all")}
+        />
+
+        <DataTableFacetedFilter
+          title="Hộp lưu trữ"
+          options={storageBoxStatusOptions}
+          value={searchParams.get("hasBox") ? [searchParams.get("hasBox")!] : []}
+          onFilter={(values) => setUrlParam("hasBox", values?.[0] || "all")}
         />
 
         {isSuperOrAdmin && (

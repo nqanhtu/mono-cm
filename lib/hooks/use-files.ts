@@ -9,6 +9,7 @@ export interface SearchParams {
     type?: string
     year?: number
     status?: string
+    hasBox?: string
     judgmentNumber?: string
     party?: string
     warehouse?: string
@@ -28,6 +29,7 @@ export function getFilesQueryString(params: SearchParams) {
     if (params.type && params.type !== 'all') queryString.set('type', params.type)
     if (params.year) queryString.set('year', params.year.toString())
     if (params.status && params.status !== 'all') queryString.set('status', params.status)
+    if (params.hasBox && params.hasBox !== 'all') queryString.set('hasBox', params.hasBox)
     if (params.judgmentNumber) queryString.set('judgmentNumber', params.judgmentNumber)
     if (params.party) queryString.set('party', params.party)
     if (params.warehouse) queryString.set('warehouse', params.warehouse)

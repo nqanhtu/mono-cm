@@ -19,6 +19,7 @@ export function FileListSection({ onCreate }: FileListSectionProps) {
     const q = searchParams.get('q') || undefined
     const type = searchParams.get('type') || undefined
     const status = searchParams.get('status') || undefined
+    const hasBox = searchParams.get('hasBox') || undefined
     const judgmentNumber = searchParams.get('judgmentNumber') || undefined
     const party = searchParams.get('party') || undefined
     const warehouse = searchParams.get('warehouse') || undefined
@@ -35,6 +36,7 @@ export function FileListSection({ onCreate }: FileListSectionProps) {
         query: q,
         type,
         status,
+        hasBox,
         judgmentNumber,
         party,
         warehouse,
