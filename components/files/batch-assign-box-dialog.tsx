@@ -104,26 +104,26 @@ export function BatchAssignBoxDialog({
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !isSubmitting && !open && onClose()}>
-      <DialogContent className="max-w-md">
-        <DialogHeader>
-          <div className="flex items-center gap-2">
-            <div className="flex size-9 items-center justify-center rounded-lg bg-primary/10 text-primary">
+      <DialogContent className="sm:max-w-lg w-full min-w-0 overflow-hidden">
+        <DialogHeader className="min-w-0">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
               <Archive className="size-5" />
             </div>
-            <div>
-              <DialogTitle className="text-base font-bold">
+            <div className="min-w-0 flex-1">
+              <DialogTitle className="text-base font-bold truncate">
                 Chuyển {selectedFiles.length} hồ sơ vào hộp lưu trữ
               </DialogTitle>
-              <DialogDescription className="text-xs">
+              <DialogDescription className="text-xs truncate">
                 Chọn hộp lưu trữ đích để xếp tất cả hồ sơ đã chọn vào.
               </DialogDescription>
             </div>
           </div>
         </DialogHeader>
 
-        <div className="space-y-4 py-2">
+        <div className="space-y-4 py-2 min-w-0 w-full">
           {/* Danh sách hồ sơ sẽ chuyển */}
-          <div className="space-y-1.5">
+          <div className="space-y-1.5 min-w-0 w-full">
             <div className="flex items-center justify-between text-xs">
               <span className="font-semibold text-foreground">
                 Danh sách hồ sơ ({selectedFiles.length})
@@ -132,25 +132,25 @@ export function BatchAssignBoxDialog({
                 Bấm <span className="font-semibold text-destructive">✕</span> để loại bớt hồ sơ
               </span>
             </div>
-            <div className="max-h-40 overflow-y-auto rounded-lg border bg-slate-50/50 p-1.5 space-y-1 dark:bg-slate-900/40 dark:border-slate-800">
+            <div className="max-h-40 overflow-y-auto rounded-lg border bg-slate-50/50 p-1.5 space-y-1 min-w-0 w-full dark:bg-slate-900/40 dark:border-slate-800">
               {selectedFiles.length === 0 ? (
                 <p className="text-xs text-muted-foreground text-center py-4">Chưa có hồ sơ nào được chọn</p>
               ) : (
                 selectedFiles.map((file) => (
                   <div
                     key={file.id}
-                    className="flex items-center justify-between gap-2 rounded-md border bg-background px-2.5 py-1.5 text-xs shadow-2xs dark:border-slate-800"
+                    className="flex items-center justify-between gap-2 rounded-md border bg-background px-2.5 py-1.5 text-xs shadow-2xs min-w-0 w-full dark:border-slate-800"
                   >
-                    <div className="flex items-center gap-2 min-w-0 flex-1">
+                    <div className="flex items-center gap-2 min-w-0 flex-1 overflow-hidden">
                       <span className="font-mono font-bold text-primary shrink-0">
                         {file.code || 'Chưa có mã'}
                       </span>
-                      <span className="truncate text-slate-700 dark:text-slate-300">
+                      <span className="truncate text-slate-700 dark:text-slate-300 min-w-0 block" title={file.title}>
                         {file.title}
                       </span>
                     </div>
                     <div className="flex items-center gap-1.5 shrink-0">
-                      <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-4 text-muted-foreground">
+                      <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-4 text-muted-foreground shrink-0">
                         {file.box?.code ? (
                           <>
                             Hộp: <span>{file.box.code}</span>
@@ -166,7 +166,7 @@ export function BatchAssignBoxDialog({
                           size="icon"
                           aria-label={`Loại bỏ ${file.code || file.title}`}
                           onClick={() => onRemoveFile(file.id)}
-                          className="size-5 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-full"
+                          className="size-5 shrink-0 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-full"
                         >
                           <X className="size-3" />
                         </Button>
@@ -178,7 +178,7 @@ export function BatchAssignBoxDialog({
             </div>
           </div>
 
-          <div className="space-y-1.5">
+          <div className="space-y-1.5 min-w-0 w-full">
             <label className="text-xs font-semibold text-foreground">
               Hộp lưu trữ đích <span className="text-destructive">*</span>
             </label>
@@ -188,18 +188,18 @@ export function BatchAssignBoxDialog({
                   variant="outline"
                   role="combobox"
                   aria-expanded={isComboboxOpen}
-                  className="w-full justify-between font-normal text-sm h-10"
+                  className="w-full justify-between font-normal text-sm h-10 min-w-0 overflow-hidden"
                   disabled={isSubmitting || isLoadingBoxes}
                 >
                   {selectedBox ? (
-                    <span className="flex items-center gap-2 truncate">
-                      <span className="font-semibold font-mono">{selectedBox.code}</span>
-                      <span className="text-muted-foreground text-xs">
+                    <span className="flex items-center gap-2 truncate min-w-0">
+                      <span className="font-semibold font-mono shrink-0">{selectedBox.code}</span>
+                      <span className="text-muted-foreground text-xs truncate">
                         ({selectedBox.warehouse} - {selectedBox.line} - {selectedBox.shelf})
                       </span>
                     </span>
                   ) : (
-                    <span className="text-muted-foreground">
+                    <span className="text-muted-foreground truncate">
                       {isLoadingBoxes ? 'Đang tải danh sách hộp...' : 'Tìm kiếm và chọn hộp lưu trữ...'}
                     </span>
                   )}
@@ -256,35 +256,35 @@ export function BatchAssignBoxDialog({
           </div>
 
           {selectedBox && (
-            <div className="rounded-lg border bg-slate-50/80 p-3 text-xs space-y-2 dark:bg-slate-900/50 dark:border-slate-800">
-              <div className="flex items-center justify-between border-b pb-2 dark:border-slate-800">
+            <div className="rounded-lg border bg-slate-50/80 p-3 text-xs space-y-2 min-w-0 w-full dark:bg-slate-900/50 dark:border-slate-800">
+              <div className="flex items-center justify-between border-b pb-2 min-w-0 dark:border-slate-800">
                 <span className="font-semibold text-slate-700 dark:text-slate-200">Thông tin hộp</span>
-                <Badge variant="outline" className="font-mono bg-background">
+                <Badge variant="outline" className="font-mono bg-background shrink-0">
                   {selectedBox.code}
                 </Badge>
               </div>
-              <div className="grid grid-cols-2 gap-2 text-muted-foreground">
-                <div className="flex items-center gap-1.5">
+              <div className="grid grid-cols-2 gap-2 text-muted-foreground min-w-0">
+                <div className="flex items-center gap-1.5 min-w-0">
                   <MapPin className="size-3.5 shrink-0 text-slate-500" />
                   <span className="truncate">
                     {selectedBox.warehouse} - {selectedBox.line} - {selectedBox.shelf} {selectedBox.slot ? `- ${selectedBox.slot}` : ''}
                   </span>
                 </div>
-                <div className="flex items-center gap-1.5">
+                <div className="flex items-center gap-1.5 min-w-0">
                   <FolderArchive className="size-3.5 shrink-0 text-slate-500" />
                   <span className="truncate">Đang có: {selectedBox._count?.files ?? 0} hồ sơ</span>
                 </div>
-                <div className="flex items-center gap-1.5">
+                <div className="flex items-center gap-1.5 min-w-0">
                   <Layers className="size-3.5 shrink-0 text-slate-500" />
                   <span className="truncate">{selectedBox.caseType || 'Chưa phân loại'}</span>
                 </div>
-                <div className="flex items-center gap-1.5">
+                <div className="flex items-center gap-1.5 min-w-0">
                   <Clock className="size-3.5 shrink-0 text-slate-500" />
                   <span className="truncate">Thời hạn: {selectedBox.retention || 'Không khóa'}</span>
                 </div>
               </div>
               {selectedBox.retention && (
-                <div className="text-[11px] text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/30 p-1.5 rounded border border-amber-200/50 dark:border-amber-900/50">
+                <div className="text-[11px] text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/30 p-1.5 rounded border border-amber-200/50 dark:border-amber-900/50 min-w-0">
                   Thời hạn bảo quản của các hồ sơ được chọn sẽ tự động đồng bộ theo hộp (<strong>{selectedBox.retention}</strong>).
                 </div>
               )}
@@ -292,7 +292,7 @@ export function BatchAssignBoxDialog({
           )}
         </div>
 
-        <DialogFooter className="gap-2 sm:gap-0">
+        <DialogFooter className="gap-2 sm:gap-0 min-w-0 w-full">
           <Button
             type="button"
             variant="ghost"
