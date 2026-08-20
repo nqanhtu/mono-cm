@@ -3,6 +3,8 @@ import * as React from 'react'
 import {
   ColumnFiltersState,
   ColumnDef,
+  OnChangeFn,
+  RowSelectionState,
   SortingState,
   VisibilityState,
   flexRender,
@@ -82,7 +84,46 @@ export function FileTable({
   onSortingChange,
 }: FileTableProps) {
   const searchParams = useSearchParams()
-  const [rowSelection, setRowSelection] = React.useState({})
+  const [selectedFilesMap, setSelectedFilesMap] = React.useState<Record<string, FileWithBox>>({})
+
+  const rowSelection = React.useMemo(() => {
+    const sel: Record<string, boolean> = {}
+    for (const id of Object.keys(selectedFilesMap)) {
+      sel[id] = true
+    }
+    return sel
+  }, [selectedFilesMap])
+
+  const handleRowSelectionChange: OnChangeFn<RowSelectionState> = React.useCallback(
+    (updater) => {
+      const nextSelection = typeof updater === 'function' ? updater(rowSelection) : updater
+      setSelectedFilesMap((prev) => {
+        const next = { ...prev }
+        // Cập nhật cho các hồ sơ của trang hiện tại
+        for (const file of files) {
+          if (nextSelection[file.id]) {
+            next[file.id] = file
+          } else {
+            delete next[file.id]
+          }
+        }
+        return next
+      })
+    },
+    [files, rowSelection]
+  )
+
+  const handleRemoveSelectedFile = React.useCallback((fileId: string) => {
+    setSelectedFilesMap((prev) => {
+      const next = { ...prev }
+      delete next[fileId]
+      return next
+    })
+  }, [])
+
+  const selectedFiles = React.useMemo(() => Object.values(selectedFilesMap), [selectedFilesMap])
+  const selectedCount = selectedFiles.length
+
   const [isBorrowModalOpen, setIsBorrowModalOpen] = React.useState(false);
   const [borrowFiles, setBorrowFiles] = React.useState<FileWithBox[]>([]);
   const [isPrintModalOpen, setIsPrintModalOpen] = React.useState(false);
@@ -221,7 +262,7 @@ export function FileTable({
         onPaginationChange(nextState.pageIndex + 1, nextState.pageSize);
       }
     } : undefined,
-    onRowSelectionChange: setRowSelection,
+    onRowSelectionChange: handleRowSelectionChange,
     onSortingChange: (updater) => {
       const nextSorting = typeof updater === 'function' ? updater(activeSorting) : updater
       handleSortingChange(nextSorting)
@@ -234,8 +275,6 @@ export function FileTable({
     getSortedRowModel: getSortedRowModel(),
   })
 
-  const selectedRows = table.getFilteredSelectedRowModel().rows
-
   const handleBulkDelete = React.useCallback(async (selectedFiles: FileWithBox[]) => {
     try {
       await Promise.all(
@@ -244,7 +283,7 @@ export function FileTable({
         )
       );
       toast.success(`Đã lưu trữ thành công ${selectedFiles.length} hồ sơ`);
-      table.resetRowSelection();
+      setSelectedFilesMap({});
       queryClient.invalidateQueries({ queryKey: queryKeys.files.all });
       queryClient.invalidateQueries({ queryKey: queryKeys.files.stats });
       queryClient.invalidateQueries({ queryKey: queryKeys.boxes.all });
@@ -252,7 +291,7 @@ export function FileTable({
     } catch {
       toast.error('Có lỗi xảy ra khi lưu trữ hồ sơ');
     }
-  }, [onRefresh, table]);
+  }, [onRefresh]);
 
   const hasActiveFilters = [
     "q",
@@ -267,7 +306,6 @@ export function FileTable({
     "slot",
     "createdById",
   ].some((key) => !!searchParams.get(key))
-  const selectedFiles = selectedRows.map((row) => row.original)
   const actionColumnClassName = "sticky right-0 z-20 bg-background shadow-[-10px_0_16px_-14px_rgba(15,23,42,0.55)]"
   const getStickyActionClassName = (columnId: string) => columnId === "actions" ? actionColumnClassName : undefined
 
@@ -282,14 +320,14 @@ export function FileTable({
       />
       <TableSurface
         toolbar={
-          selectedRows.length > 0 ? (
+          selectedCount > 0 ? (
             <div className="relative h-10 w-full overflow-hidden">
               <div
                 className="absolute inset-0 flex items-center justify-between rounded-lg border border-slate-200 bg-slate-50 px-3 text-slate-900 shadow-xs dark:border-slate-800 dark:bg-slate-900 dark:text-slate-100"
               >
                 <div className="flex items-center gap-2 pl-1 text-sm font-semibold">
                   <span className="flex size-5 items-center justify-center rounded bg-primary text-xs text-primary-foreground">
-                    {selectedRows.length}
+                    {selectedCount}
                   </span>
                   <span>hồ sơ đã chọn</span>
                 </div>
@@ -337,7 +375,7 @@ export function FileTable({
                   <Button
                     size="sm"
                     variant="ghost"
-                    onClick={() => table.resetRowSelection()}
+                    onClick={() => setSelectedFilesMap({})}
                     className="h-7 rounded-md text-xs font-semibold text-muted-foreground"
                   >
                     Bỏ chọn
@@ -494,7 +532,7 @@ export function FileTable({
           initialFiles={borrowFiles}
           onSuccess={() => {
             setIsBorrowModalOpen(false);
-            setRowSelection({});
+            setSelectedFilesMap({});
             queryClient.invalidateQueries({ queryKey: queryKeys.files.all });
             queryClient.invalidateQueries({ queryKey: queryKeys.files.stats });
             queryClient.invalidateQueries({ queryKey: queryKeys.borrow.all });
@@ -513,8 +551,9 @@ export function FileTable({
         isOpen={isAssignBoxModalOpen}
         onClose={() => setIsAssignBoxModalOpen(false)}
         selectedFiles={selectedFiles}
+        onRemoveFile={handleRemoveSelectedFile}
         onSuccess={() => {
-          table.resetRowSelection()
+          setSelectedFilesMap({})
           queryClient.invalidateQueries({ queryKey: queryKeys.files.all })
           queryClient.invalidateQueries({ queryKey: queryKeys.files.stats })
           queryClient.invalidateQueries({ queryKey: queryKeys.boxes.all })
@@ -525,7 +564,7 @@ export function FileTable({
       <AlertDialog open={isBulkDeleteDialogOpen} onOpenChange={setIsBulkDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Lưu trữ {selectedRows.length} hồ sơ?</AlertDialogTitle>
+            <AlertDialogTitle>Lưu trữ {selectedCount} hồ sơ?</AlertDialogTitle>
             <AlertDialogDescription>
               Các hồ sơ đã chọn sẽ chuyển sang trạng thái ngừng sử dụng và bị ẩn khỏi danh sách mặc định. Lịch sử mượn/trả vẫn được giữ lại.
             </AlertDialogDescription>

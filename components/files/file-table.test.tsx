@@ -102,6 +102,89 @@ describe('FileTable row selection', () => {
     expect(newRowCheckboxes[1]).not.toBeChecked()
   })
 
+  it('persists selected files across multiple pages and accumulates count and selected items', () => {
+    const page1Files = [
+      createMockFile('file-1', 'HS-001', 'Hồ sơ 1'),
+      createMockFile('file-2', 'HS-002', 'Hồ sơ 2'),
+    ]
+    const page2Files = [
+      createMockFile('file-3', 'HS-003', 'Hồ sơ 3'),
+      createMockFile('file-4', 'HS-004', 'Hồ sơ 4'),
+    ]
+
+    const onPaginationChange = vi.fn()
+
+    const { rerender } = renderFileTable({
+      files: page1Files,
+      total: 4,
+      page: 1,
+      pageSize: 2,
+      onPaginationChange,
+      canManageFiles: true,
+    })
+
+    // Select file-1 on page 1
+    const p1Checkboxes = screen.getAllByRole('checkbox', { name: /select row/i })
+    fireEvent.click(p1Checkboxes[0])
+    expect(p1Checkboxes[0]).toBeChecked()
+    expect(screen.getByText('1')).toBeInTheDocument()
+
+    // Switch to page 2
+    const queryClient = new QueryClient({
+      defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
+    })
+
+    rerender(
+      <QueryClientProvider client={queryClient}>
+        <MemoryRouter>
+          <FileTable
+            files={page2Files}
+            total={4}
+            page={2}
+            pageSize={2}
+            onPaginationChange={onPaginationChange}
+            canManageFiles={true}
+          />
+        </MemoryRouter>
+      </QueryClientProvider>
+    )
+
+    // On page 2: toolbar should still show "1 hồ sơ đã chọn" from page 1
+    expect(screen.getByText('1')).toBeInTheDocument()
+    expect(screen.getByText('hồ sơ đã chọn')).toBeInTheDocument()
+
+    // Select file-3 on page 2
+    const p2Checkboxes = screen.getAllByRole('checkbox', { name: /select row/i })
+    expect(p2Checkboxes[0]).not.toBeChecked()
+    fireEvent.click(p2Checkboxes[0])
+    expect(p2Checkboxes[0]).toBeChecked()
+
+    // Total count should now be 2
+    expect(screen.getByText('2')).toBeInTheDocument()
+
+    // Switch back to page 1
+    rerender(
+      <QueryClientProvider client={queryClient}>
+        <MemoryRouter>
+          <FileTable
+            files={page1Files}
+            total={4}
+            page={1}
+            pageSize={2}
+            onPaginationChange={onPaginationChange}
+            canManageFiles={true}
+          />
+        </MemoryRouter>
+      </QueryClientProvider>
+    )
+
+    // file-1 should still be checked and total count still 2
+    const p1CheckboxesBack = screen.getAllByRole('checkbox', { name: /select row/i })
+    expect(p1CheckboxesBack[0]).toBeChecked()
+    expect(p1CheckboxesBack[1]).not.toBeChecked()
+    expect(screen.getByText('2')).toBeInTheDocument()
+  })
+
   it('shows "Chuyển vào hộp" button when files are selected and canManageFiles is true', () => {
     const files = [
       createMockFile('file-1', 'HS-001', 'Hồ sơ 1'),
