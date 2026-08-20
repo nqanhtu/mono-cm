@@ -210,6 +210,7 @@ export const reportRoutes = new Elysia()
           fromYearNum ? { year: { gte: fromYearNum } } : {},
           toYearNum ? { year: { lte: toYearNum } } : {},
           typeFilter ? { type: { contains: typeFilter, mode: 'insensitive' } } : {},
+          { status: { not: 'ARCHIVED' } },
         ],
       }
 
@@ -369,6 +370,7 @@ export const reportRoutes = new Elysia()
       const files = await db.file.findMany({
         where: {
           year,
+          status: { not: 'ARCHIVED' },
           OR: [
             { type: { equals: type, mode: 'insensitive' } },
             { type: { startsWith: `${type} ` } },
@@ -420,6 +422,7 @@ async function loadReportRows(type: 'files' | 'borrows' | 'audit' | 'case-matrix
       AND: [
         fromYearNum ? { year: { gte: fromYearNum } } : {},
         toYearNum ? { year: { lte: toYearNum } } : {},
+        { status: { not: 'ARCHIVED' } },
       ],
     }
 

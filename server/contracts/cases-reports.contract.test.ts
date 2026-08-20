@@ -87,4 +87,26 @@ describe('cases reports contract', () => {
     expect(response.status).toBe(200)
     expect(response.headers.get('content-type')).toContain('spreadsheetml.sheet')
   })
+
+  test('GET /api/reports/cases-matrix filters out ARCHIVED files in Prisma where input', async () => {
+    const app = createTestApp()
+    let capturedWhere: unknown = null
+    setDbForTesting({
+      file: {
+        findMany: async (args: { where?: unknown }) => {
+          capturedWhere = args.where
+          return []
+        },
+      },
+    })
+
+    const response = await app.handle(jsonRequest('/api/reports/cases-matrix', {
+      headers: { cookie: await sessionCookie('VIEWER') },
+    }))
+
+    expect(response.status).toBe(200)
+    expect(capturedWhere).toMatchObject({
+      AND: expect.arrayContaining([{ status: { not: 'ARCHIVED' } }]),
+    })
+  })
 })
