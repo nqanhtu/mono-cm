@@ -24,6 +24,7 @@ export const fileRoutes = new Elysia()
     const line = query.line || undefined
     const shelf = query.shelf || undefined
     const slot = query.slot || undefined
+    const hasBox = query.hasBox || undefined
     const limit = toInt(query.limit, 20) ?? 20
     const offset = toInt(query.offset, 0) ?? 0
     const sortField = query.sortField || undefined
@@ -74,6 +75,8 @@ export const fileRoutes = new Elysia()
         type && type !== 'all' ? { type: { equals: type } } : {},
         year ? { year: { equals: year } } : {},
         status && status !== 'all' ? { status: { equals: status } } : { NOT: { status: 'ARCHIVED' } },
+        hasBox === 'false' ? { boxId: null } : {},
+        hasBox === 'true' ? { boxId: { not: null } } : {},
         judgmentNumber ? { judgmentNumber: { contains: judgmentNumber, mode: 'insensitive' } } : {},
         party ? (
           partyFileIds !== undefined 

@@ -48,6 +48,64 @@ describe('files contract', () => {
       expect(countCalls).toHaveLength(1)
     })
 
+    test('GET /api/files?hasBox=false queries files with boxId null', async () => {
+      const app = createTestApp()
+      const findManyCalls: unknown[] = []
+      const countCalls: unknown[] = []
+
+      setDbForTesting({
+        file: {
+          findMany: async (args: unknown) => {
+            findManyCalls.push(args)
+            return []
+          },
+          count: async (args: unknown) => {
+            countCalls.push(args)
+            return 0
+          },
+        },
+      })
+
+      const response = await app.handle(jsonRequest('/api/files?hasBox=false', {
+        headers: { cookie: await sessionCookie('ADMIN') },
+      }))
+
+      expect(response.status).toBe(200)
+      expect(findManyCalls).toHaveLength(1)
+      expect(findManyCalls[0]).toMatchObject({
+        where: {
+          AND: expect.arrayContaining([{ boxId: null }]),
+        },
+      })
+    })
+
+    test('GET /api/files?hasBox=true queries files with boxId not null', async () => {
+      const app = createTestApp()
+      const findManyCalls: unknown[] = []
+
+      setDbForTesting({
+        file: {
+          findMany: async (args: unknown) => {
+            findManyCalls.push(args)
+            return []
+          },
+          count: async () => 0,
+        },
+      })
+
+      const response = await app.handle(jsonRequest('/api/files?hasBox=true', {
+        headers: { cookie: await sessionCookie('ADMIN') },
+      }))
+
+      expect(response.status).toBe(200)
+      expect(findManyCalls).toHaveLength(1)
+      expect(findManyCalls[0]).toMatchObject({
+        where: {
+          AND: expect.arrayContaining([{ boxId: { not: null } }]),
+        },
+      })
+    })
+
     test('GET /api/files/:id keeps the successful detail response shape', async () => {
       const app = createTestApp()
       const file = {
