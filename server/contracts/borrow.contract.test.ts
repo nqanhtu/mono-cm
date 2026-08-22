@@ -305,4 +305,90 @@ describe('borrow contract', () => {
         data: { borrowSlipId: 'borrow-1', eventType: 'APPROVED', creatorId: 'test-user-id' },
       })
     })
+
+    test('POST /api/borrow allows ADMIN to create a borrow request', async () => {
+      const app = createTestApp()
+      const createCalls: unknown[] = []
+
+      setDbForTesting({
+        file: {
+          findMany: async () => [{ id: 'file-1', code: 'HS-001', status: 'IN_STOCK' }],
+        },
+        borrowItem: {
+          findFirst: async () => null,
+        },
+        $transaction: async (callback: (tx: unknown) => Promise<unknown>) => callback({
+          file: {
+            updateMany: async () => ({ count: 1 }),
+          },
+          borrowSlip: {
+            create: async (args: unknown) => {
+              createCalls.push(args)
+              return { id: 'borrow-admin-1', code: 'PM-2026-0002' }
+            },
+          },
+        }),
+        borrowSlipEvent: {
+          create: async () => ({ id: 'event-1' }),
+        },
+        auditLog: {
+          create: async () => ({ id: 'audit-1' }),
+        },
+      })
+
+      const response = await app.handle(postJson('/api/borrow', {
+        borrowerName: 'Trần Văn B',
+        dueDate: '2026-06-01',
+        fileIds: ['file-1'],
+      }, {
+        headers: { cookie: await sessionCookie('ADMIN') },
+      }))
+
+      expect(response.status).toBe(200)
+      expect(await response.json()).toEqual({ success: true, slipId: 'borrow-admin-1' })
+      expect(createCalls[0]).toMatchObject({
+        data: {
+          borrowerName: 'Trần Văn B',
+          status: 'PENDING_APPROVAL',
+        },
+      })
+    })
+
+    test('POST /api/borrow/:id/export allows ADMIN to export approved slip', async () => {
+      const app = createTestApp()
+
+      setDbForTesting({
+        borrowSlip: {
+          findUnique: async () => ({
+            id: 'borrow-1',
+            status: 'APPROVED',
+            items: [{ fileId: 'file-1' }],
+          }),
+        },
+        $transaction: async (callback: (tx: unknown) => Promise<unknown>) => callback({
+          file: {
+            updateMany: async () => ({ count: 1 }),
+          },
+          borrowItem: {
+            updateMany: async () => ({ count: 1 }),
+          },
+          borrowSlip: {
+            update: async () => ({ id: 'borrow-1', status: 'EXPORTED' }),
+          },
+        }),
+        borrowSlipEvent: {
+          create: async () => ({ id: 'event-1' }),
+        },
+        auditLog: {
+          create: async () => ({ id: 'audit-1' }),
+        },
+      })
+
+      const response = await app.handle(postJson('/api/borrow/borrow-1/export', {}, {
+        headers: { cookie: await sessionCookie('ADMIN') },
+      }))
+
+      expect(response.status).toBe(200)
+      expect(await response.json()).toEqual({ success: true, status: 'EXPORTED' })
+    })
 })
