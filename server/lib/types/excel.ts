@@ -16,10 +16,10 @@ export interface ExtractedFile {
     retention: string
     startDate?: Date
     endDate?: Date
-    details: FileDetails
+    details?: FileDetails
     boxCode: string // Links to Location
-    indexCode: string // MLHS
-    note: string // Ghi chú
+    indexCode?: string // MLHS
+    note?: string // Ghi chú
     judgmentNumber?: string // Số bản án
     defendants?: string[] // Bị cáo
     plaintiffs?: string[] // Nguyên đơn

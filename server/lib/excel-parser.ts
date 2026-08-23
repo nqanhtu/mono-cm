@@ -1,16 +1,8 @@
 import * as XLSX from 'xlsx'
-import { ExtractedFile, ExtractedDocument, ExtractedLocation, ImportData, FileDetails, ExtractedUser } from './types/excel'
-
-
+import { ExtractedFile, ExtractedDocument, ExtractedLocation, ImportData, ExtractedUser } from './types/excel'
 
 export const parseExcelFile = async (buffer: ArrayBuffer): Promise<ImportData> => {
-    const workbook = XLSX.read(buffer, { type: 'array' })
-
-    // Validate Sheets
-    // Assuming Sheet Names are standardized or we use index 0, 1, 2
-    // Sheet 1: Thông tin hồ sơ
-    // Sheet 2: Mục lục hồ sơ (Văn bản con)
-    // Sheet 3: Vị trí lưu kho
+    const workbook = XLSX.read(buffer, { type: 'array', cellDates: true })
 
     const sheetNames = workbook.SheetNames
     if (sheetNames.length < 1) {
@@ -18,39 +10,37 @@ export const parseExcelFile = async (buffer: ArrayBuffer): Promise<ImportData> =
     }
 
     const filesSheet = workbook.Sheets[sheetNames[0]]
-
-    // Parse Sheet 1: Files
     const rawFiles = XLSX.utils.sheet_to_json<Record<string, unknown>>(filesSheet)
+    
     const files: ExtractedFile[] = rawFiles.map((row: Record<string, unknown>) => {
-        const detailsText = (row[':'] || row['Chi tiết'] || '') as string
-        const parsedDet = parseDetails(detailsText)
-        const titleFromCol = (row['Tiêu đề'] || row['Trích yếu'] || row['Tên hồ sơ'] || '') as string
-        const rawBoxCode = row['Dữ liệu ( Hộp)'] ?? row['Hộp số'] ?? row['Hộp'] ?? row['Mã hộp'] ?? row['Mã Hộp'] ?? row['Hộp lưu trữ'] ?? ''
-        return {
-            code: row['Hồ sơ số'] as string,
-            title: parsedDet.summary || titleFromCol || '',
-            type: row['Loại án'] as string,
-            year: parseYear(row['Thời gian']),
-            pageCount: typeof row['Số tờ'] === 'number' ? row['Số tờ'] : parseInt((row['Số tờ'] as string) || '0'),
-            retention: (row['THBQ'] || row['Thời hạn bảo quản']) as string,
-            boxCode: String(rawBoxCode).trim(),
-            indexCode: row['MLHS'] as string,
-            note: row['Ghi chú'] as string,
-            details: parsedDet,
-            startDate: undefined,
-        }
-    })
+        const rawBoxCode = row['Hộp số'] ?? row['Dữ liệu ( Hộp)'] ?? row['Hộp'] ?? row['Mã hộp'] ?? ''
+        const judgmentDate = parseExcelDate(row['Ngày bản án/ quyết định'])
+        const year = parseYear(row['Thời gian']) || (judgmentDate ? judgmentDate.getFullYear() : 0)
 
-    // Post-process to set title and startDate from details
-    files.forEach(f => {
-        if (f.details) {
-            const d = f.details as FileDetails; 
-            if (d.summary) f.title = d.summary;
-            if (d.judgmentDate) f.startDate = new Date(d.judgmentDate);
-            f.judgmentNumber = d.judgmentNumber;
-            f.defendants = d.defendants;
-            f.plaintiffs = d.plaintiffs;
-            f.civilDefendants = d.civilDefendants;
+        const plaintiffs = parseNameList(row['Nguyên đơn/ người bị hại'] ?? row['Nguyên đơn'])
+        const defendants = parseNameList(row['Bị cáo/ bị đơn'] ?? row['Bị cáo'])
+
+        return {
+            code: String(row['Hồ sơ số'] ?? '').trim(),
+            title: String(row['Tiêu đề'] ?? row['Trích yếu'] ?? '').trim(),
+            type: String(row['Loại án'] ?? '').trim(),
+            year,
+            pageCount: typeof row['Số tờ'] === 'number' ? row['Số tờ'] : parseInt(String(row['Số tờ'] || '0'), 10) || 0,
+            retention: String(row['THBQ'] ?? row['Thời hạn bảo quản'] ?? '').trim(),
+            boxCode: String(rawBoxCode).trim(),
+            indexCode: row['MLHS'] ? String(row['MLHS']).trim() : undefined,
+            note: row['Ghi chú'] ? String(row['Ghi chú']).trim() : undefined,
+            judgmentNumber: row['Số bản án/ quyết định'] ? String(row['Số bản án/ quyết định']).trim() : undefined,
+            startDate: judgmentDate,
+            plaintiffs: plaintiffs.length > 0 ? plaintiffs : undefined,
+            defendants: defendants.length > 0 ? defendants : undefined,
+            details: {
+                summary: String(row['Tiêu đề'] ?? '').trim(),
+                judgmentNumber: row['Số bản án/ quyết định'] ? String(row['Số bản án/ quyết định']).trim() : undefined,
+                judgmentDate: judgmentDate ? judgmentDate.toISOString() : undefined,
+                plaintiffs,
+                defendants,
+            }
         }
     })
 
@@ -60,110 +50,96 @@ export const parseExcelFile = async (buffer: ArrayBuffer): Promise<ImportData> =
         const rawDocs = XLSX.utils.sheet_to_json<Record<string, unknown>>(docsSheet)
         rawDocs.forEach((row, index) => {
             documents.push({
-                fileCode: row['Hồ sơ số'] ? String(row['Hồ sơ số']) : '',
-                code: row['Mục lục văn bản'] ? String(row['Mục lục văn bản']) : '',
+                fileCode: row['Hồ sơ số'] ? String(row['Hồ sơ số']).trim() : '',
+                code: row['Mục lục văn bản'] ? String(row['Mục lục văn bản']).trim() : '',
                 title: (row['Tiêu đề'] || row['Tên văn bản'] || 'Bản kê văn bản') as string,
-                type: row['Loại án'] ? String(row['Loại án']) : undefined,
+                type: row['Loại án'] ? String(row['Loại án']).trim() : undefined,
                 year: parseYear(row['Thời gian']),
-                pageCount: typeof row['Số tờ'] === 'number' ? row['Số tờ'] : parseInt((row['Số tờ'] as string) || '0'),
-                note: row['Ghi chú'] ? String(row['Ghi chú']) : undefined,
-                preservationTime: (row['Thời hạn bảo quản'] || row['THBQ']) ? String(row['Thời hạn bảo quản'] || row['THBQ']) : undefined,
-                contentIndex: row['Mục lục văn bản'] ? String(row['Mục lục văn bản']) : undefined,
+                pageCount: typeof row['Số tờ'] === 'number' ? row['Số tờ'] : parseInt(String(row['Số tờ'] || '0'), 10) || 0,
+                note: row['Ghi chú'] ? String(row['Ghi chú']).trim() : undefined,
+                preservationTime: (row['Thời hạn bảo quản'] || row['THBQ']) ? String(row['Thời hạn bảo quản'] || row['THBQ']).trim() : undefined,
+                contentIndex: row['Mục lục văn bản'] ? String(row['Mục lục văn bản']).trim() : undefined,
                 order: index + 1
             })
         })
     }
 
     const boxes: ExtractedLocation[] = []
-
     return { files, documents, boxes }
 }
 
-function parseDetails(text: string): FileDetails {
-    if (!text) return {};
-    // Excel cells can hold Vietnamese text as NFC or NFD (visually identical,
-    // different bytes). Normalize before matching the hardcoded Vietnamese
-    // prefixes below, otherwise a startsWith() check silently fails and the
-    // field is dropped instead of just being un-searchable.
-    const lines = text.normalize('NFC').split(/\r?\n/).map(l => l.trim());
-    const details: FileDetails = {};
-
-    // ...
-
-    lines.forEach(line => {
-        if (line.startsWith('Về việc:')) details.summary = line.replace('Về việc:', '').trim();
-        if (line.startsWith('Bị cáo:')) details.defendants = line.replace('Bị cáo:', '').trim().split(',').map(s => s.trim());
-        if (line.startsWith('Nguyên đơn:')) details.plaintiffs = line.replace('Nguyên đơn:', '').trim().split(',').map(s => s.trim());
-        if (line.startsWith('Bị đơn:')) details.civilDefendants = line.replace('Bị đơn:', '').trim().split(',').map(s => s.trim());
-        if (line.startsWith('QDTHS:') || line.startsWith('Số:')) details.judgmentNumber = (line.replace('QDTHS:', '').replace('Số:', '')).trim();
-        if (line.startsWith('Ngày:')) {
-            const dateStr = line.replace('Ngày:', '').trim();
-            // Parse DD/MM/YYYY
-            const parts = dateStr.split('/');
-            if (parts.length === 3) {
-                // Store as format YYYY-MM-DD or ISO string for JSON compatibility
-                // Using new Date() directly in JSON object causes Prisma Error
-                const d = new Date(`${parts[2]}-${parts[1]}-${parts[0]}`);
-                if (!isNaN(d.getTime())) {
-                    details.judgmentDate = d.toISOString();
-                }
-            }
-        }
-    });
-
-    return details;
+function parseNameList(value: unknown): string[] {
+    if (!value) return []
+    const str = String(value).trim()
+    if (!str) return []
+    return str.split(/[,;\n]/).map(s => s.trim()).filter(Boolean)
 }
 
-// ... (existing imports)
+function parseExcelDate(value: unknown): Date | undefined {
+    if (!value) return undefined
+    if (value instanceof Date && !isNaN(value.getTime())) return value
+    if (typeof value === 'number') {
+        // Excel serial date to JS Date
+        const parsed = XLSX.SSF.parse_date_code(value)
+        if (parsed) {
+            return new Date(Date.UTC(parsed.y, parsed.m - 1, parsed.d))
+        }
+    }
+    if (typeof value === 'string') {
+        const str = value.trim()
+        // DD/MM/YYYY or DD-MM-YYYY
+        const dmyMatch = str.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/)
+        if (dmyMatch) {
+            const day = parseInt(dmyMatch[1], 10)
+            const month = parseInt(dmyMatch[2], 10) - 1
+            const year = parseInt(dmyMatch[3], 10)
+            const d = new Date(Date.UTC(year, month, day))
+            if (!isNaN(d.getTime())) return d
+        }
+        // YYYY-MM-DD
+        const ymdMatch = str.match(/^(\d{4})[\/\-](\d{1,2})[\/\-](\d{1,2})$/)
+        if (ymdMatch) {
+            const year = parseInt(ymdMatch[1], 10)
+            const month = parseInt(ymdMatch[2], 10) - 1
+            const day = parseInt(ymdMatch[3], 10)
+            const d = new Date(Date.UTC(year, month, day))
+            if (!isNaN(d.getTime())) return d
+        }
+        const d = new Date(str)
+        if (!isNaN(d.getTime())) return d
+    }
+    return undefined
+}
+
+function parseYear(val: unknown): number {
+    if (!val) return 0
+    if (typeof val === 'number') return Math.floor(val)
+    if (val instanceof Date) return val.getFullYear()
+    const str = String(val).trim()
+    const match = str.match(/\b(19\d\d|20\d\d)\b/)
+    if (match) return parseInt(match[1], 10)
+    return parseInt(str, 10) || 0
+}
 
 export const parseChildDocumentsExcel = async (buffer: ArrayBuffer): Promise<ExtractedDocument[]> => {
-    const workbook = XLSX.read(buffer, { type: 'array' })
+    const workbook = XLSX.read(buffer, { type: 'array', cellDates: true })
     const sheetName = workbook.SheetNames[0]
     const sheet = workbook.Sheets[sheetName]
 
     const rawData = XLSX.utils.sheet_to_json<Record<string, unknown>>(sheet)
 
     return rawData.map((row: Record<string, unknown>, index: number) => ({
-        // Assuming "Hồ sơ số" maps to fileCode (to link to parent). Default to '' if missing.
-        fileCode: row['Hồ sơ số'] ? String(row['Hồ sơ số']) : '',
-
-        // "Mục lục văn bản" might be the Document Code or ID
-        code: row['Mục lục văn bản'] ? String(row['Mục lục văn bản']) : '',
-
-        title: row['Tiêu đề'] ? String(row['Tiêu đề']) : 'Bản kê văn bản',
-
-        type: row['Loại án'] ? String(row['Loại án']) : undefined,
-
+        fileCode: row['Hồ sơ số'] ? String(row['Hồ sơ số']).trim() : '',
+        code: row['Mục lục văn bản'] ? String(row['Mục lục văn bản']).trim() : '',
+        title: (row['Tiêu đề'] || row['Tên văn bản'] || 'Bản kê văn bản') as string,
+        type: row['Loại án'] ? String(row['Loại án']).trim() : undefined,
         year: parseYear(row['Thời gian']),
-
-        pageCount: typeof row['Số tờ'] === 'number' ? row['Số tờ'] : parseInt((row['Số tờ'] as string) || '0'),
-
-        // New fields
-        note: row['Ghi chú'] ? String(row['Ghi chú']) : undefined,
-        preservationTime: row['Thời hạn bảo quản'] ? String(row['Thời hạn bảo quản']) : undefined,
-        contentIndex: row['Mục lục văn bản'] ? String(row['Mục lục văn bản']) : undefined,
-
+        pageCount: typeof row['Số tờ'] === 'number' ? row['Số tờ'] : parseInt(String(row['Số tờ'] || '0'), 10) || 0,
+        note: row['Ghi chú'] ? String(row['Ghi chú']).trim() : undefined,
+        preservationTime: (row['Thời hạn bảo quản'] || row['THBQ']) ? String(row['Thời hạn bảo quản'] || row['THBQ']).trim() : undefined,
+        contentIndex: row['Mục lục văn bản'] ? String(row['Mục lục văn bản']).trim() : undefined,
         order: index + 1
     }))
-}
-
-// ... (keep existing functions)
-
-function parseYear(dateStr: unknown): number {
-    if (typeof dateStr === 'number') {
-        if (dateStr > 10000) {
-            // Excel serial date (days since 1900-01-01)
-            const date = new Date(Math.round((dateStr - 25569) * 86400 * 1000))
-            return date.getFullYear()
-        }
-        return dateStr
-    }
-    if (!dateStr) return new Date().getFullYear()
-    const date = new Date(dateStr as string | number)
-    if (!isNaN(date.getTime())) return date.getFullYear()
-    // Try regex for YYYY
-    const match = dateStr.toString().match(/\d{4}/)
-    return match ? parseInt(match[0]) : new Date().getFullYear()
 }
 
 function normalizeUserRole(roleStr: string): string {
