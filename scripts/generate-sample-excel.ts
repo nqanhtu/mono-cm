@@ -12,51 +12,46 @@ if (!fs.existsSync(outputDir)) {
 // -------------------------------------------------------------
 const sheet1Data = [
   {
+    'Hộp số': 'H01',
     'Hồ sơ số': '2024/HS-ST/01',
+    'Số bản án/ quyết định': '45/2024/QĐ-ST',
+    'Ngày bản án/ quyết định': '15/04/2024',
     'Tiêu đề': 'Vụ án Nguyễn Văn A và đồng phạm về tội Trộm cắp tài sản',
+    'Nguyên đơn/ người bị hại': 'Công ty TNHH X',
+    'Bị cáo/ bị đơn': 'Nguyễn Văn A, Trần Văn B',
+    'Số tờ': 150,
     'Loại án': 'Hình sự',
     'Thời gian': 2024,
-    'Số tờ': 150,
     'THBQ': 'Vĩnh viễn',
-    'Hộp số': 'H01',
-    'MLHS': 'ML-2024-01',
     'Ghi chú': 'Hồ sơ án điểm năm 2024',
-    ':': `Về việc: Vụ án Nguyễn Văn A và đồng phạm về tội Trộm cắp tài sản
-Bị cáo: Nguyễn Văn A, Trần Văn B
-QDTHS: 45/2024/QĐ-ST
-Ngày: 15/04/2024`,
   },
   {
+    'Hộp số': 'H01',
     'Hồ sơ số': '2024/DS-ST/02',
+    'Số bản án/ quyết định': '12/2024/DS-ST',
+    'Ngày bản án/ quyết định': '20/05/2024',
     'Tiêu đề': 'Vụ án tranh chấp hợp đồng chuyển nhượng quyền sử dụng đất',
+    'Nguyên đơn/ người bị hại': 'Lê Thị C',
+    'Bị cáo/ bị đơn': 'Phạm Văn D',
+    'Số tờ': 85,
     'Loại án': 'Dân sự',
     'Thời gian': 2024,
-    'Số tờ': 85,
     'THBQ': '50 năm',
-    'Hộp số': 'H01',
-    'MLHS': 'ML-2024-01',
     'Ghi chú': 'Đã thi hành án xong',
-    ':': `Về việc: Vụ án tranh chấp hợp đồng chuyển nhượng quyền sử dụng đất
-Nguyên đơn: Lê Thị C
-Bị đơn: Phạm Văn D
-Số: 12/2024/DS-ST
-Ngày: 20/05/2024`,
   },
   {
+    'Hộp số': 'H02',
     'Hồ sơ số': '2024/HC-ST/03',
+    'Số bản án/ quyết định': '08/2024/HC-ST',
+    'Ngày bản án/ quyết định': '10/06/2024',
     'Tiêu đề': 'Vụ án khiếu kiện quyết định xử phạt hành chính trong lĩnh vực đất đai',
+    'Nguyên đơn/ người bị hại': 'Hoàng Văn E',
+    'Bị cáo/ bị đơn': 'Ủy ban nhân dân quận X',
+    'Số tờ': 60,
     'Loại án': 'Hành chính',
     'Thời gian': 2024,
-    'Số tờ': 60,
     'THBQ': '15 năm',
-    'Hộp số': 'H02',
-    'MLHS': 'ML-2024-02',
     'Ghi chú': 'Lưu trữ tại kho B',
-    ':': `Về việc: Vụ án khiếu kiện quyết định xử phạt hành chính trong lĩnh vực đất đai
-Nguyên đơn: Hoàng Văn E
-Bị đơn: Ủy ban nhân dân quận X
-Số: 08/2024/HC-ST
-Ngày: 10/06/2024`,
   },
 ]
 
@@ -107,8 +102,18 @@ const wbMother = XLSX.utils.book_new()
 
 const wsMother1 = XLSX.utils.json_to_sheet(sheet1Data)
 wsMother1['!cols'] = [
-  { wch: 18 }, { wch: 45 }, { wch: 12 }, { wch: 10 }, { wch: 10 },
-  { wch: 15 }, { wch: 10 }, { wch: 15 }, { wch: 25 }, { wch: 60 },
+  { wch: 10 }, // Hộp số
+  { wch: 18 }, // Hồ sơ số
+  { wch: 25 }, // Số bản án/ quyết định
+  { wch: 25 }, // Ngày bản án/ quyết định
+  { wch: 60 }, // Tiêu đề
+  { wch: 25 }, // Nguyên đơn/ người bị hại
+  { wch: 25 }, // Bị cáo/ bị đơn
+  { wch: 10 }, // Số tờ
+  { wch: 12 }, // Loại án
+  { wch: 10 }, // Thời gian
+  { wch: 15 }, // THBQ
+  { wch: 30 }, // Ghi chú
 ]
 
 const wsMother2 = XLSX.utils.json_to_sheet(sheet2Data)
