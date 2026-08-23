@@ -83,6 +83,35 @@ services:
       - cm-net
       - n8n_n8n-net
 
+  # ─── Đồng Nai City ───────────────────────────────────────────────────────────
+  dongnai_city_server:
+    image: ghcr.io/nqanhtu/cm-server:latest
+    container_name: dongnai_city_server
+    restart: always
+    env_file:
+      - .env.dongnai_city
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      - REDIS_URL=redis://cm-redis:6379
+    depends_on:
+      - cm-redis
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=n8n_n8n-net"
+      # Router
+      - "traefik.http.routers.dongnai-city.rule=Host(`namnn07.zhost.store`) && PathPrefix(`/dongnai-city`)"
+      - "traefik.http.routers.dongnai-city.entrypoints=websecure"
+      - "traefik.http.routers.dongnai-city.tls.certresolver=myresolver"
+      # Strip /dongnai-city prefix before forwarding
+      - "traefik.http.middlewares.dongnai-city-strip.stripprefix.prefixes=/dongnai-city"
+      - "traefik.http.routers.dongnai-city.middlewares=dongnai-city-strip"
+      # Service
+      - "traefik.http.services.dongnai-city.loadbalancer.server.port=3000"
+    networks:
+      - cm-net
+      - n8n_n8n-net
+
 networks:
   cm-net:
     driver: bridge
