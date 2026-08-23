@@ -60,4 +60,31 @@ describe('excel-parser with new 12-column format', () => {
     expect(result.documents[0].fileCode).toBe('2024/HS-ST/01')
     expect(result.documents[0].title).toBe('Cáo trạng')
   })
+
+  test('parses generated public/templates/mau-ho-so-me.xlsx successfully', async () => {
+    const fs = await import('fs')
+    const path = await import('path')
+    const templatePath = path.resolve(process.cwd(), 'public/templates/mau-ho-so-me.xlsx')
+    const buffer = fs.readFileSync(templatePath).buffer
+    const result = await parseExcelFile(buffer)
+    expect(result.files.length).toBe(3)
+    expect(result.files[0].code).toBe('2024/HS-ST/01')
+    expect(result.files[0].boxCode).toBe('H01')
+    expect(result.files[0].judgmentNumber).toBe('45/2024/QĐ-ST')
+    expect(result.files[0].plaintiffs).toEqual(['Công ty TNHH X'])
+    expect(result.files[0].defendants).toEqual(['Nguyễn Văn A', 'Trần Văn B'])
+    expect(result.documents.length).toBeGreaterThan(0)
+  })
+
+  test('parses mau-ho-so-me 2011 (3).xlsx without errors', async () => {
+    const fs = await import('fs')
+    const path = await import('path')
+    const realFilePath = path.resolve(process.cwd(), 'mau-ho-so-me 2011 (3).xlsx')
+    if (fs.existsSync(realFilePath)) {
+      const buffer = fs.readFileSync(realFilePath).buffer
+      const result = await parseExcelFile(buffer)
+      expect(result.files).toBeDefined()
+      expect(result.documents).toBeDefined()
+    }
+  })
 })
