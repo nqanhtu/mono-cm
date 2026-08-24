@@ -34,7 +34,7 @@ export default function Header({ user }: HeaderProps) {
   const currentPage = pageTitles[pathname] ?? (
     pathname.startsWith("/files/")
       ? { title: "Chi tiết hồ sơ", description: "Xem và cập nhật thông tin hồ sơ" }
-      : { title: "Quản lý hồ sơ", description: "Hệ thống lưu trữ nội bộ" }
+      : { title: import.meta.env.VITE_COURT_NAME || "Quản lý hồ sơ", description: "Hệ thống lưu trữ nội bộ" }
   )
 
   async function handleLogout() {

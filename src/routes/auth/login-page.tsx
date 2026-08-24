@@ -79,7 +79,7 @@ export default function LoginPage() {
                     </div>
                     <CardTitle className="text-2xl font-semibold text-slate-900">Đăng nhập hệ thống</CardTitle>
                     <CardDescription className="text-slate-500">
-                        Quản lý hồ sơ lưu trữ nội bộ
+                        {import.meta.env.VITE_COURT_NAME ? `${import.meta.env.VITE_COURT_NAME} - Lưu trữ nội bộ` : "Quản lý hồ sơ lưu trữ nội bộ"}
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -128,7 +128,7 @@ export default function LoginPage() {
                 </CardContent>
                 <CardFooter className="flex justify-center pb-8 pt-2">
                     <p className="text-xs text-slate-400 text-center">
-                        Hệ thống lưu trữ và quản lý hồ sơ nội bộ <br />
+                        {import.meta.env.VITE_COURT_NAME ? `${import.meta.env.VITE_COURT_NAME} - Hệ thống lưu trữ nội bộ` : "Hệ thống lưu trữ và quản lý hồ sơ nội bộ"} <br />
                     </p>
                 </CardFooter>
             </Card>
