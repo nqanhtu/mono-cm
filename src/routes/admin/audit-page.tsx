@@ -15,9 +15,6 @@ export default function AuditLogPage() {
     const { session, isLoading } = useSession();
     const currentTab = searchParams.get("tab") === "access" ? "access" : "audit";
 
-    useEffect(() => {
-        document.title = "Nhật ký hệ thống | Court Management";
-    }, []);
 
     useEffect(() => {
         if (!isLoading && (!session || session.role !== "SUPER_ADMIN")) {

@@ -105,10 +105,6 @@ export default function StorageBoxesPage() {
   const totalPages = Math.ceil(totalBoxes / pageSize) || 1;
   const paginatedBoxes = boxes.slice(pageIndex * pageSize, (pageIndex + 1) * pageSize);
 
-  // Authenticate SUPER_ADMIN
-  useEffect(() => {
-    document.title = "Quản lý Hộp lưu trữ | Court Management";
-  }, []);
 
   useEffect(() => {
     if (!isSessionLoading && (!session || session.role !== "SUPER_ADMIN")) {

@@ -103,9 +103,6 @@ export default function BackupPage() {
     }
   };
 
-  useEffect(() => {
-    document.title = "Quản lý Sao lưu | Court Management";
-  }, []);
 
   useEffect(() => {
     if (!isSessionLoading && (!session || session.role !== "SUPER_ADMIN")) {

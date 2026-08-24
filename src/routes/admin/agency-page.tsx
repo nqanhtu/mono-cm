@@ -10,9 +10,6 @@ export default function AgencyPage() {
   const router = useRouter();
   const { session, isLoading } = useSession();
 
-  useEffect(() => {
-    document.title = "Quản lý Phông lưu trữ | Court Management";
-  }, []);
 
   useEffect(() => {
     if (!isLoading && (!session || session.role !== "SUPER_ADMIN")) {
