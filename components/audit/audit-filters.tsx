@@ -65,13 +65,13 @@ export function AuditFilters() {
             </div>
 
             <div className='flex-1 min-w-50 relative max-w-md ml-auto'>
-                <Search className='absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 z-10' />
+                <Search className='absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 z-10' aria-hidden="true" />
                 <Input
                     type='text'
-                    placeholder='Tìm kiếm người dùng, đối tượng...'
+                    placeholder='Tìm kiếm người dùng, đối tượng…'
                     defaultValue={searchParams.get('q')?.toString()}
                     onChange={(e) => handleSearch(e.target.value)}
-                    className='w-full pl-9 pr-4 py-1.5 bg-slate-50 border-slate-200 rounded-lg text-sm outline-none focus-visible:ring-indigo-500 transition-all h-9'
+                    className='w-full pl-9 pr-4 py-1.5 bg-slate-50 border-slate-200 rounded-lg text-sm outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 transition-colors h-9'
                 />
             </div>
         </div>

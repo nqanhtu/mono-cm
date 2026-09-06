@@ -368,7 +368,7 @@ export default function BorrowForm({ onSuccess, onCancel, initialData, slipId, i
                   value={borrowDate}
                   onChange={(e) => setBorrowDate(e.target.value)}
                   suppressHydrationWarning
-                  className="w-full pl-9 pr-3 py-2 bg-white border-slate-200 rounded-lg text-sm focus-visible:ring-indigo-500 outline-none transition-colors"
+                  className="w-full pl-9 pr-3 py-2 bg-white border-slate-200 rounded-lg text-sm focus-visible:ring-2 focus-visible:ring-indigo-500 outline-none transition-colors"
                 />
               </div>
             </Field>
@@ -383,7 +383,7 @@ export default function BorrowForm({ onSuccess, onCancel, initialData, slipId, i
                   value={dueDate}
                   onChange={(e) => setDueDate(e.target.value)}
                   suppressHydrationWarning
-                  className="w-full pl-9 pr-3 py-2 bg-white border-slate-200 rounded-lg text-sm focus-visible:ring-indigo-500 outline-none transition-colors"
+                  className="w-full pl-9 pr-3 py-2 bg-white border-slate-200 rounded-lg text-sm focus-visible:ring-2 focus-visible:ring-indigo-500 outline-none transition-colors"
                 />
               </div>
             </Field>
@@ -395,8 +395,8 @@ export default function BorrowForm({ onSuccess, onCancel, initialData, slipId, i
               id="reason"
               value={reason}
               onChange={(e) => setReason(e.target.value)}
-              className="w-full px-3 py-2 bg-white border-slate-200 rounded-lg text-sm focus-visible:ring-indigo-500 outline-none transition-colors h-20 resize-none"
-              placeholder="Lý do mượn, ghi chú tình trạng hồ sơ..."
+              className="w-full px-3 py-2 bg-white border-slate-200 rounded-lg text-sm focus-visible:ring-2 focus-visible:ring-indigo-500 outline-none transition-colors h-20 resize-none"
+              placeholder="Lý do mượn, ghi chú tình trạng hồ sơ…"
             />
           </Field>
 
@@ -439,9 +439,9 @@ export default function BorrowForm({ onSuccess, onCancel, initialData, slipId, i
         <div className="flex items-center justify-between">
           <div className="flex bg-slate-100 p-1 rounded-lg">
             <div
-              className={`px-3 py-1.5 text-xs font-medium rounded-md flex items-center gap-1.5 transition-all bg-white shadow-sm text-slate-800`}
+              className="px-3 py-1.5 text-xs font-medium rounded-md flex items-center gap-1.5 transition-colors bg-white shadow-sm text-slate-800"
             >
-              <FileText className="w-3.5 h-3.5" />
+              <FileText className="w-3.5 h-3.5" aria-hidden="true" />
               Danh sách hồ sơ
               <span className="bg-indigo-100 text-indigo-700 px-1.5 rounded-full text-[10px]">
                 {selectedFiles.length}
@@ -452,7 +452,7 @@ export default function BorrowForm({ onSuccess, onCancel, initialData, slipId, i
 
         <div className="flex gap-2">
           <div className="relative flex-1">
-            <FileStack className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 z-10" />
+            <FileStack className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 z-10" aria-hidden="true" />
             <Input
               type="text"
               value={fileQuery}
@@ -466,8 +466,8 @@ export default function BorrowForm({ onSuccess, onCancel, initialData, slipId, i
                 }
               }}
               disabled={isSearchingFile}
-              placeholder="Nhập mã hoặc quét..."
-              className="w-full pl-9 pr-3 py-2 bg-slate-50 border-slate-200 rounded-lg text-sm focus:bg-white focus-visible:ring-indigo-500 outline-none transition-colors"
+              placeholder="Nhập mã hoặc quét…"
+              className="w-full pl-9 pr-3 py-2 bg-slate-50 border-slate-200 rounded-lg text-sm focus:bg-white focus-visible:ring-2 focus-visible:ring-indigo-500 outline-none transition-colors"
             />
             {showSuggestions && fileSuggestions.length > 0 && (
               <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-slate-200 rounded-lg shadow-lg z-50 max-h-60 overflow-auto">
@@ -488,11 +488,12 @@ export default function BorrowForm({ onSuccess, onCancel, initialData, slipId, i
             size="icon"
             onClick={handleAddFile}
             disabled={isSearchingFile || !fileQuery}
+            aria-label="Thêm hồ sơ vào phiếu mượn"
           >
             {isSearchingFile ? (
-              <Loader2 className="w-4 h-4 animate-spin" />
+              <Loader2 className="w-4 h-4 animate-spin" aria-hidden="true" />
             ) : (
-              <Plus className="w-4 h-4" />
+              <Plus className="w-4 h-4" aria-hidden="true" />
             )}
           </Button>
         </div>

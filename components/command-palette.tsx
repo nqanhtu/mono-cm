@@ -78,7 +78,7 @@ export function CommandPalette() {
 
   const handleRunBackup = async () => {
     setOpen(false)
-    const toastId = toast.loading('Đang chạy sao lưu dữ liệu...')
+    const toastId = toast.loading('Đang chạy sao lưu dữ liệu…')
     try {
       const res = await apiFetch('/api/admin/backup/run', { method: 'POST' })
       if (res.ok) {
@@ -99,13 +99,13 @@ export function CommandPalette() {
   return (
     <CommandDialog open={open} onOpenChange={setOpen}>
       <CommandInput 
-        placeholder="Tìm kiếm hồ sơ, lệnh điều hướng... (Ctrl + K)" 
+        placeholder="Tìm kiếm hồ sơ, lệnh điều hướng… (Ctrl + K)" 
         value={query}
         onValueChange={setQuery}
       />
       <CommandList>
         <CommandEmpty>
-          {isSearching ? 'Đang tìm kiếm...' : 'Không tìm thấy kết quả phù hợp.'}
+          {isSearching ? 'Đang tìm kiếm…' : 'Không tìm thấy kết quả phù hợp.'}
         </CommandEmpty>
         
         {files.length > 0 && (

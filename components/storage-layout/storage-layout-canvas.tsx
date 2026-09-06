@@ -1347,23 +1347,23 @@ export function StorageLayoutCanvas({
             </div>
 
             <div className="absolute right-4 top-4 z-10 flex flex-wrap justify-end gap-2">
-              <Button type="button" variant={isHeatmapMode ? "default" : "outline"} size="icon-sm" onClick={() => setIsHeatmapMode((current) => !current)} title="Mật độ">
-                <Flame className="h-4 w-4" />
+              <Button type="button" variant={isHeatmapMode ? "default" : "outline"} size="icon-sm" onClick={() => setIsHeatmapMode((current) => !current)} title="Mật độ" aria-label="Mật độ">
+                <Flame className="h-4 w-4" aria-hidden="true" />
               </Button>
-              <Button type="button" variant={is25DMode ? "default" : "outline"} size="icon-sm" onClick={() => setIs25DMode((current) => !current)} title="2.5D">
-                <Layers3 className="h-4 w-4" />
+              <Button type="button" variant={is25DMode ? "default" : "outline"} size="icon-sm" onClick={() => setIs25DMode((current) => !current)} title="2.5D" aria-label="Chế độ 2.5D">
+                <Layers3 className="h-4 w-4" aria-hidden="true" />
               </Button>
-              <Button type="button" variant={isPathfindingActive ? "default" : "outline"} size="icon-sm" onClick={() => setIsPathfindingActive((current) => !current)} title="Chỉ đường">
-                <Route className="h-4 w-4" />
+              <Button type="button" variant={isPathfindingActive ? "default" : "outline"} size="icon-sm" onClick={() => setIsPathfindingActive((current) => !current)} title="Chỉ đường" aria-label="Chỉ đường">
+                <Route className="h-4 w-4" aria-hidden="true" />
               </Button>
-              <Button type="button" variant="outline" size="icon-sm" onClick={() => setTransform((current) => ({ ...current, k: Math.min(current.k + 0.12, 4) }))} title="Phóng to">
-                <ZoomIn className="h-4 w-4" />
+              <Button type="button" variant="outline" size="icon-sm" onClick={() => setTransform((current) => ({ ...current, k: Math.min(current.k + 0.12, 4) }))} title="Phóng to" aria-label="Phóng to">
+                <ZoomIn className="h-4 w-4" aria-hidden="true" />
               </Button>
-              <Button type="button" variant="outline" size="icon-sm" onClick={() => setTransform((current) => ({ ...current, k: Math.max(current.k - 0.12, 0.55) }))} title="Thu nhỏ">
-                <ZoomOut className="h-4 w-4" />
+              <Button type="button" variant="outline" size="icon-sm" onClick={() => setTransform((current) => ({ ...current, k: Math.max(current.k - 0.12, 0.55) }))} title="Thu nhỏ" aria-label="Thu nhỏ">
+                <ZoomOut className="h-4 w-4" aria-hidden="true" />
               </Button>
               <Button type="button" variant="outline" size="icon-sm" onClick={handleFitLayout} title="Căn lại" aria-label="Căn lại">
-                <RotateCcw className="h-4 w-4" />
+                <RotateCcw className="h-4 w-4" aria-hidden="true" />
               </Button>
             </div>
 

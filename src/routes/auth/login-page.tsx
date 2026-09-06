@@ -75,7 +75,7 @@ export default function LoginPage() {
             <Card className="z-10 w-full max-w-md rounded-xl border-slate-200 bg-white/95 shadow-xl shadow-slate-200/60">
                 <CardHeader className="space-y-1 pb-7 pt-8 text-center">
                     <div className="mx-auto mb-4 flex size-14 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-sm shadow-primary/20">
-                        <Scale className="size-7" />
+                        <Scale className="size-7" aria-hidden="true" />
                     </div>
                     <CardTitle className="text-2xl font-semibold text-slate-900">Đăng nhập hệ thống</CardTitle>
                     <CardDescription className="text-slate-500">
@@ -85,17 +85,27 @@ export default function LoginPage() {
                 <CardContent>
                     <form onSubmit={onSubmit} noValidate className="space-y-5">
                         {error && (
-                            <Alert variant="destructive" className="bg-red-50 text-red-700 border-red-200">
+                            <Alert
+                                id="login-error"
+                                role="alert"
+                                aria-live="polite"
+                                variant="destructive"
+                                className="bg-red-50 text-red-700 border-red-200"
+                            >
                                 <AlertDescription>{error}</AlertDescription>
                             </Alert>
                         )}
                         <div className="space-y-2">
                             <Label htmlFor="username">Tên đăng nhập</Label>
                             <div className="relative">
-                                <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                                <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" aria-hidden="true" />
                                 <Input
                                     id="username"
                                     name="username"
+                                    autoComplete="username"
+                                    spellCheck={false}
+                                    aria-invalid={!!error}
+                                    aria-describedby={error ? "login-error" : undefined}
                                     placeholder="admin"
                                     required
                                     disabled={isLoading}
@@ -106,11 +116,14 @@ export default function LoginPage() {
                         <div className="space-y-2">
                             <Label htmlFor="password">Mật khẩu</Label>
                             <div className="relative">
-                                <KeyRound className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                                <KeyRound className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" aria-hidden="true" />
                                 <Input
                                     id="password"
                                     name="password"
                                     type="password"
+                                    autoComplete="current-password"
+                                    aria-invalid={!!error}
+                                    aria-describedby={error ? "login-error" : undefined}
                                     placeholder="••••••••"
                                     required
                                     disabled={isLoading}
@@ -120,7 +133,7 @@ export default function LoginPage() {
                         </div>
                         <div className="pt-1">
                             <Button type="submit" disabled={isLoading} className="h-10 w-full rounded-lg">
-                                {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />}
                                 <span>Đăng nhập</span>
                             </Button>
                         </div>

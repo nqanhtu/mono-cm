@@ -188,12 +188,12 @@ export function FileTableToolbar<TData>({
       {/* Row 1: Search & Top Actions */}
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <div className="relative flex-1">
-          <Search className="absolute left-3 top-[12px] h-4 w-4 text-muted-foreground" />
+          <Search className="absolute left-3 top-[12px] h-4 w-4 text-muted-foreground" aria-hidden="true" />
           <Input
-            placeholder="Tìm hồ sơ, mã hồ sơ, tiêu đề..."
+            placeholder="Tìm hồ sơ, mã hồ sơ, tiêu đề…"
             defaultValue={searchParams.get("q")?.toString()}
             onChange={(event) => handleSearch(event.target.value)}
-            className="h-10 w-full pl-9 bg-background border-slate-300 dark:border-slate-700 shadow-xs focus-visible:border-primary focus-visible:ring-primary/20 transition-all font-medium placeholder:text-muted-foreground/60 focus-visible:ring-2"
+            className="h-10 w-full pl-9 bg-background border-slate-300 dark:border-slate-700 shadow-xs focus-visible:border-primary focus-visible:ring-primary/20 transition-colors font-medium placeholder:text-muted-foreground/60 focus-visible:ring-2"
           />
         </div>
 
@@ -311,20 +311,26 @@ export function FileTableToolbar<TData>({
         )}
 
         <div className="relative flex items-center h-8 rounded-md border border-input bg-background px-2.5 text-xs text-foreground focus-within:ring-1 focus-within:ring-primary">
-          <CalendarDays className="mr-1.5 h-3.5 w-3.5 text-muted-foreground" />
+          <CalendarDays className="mr-1.5 h-3.5 w-3.5 text-muted-foreground" aria-hidden="true" />
           <input
+            id="file-filter-year"
+            name="year"
             type="number"
-            placeholder="Năm..."
+            autoComplete="off"
+            aria-label="Lọc theo năm"
+            placeholder="Năm…"
             defaultValue={searchParams.get("year")?.toString()}
             onChange={(event) => handleTextFilter("year", event.target.value)}
-            className="w-14 bg-transparent focus:outline-none placeholder:text-muted-foreground/80 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none font-medium"
+            className="w-14 bg-transparent outline-none placeholder:text-muted-foreground/80 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none font-medium"
           />
           {searchParams.get("year") && (
             <button
+              type="button"
               onClick={() => setUrlParam("year", "")}
+              aria-label="Xóa bộ lọc năm"
               className="ml-1 hover:bg-muted p-0.5 rounded-full"
             >
-              <X className="h-3 w-3 text-muted-foreground" />
+              <X className="h-3 w-3 text-muted-foreground" aria-hidden="true" />
             </button>
           )}
         </div>

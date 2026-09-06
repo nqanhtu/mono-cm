@@ -341,8 +341,9 @@ export const getColumns = (
                   className="h-8 w-8 text-muted-foreground hover:bg-blue-50 hover:text-blue-600 dark:hover:bg-blue-950/50 dark:hover:text-blue-400"
                   onClick={() => onPrintFile(doc)}
                   title="In bìa hồ sơ"
+                  aria-label="In bìa hồ sơ"
                 >
-                  <Printer className="h-4 w-4" />
+                  <Printer className="h-4 w-4" aria-hidden="true" />
                 </Button>
               )}
               {onDeleteFile && isSuperAdmin && (
@@ -353,8 +354,9 @@ export const getColumns = (
                       size="icon"
                       className="h-8 w-8 text-muted-foreground hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950/50 dark:hover:text-red-400"
                       title="Lưu trữ hồ sơ"
+                      aria-label="Lưu trữ hồ sơ"
                     >
-                      <Trash2 className="h-4 w-4" />
+                      <Trash2 className="h-4 w-4" aria-hidden="true" />
                     </Button>
                   </AlertDialogTrigger>
                   <AlertDialogContent>
@@ -391,8 +393,9 @@ export const getColumns = (
                   size="icon"
                   className="h-8 w-8 text-muted-foreground hover:bg-amber-50 hover:text-amber-600 dark:hover:bg-amber-950/50 dark:hover:text-amber-400"
                   title="Chỉnh sửa văn bản"
+                  aria-label="Chỉnh sửa văn bản"
                 >
-                  <Pencil className="h-4 w-4" />
+                  <Pencil className="h-4 w-4" aria-hidden="true" />
                 </Button>
               }
               onSuccess={() => mutate()}
@@ -405,8 +408,9 @@ export const getColumns = (
                     size="icon"
                     className="h-8 w-8 text-muted-foreground hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950/50 dark:hover:text-red-400"
                     title="Xóa văn bản"
+                    aria-label="Xóa văn bản"
                   >
-                    <Trash2 className="h-4 w-4" />
+                    <Trash2 className="h-4 w-4" aria-hidden="true" />
                   </Button>
                 </AlertDialogTrigger>
                 <AlertDialogContent>

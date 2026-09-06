@@ -170,8 +170,9 @@ export const getColumns = ({ onReturn, onApprove, onReject, onExport, onEdit, on
               onClick={() => onPrint(slip)}
               className='h-8 w-8 text-slate-600 hover:text-slate-700 hover:bg-slate-50'
               title='In phiếu'
+              aria-label='In phiếu mượn'
             >
-              <Printer className='w-4 h-4' />
+              <Printer className='w-4 h-4' aria-hidden="true" />
             </Button>
             <Button
               variant="ghost"
@@ -179,8 +180,9 @@ export const getColumns = ({ onReturn, onApprove, onReject, onExport, onEdit, on
               onClick={() => onViewHistory(slip.id)}
               className='h-8 w-8 text-blue-600 hover:text-blue-700 hover:bg-blue-50'
               title='Nhật ký'
+              aria-label='Xem nhật ký mượn'
             >
-              <History className='w-4 h-4' />
+              <History className='w-4 h-4' aria-hidden="true" />
             </Button>
           </div>
         )
@@ -198,8 +200,9 @@ export const getColumns = ({ onReturn, onApprove, onReject, onExport, onEdit, on
                     onClick={() => onApprove(slip.id)}
                     className='h-8 w-8 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50'
                     title='Duyệt yêu cầu'
+                    aria-label='Duyệt yêu cầu mượn'
                   >
-                    <Check className='w-4 h-4' />
+                    <Check className='w-4 h-4' aria-hidden="true" />
                   </Button>
                   <Button
                     variant="ghost"
@@ -207,8 +210,9 @@ export const getColumns = ({ onReturn, onApprove, onReject, onExport, onEdit, on
                     onClick={() => onReject(slip.id)}
                     className='h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10'
                     title='Từ chối'
+                    aria-label='Từ chối yêu cầu mượn'
                   >
-                    <X className='w-4 h-4' />
+                    <X className='w-4 h-4' aria-hidden="true" />
                   </Button>
                 </>
               )}
@@ -219,8 +223,9 @@ export const getColumns = ({ onReturn, onApprove, onReject, onExport, onEdit, on
                   onClick={() => onExport(slip.id)}
                   className='h-8 w-8 text-blue-600 hover:text-blue-700 hover:bg-blue-50'
                   title='Xuất hồ sơ'
+                  aria-label='Xuất hồ sơ mượn'
                 >
-                  <Send className='w-4 h-4' />
+                  <Send className='w-4 h-4' aria-hidden="true" />
                 </Button>
               )}
               {actions.canReturn && (
@@ -230,8 +235,9 @@ export const getColumns = ({ onReturn, onApprove, onReject, onExport, onEdit, on
               onClick={() => onReturn(slip.id)}
               className='h-8 w-8 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50'
               title='Trả hồ sơ'
+              aria-label='Nhận trả hồ sơ'
             >
-              <RotateCcw className='w-4 h-4' />
+              <RotateCcw className='w-4 h-4' aria-hidden="true" />
             </Button>
               )}
             </>
@@ -242,8 +248,9 @@ export const getColumns = ({ onReturn, onApprove, onReject, onExport, onEdit, on
             onClick={() => onPrint(slip)}
             className='h-8 w-8 text-slate-600 hover:text-slate-700 hover:bg-slate-50'
             title='In phiếu'
+            aria-label='In phiếu mượn'
           >
-            <Printer className='w-4 h-4' />
+            <Printer className='w-4 h-4' aria-hidden="true" />
           </Button>
           <Button
             variant="ghost"
@@ -251,8 +258,9 @@ export const getColumns = ({ onReturn, onApprove, onReject, onExport, onEdit, on
             onClick={() => onViewHistory(slip.id)}
             className='h-8 w-8 text-blue-600 hover:text-blue-700 hover:bg-blue-50'
             title='Nhật ký'
+            aria-label='Xem nhật ký mượn'
           >
-            <History className='w-4 h-4' />
+            <History className='w-4 h-4' aria-hidden="true" />
           </Button>
           {canManageBorrow && (
             <Button
@@ -261,8 +269,9 @@ export const getColumns = ({ onReturn, onApprove, onReject, onExport, onEdit, on
             onClick={() => onEdit(slip.id)}
             className='h-8 w-8 text-primary hover:text-primary hover:bg-primary/10'
             title='Chỉnh sửa'
+            aria-label='Chỉnh sửa phiếu mượn'
           >
-            <Pencil className='w-4 h-4' />
+            <Pencil className='w-4 h-4' aria-hidden="true" />
           </Button>
           )}
           {canManageBorrow && (
@@ -272,8 +281,9 @@ export const getColumns = ({ onReturn, onApprove, onReject, onExport, onEdit, on
             onClick={() => onDelete(slip.id)}
             className='h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10'
             title='Xóa'
+            aria-label='Xóa phiếu mượn'
           >
-            <Trash2 className='w-4 h-4' />
+            <Trash2 className='w-4 h-4' aria-hidden="true" />
           </Button>
           )}
         </div>

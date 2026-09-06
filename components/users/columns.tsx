@@ -95,10 +95,11 @@ export const getColumns = ({ onEdit, onDelete, onToggleLock, isAdmin }: ColumnAc
                 : 'text-amber-500 hover:text-amber-500 hover:bg-amber-50'
               }`}
               title={isLocked ? 'Mở khóa tài khoản' : 'Khóa tài khoản'}
+              aria-label={isLocked ? 'Mở khóa tài khoản' : 'Khóa tài khoản'}
             >
               {isLocked
-                ? <LockKeyholeOpen className='w-4 h-4' />
-                : <LockKeyhole className='w-4 h-4' />
+                ? <LockKeyholeOpen className='w-4 h-4' aria-hidden="true" />
+                : <LockKeyhole className='w-4 h-4' aria-hidden="true" />
               }
             </Button>
           )}
@@ -109,8 +110,9 @@ export const getColumns = ({ onEdit, onDelete, onToggleLock, isAdmin }: ColumnAc
             onClick={() => onEdit(user.id)}
             className='h-8 w-8 text-primary hover:text-primary hover:bg-primary/10'
             title='Chỉnh sửa'
+            aria-label='Chỉnh sửa người dùng'
           >
-            <Pencil className='w-4 h-4' />
+            <Pencil className='w-4 h-4' aria-hidden="true" />
           </Button>
           <Button
             variant="ghost"
@@ -118,8 +120,9 @@ export const getColumns = ({ onEdit, onDelete, onToggleLock, isAdmin }: ColumnAc
             onClick={() => onDelete(user.id)}
             className='h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10'
             title='Xóa'
+            aria-label='Xóa người dùng'
           >
-            <Trash2 className='w-4 h-4' />
+            <Trash2 className='w-4 h-4' aria-hidden="true" />
           </Button>
         </div>
       )

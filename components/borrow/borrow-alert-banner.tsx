@@ -45,8 +45,9 @@ export function BorrowAlertBanner() {
             size="icon" 
             className="h-8 w-8 text-muted-foreground"
             onClick={() => setIsVisible(false)}
+            aria-label="Đóng thông báo"
           >
-            <X className="h-4 w-4" />
+            <X className="h-4 w-4" aria-hidden="true" />
           </Button>
         </div>
       </div>

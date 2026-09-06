@@ -56,11 +56,12 @@ export default function Header({ user }: HeaderProps) {
           <TooltipTrigger asChild>
             <button
               onClick={() => window.dispatchEvent(new CustomEvent('toggle-command-palette'))}
+              aria-label="Tìm kiếm nhanh (Ctrl + K)"
               className="ml-0 hidden w-72 items-center gap-2 rounded-lg border bg-muted/35 px-2.5 py-1.5 text-left text-xs font-normal text-muted-foreground transition-colors hover:bg-muted/60 hover:text-foreground md:flex lg:ml-6"
             >
-              <Search className="h-3.5 w-3.5 shrink-0" />
+              <Search className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
               <span>Tìm kiếm...</span>
-              <kbd className="ml-auto pointer-events-none inline-flex h-4.5 select-none items-center gap-0.5 rounded border bg-muted px-1.5 font-mono text-[9px] font-medium opacity-100">
+              <kbd className="ml-auto pointer-events-none inline-flex h-4.5 select-none items-center gap-0.5 rounded border bg-muted px-1.5 font-mono text-[9px] font-medium opacity-100" aria-hidden="true">
                 <span className="text-[10px]">Ctrl</span> K
               </kbd>
             </button>
@@ -72,7 +73,7 @@ export default function Header({ user }: HeaderProps) {
 
 
         <div className="ml-auto flex items-center gap-1 lg:gap-2">
-          <div className="mx-2 h-8 w-px bg-border"></div>
+          <div className="mx-2 h-8 w-px bg-border" aria-hidden="true"></div>
           {user ? (
             <div className="flex items-center gap-3">
               <div className="text-right hidden sm:block">
@@ -81,20 +82,21 @@ export default function Header({ user }: HeaderProps) {
                 </p>
                 <p className="text-xs text-muted-foreground">{user.role}</p>
               </div>
-              <UserCircle className="w-9 h-9 text-muted-foreground/50" />
+              <UserCircle className="w-9 h-9 text-muted-foreground/50" aria-hidden="true" />
               <Button
                 variant="ghost"
                 size="icon"
                 onClick={handleLogout}
                 className="ml-2 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-full transition-colors h-10 w-10"
                 title="Đăng xuất"
+                aria-label="Đăng xuất khỏi hệ thống"
               >
-                <LogOut className="w-5 h-5" />
+                <LogOut className="w-5 h-5" aria-hidden="true" />
               </Button>
             </div>
           ) : (
             <div className="flex items-center gap-3">
-              <UserCircle className="w-9 h-9 text-muted-foreground/50" />
+              <UserCircle className="w-9 h-9 text-muted-foreground/50" aria-hidden="true" />
             </div>
           )}
         </div>

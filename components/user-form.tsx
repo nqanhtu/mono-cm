@@ -142,26 +142,26 @@ export default function UserForm({ userId, initialData, onSuccess, onCancel }: U
               Họ và tên <span className="text-red-500">*</span>
             </Label>
             <div className="relative">
-              <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 z-10" />
+              <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 z-10" aria-hidden="true" />
               <Input
                 type="text"
                 value={formData.fullName}
                 onChange={(e) => handleChange('fullName', e.target.value)}
-                className="w-full pl-9 pr-3 py-2 bg-white border-slate-200 rounded-lg text-sm focus-visible:ring-indigo-500 outline-none transition-colors"
-                placeholder="Nhập họ và tên..."
+                className="w-full pl-9 pr-3 py-2 bg-white border-slate-200 rounded-lg text-sm focus-visible:ring-2 focus-visible:ring-indigo-500 outline-none transition-colors"
+                placeholder="Nhập họ và tên…"
               />
             </div>
           </div>
           <div className="space-y-1.5">
             <Label className="text-sm font-medium text-slate-700">Đơn vị công tác</Label>
             <div className="relative">
-              <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 z-10" />
+              <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 z-10" aria-hidden="true" />
               <Input
                 type="text"
                 value={formData.unit}
                 onChange={(e) => handleChange('unit', e.target.value)}
-                className="w-full pl-9 pr-3 py-2 bg-white border-slate-200 rounded-lg text-sm focus-visible:ring-indigo-500 outline-none transition-colors"
-                placeholder="Phòng ban..."
+                className="w-full pl-9 pr-3 py-2 bg-white border-slate-200 rounded-lg text-sm focus-visible:ring-2 focus-visible:ring-indigo-500 outline-none transition-colors"
+                placeholder="Phòng ban…"
               />
             </div>
           </div>
@@ -173,12 +173,13 @@ export default function UserForm({ userId, initialData, onSuccess, onCancel }: U
               Tên đăng nhập <span className="text-red-500">*</span>
             </Label>
             <div className="relative">
-              <KeyRound className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 z-10" />
+              <KeyRound className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 z-10" aria-hidden="true" />
               <Input
                 type="text"
                 value={formData.username}
                 onChange={(e) => handleChange('username', e.target.value)}
-                className="w-full pl-9 pr-3 py-2 bg-white border-slate-200 rounded-lg text-sm focus-visible:ring-indigo-500 outline-none transition-colors"
+                spellCheck={false}
+                className="w-full pl-9 pr-3 py-2 bg-white border-slate-200 rounded-lg text-sm focus-visible:ring-2 focus-visible:ring-indigo-500 outline-none transition-colors"
                 placeholder="username"
                 disabled={isEditMode}
               />
@@ -189,13 +190,13 @@ export default function UserForm({ userId, initialData, onSuccess, onCancel }: U
               Mật khẩu {!isEditMode && <span className="text-red-500">*</span>}
             </Label>
             <div className="relative">
-              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 z-10" />
+              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 z-10" aria-hidden="true" />
               <Input
                 type="password"
                 value={formData.password}
                 onChange={(e) => handleChange('password', e.target.value)}
-                className="w-full pl-9 pr-3 py-2 bg-white border-slate-200 rounded-lg text-sm focus-visible:ring-indigo-500 outline-none transition-colors"
-                placeholder={isEditMode ? "Để trống nếu không đổi" : "Nhập mật khẩu..."}
+                className="w-full pl-9 pr-3 py-2 bg-white border-slate-200 rounded-lg text-sm focus-visible:ring-2 focus-visible:ring-indigo-500 outline-none transition-colors"
+                placeholder={isEditMode ? "Để trống nếu không đổi" : "Nhập mật khẩu…"}
               />
             </div>
           </div>
