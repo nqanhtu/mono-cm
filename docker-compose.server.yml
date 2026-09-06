@@ -112,6 +112,35 @@ services:
       - cm-net
       - n8n_n8n-net
 
+  # ─── Đồng Nai Khu Vực 1 ─────────────────────────────────────────────────────
+  dongnai_kv1_server:
+    image: ghcr.io/nqanhtu/cm-server:latest
+    container_name: dongnai_kv1_server
+    restart: always
+    env_file:
+      - .env.dongnai_kv1
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      - REDIS_URL=redis://cm-redis:6379
+    depends_on:
+      - cm-redis
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=n8n_n8n-net"
+      # Router
+      - "traefik.http.routers.dongnai-kv1.rule=Host(`namnn07.zhost.store`) && PathPrefix(`/dongnai-kv1`)"
+      - "traefik.http.routers.dongnai-kv1.entrypoints=websecure"
+      - "traefik.http.routers.dongnai-kv1.tls.certresolver=myresolver"
+      # Strip /dongnai-kv1 prefix before forwarding
+      - "traefik.http.middlewares.dongnai-kv1-strip.stripprefix.prefixes=/dongnai-kv1"
+      - "traefik.http.routers.dongnai-kv1.middlewares=dongnai-kv1-strip"
+      # Service
+      - "traefik.http.services.dongnai-kv1.loadbalancer.server.port=3000"
+    networks:
+      - cm-net
+      - n8n_n8n-net
+
 networks:
   cm-net:
     driver: bridge
