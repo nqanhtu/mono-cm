@@ -130,6 +130,7 @@ export function BorrowListSection() {
             <BorrowTable
               borrowSlips={borrowSlips.filter((slip) => tab.statuses.includes(slip.status))}
               isLoading={isLoading}
+              onCreate={canManageBorrow ? () => setIsAddModalOpen(true) : undefined}
               onReturn={setReturnSlipId}
               onApprove={(id) => mutateWithToast(id, 'approve')}
               onReject={(id) => mutateWithToast(id, 'reject')}

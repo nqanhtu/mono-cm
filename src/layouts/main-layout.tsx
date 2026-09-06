@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react'
 import { Outlet } from 'react-router-dom'
 
 import { AppSidebar } from '@/components/app-sidebar'
@@ -6,9 +7,20 @@ import Header from '@/components/header'
 import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar'
 import { useSession } from '@/lib/hooks/use-auth'
 import { CommandPalette } from '@/components/command-palette'
+import Modal from '@/components/modal'
+import BorrowForm from '@/components/borrow/borrow-form'
+import { queryClient } from '@/src/lib/query-client'
+import { queryKeys } from '@/src/lib/query-keys'
 
 export function MainLayout() {
   const { session } = useSession()
+  const [isBorrowModalOpen, setIsBorrowModalOpen] = useState(false)
+
+  useEffect(() => {
+    const handleOpen = () => setIsBorrowModalOpen(true)
+    window.addEventListener('open-create-borrow-modal', handleOpen)
+    return () => window.removeEventListener('open-create-borrow-modal', handleOpen)
+  }, [])
 
   return (
     <SidebarProvider
@@ -39,6 +51,23 @@ export function MainLayout() {
         </div>
       </SidebarInset>
       <CommandPalette />
+      {isBorrowModalOpen && (
+        <Modal
+          isOpen={isBorrowModalOpen}
+          onClose={() => setIsBorrowModalOpen(false)}
+          title="Tạo phiếu mượn hồ sơ"
+          className="max-w-5xl"
+        >
+          <BorrowForm
+            onSuccess={() => {
+              setIsBorrowModalOpen(false)
+              queryClient.invalidateQueries({ queryKey: queryKeys.borrow.all })
+              queryClient.invalidateQueries({ queryKey: queryKeys.files.all })
+            }}
+            onCancel={() => setIsBorrowModalOpen(false)}
+          />
+        </Modal>
+      )}
     </SidebarProvider>
   )
 }

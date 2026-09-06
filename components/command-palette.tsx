@@ -155,12 +155,23 @@ export function CommandPalette() {
 
         <CommandGroup heading="Hành động nhanh">
           <CommandItem value="tao ho so moi create manual" onSelect={() => navigateTo('/?create=true')}>
-            <Plus className="mr-2 h-4 w-4" />
+            <Plus className="mr-2 h-4 w-4" aria-hidden="true" />
             <span>Tạo mới hồ sơ thủ công</span>
             <CommandShortcut>⌘N</CommandShortcut>
           </CommandItem>
+          <CommandItem
+            value="tao phieu muon moi create borrow"
+            onSelect={() => {
+              setOpen(false)
+              window.dispatchEvent(new CustomEvent('open-create-borrow-modal'))
+            }}
+          >
+            <FileText className="mr-2 h-4 w-4" aria-hidden="true" />
+            <span>Tạo phiếu mượn hồ sơ</span>
+            <CommandShortcut>⌘B</CommandShortcut>
+          </CommandItem>
           <CommandItem value="sao luu du lieu backup system" onSelect={handleRunBackup}>
-            <Database className="mr-2 h-4 w-4" />
+            <Database className="mr-2 h-4 w-4" aria-hidden="true" />
             <span>Sao lưu dữ liệu hệ thống</span>
           </CommandItem>
         </CommandGroup>

@@ -12,6 +12,7 @@ import {
   Archive,
   Database,
   Scale,
+  Plus,
 } from "lucide-react";
 import { usePathname } from '@/src/lib/router';
 import type { User } from "@/lib/types/user";
@@ -23,6 +24,7 @@ import {
   SidebarGroupLabel,
   SidebarHeader,
   SidebarMenu,
+  SidebarMenuAction,
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarRail,
@@ -40,6 +42,8 @@ export function AppSidebar({ user }: AppSidebarProps) {
   if (pathname === "/login") return null;
 
   const role = user?.role;
+  const canManageBorrow = can(role, "manageBorrow");
+  const canCreateFiles = can(role, "createFiles");
   const isItemActive = (href: string) => {
     if (href === '/') return pathname === '/' || pathname.startsWith('/files/')
     if (href === '/borrow') return pathname === '/borrow' || pathname.startsWith('/borrow/')
@@ -118,10 +122,36 @@ export function AppSidebar({ user }: AppSidebarProps) {
                       className="font-medium data-[active=true]:bg-primary data-[active=true]:text-primary-foreground data-[active=true]:shadow-sm data-[active=true]:shadow-primary/20"
                     >
                       <Link to={item.href}>
-                        <item.icon />
+                        <item.icon aria-hidden="true" />
                         <span>{item.name}</span>
                       </Link>
                     </SidebarMenuButton>
+                    {item.href === "/" && canCreateFiles && (
+                      <SidebarMenuAction
+                        asChild
+                        aria-label="Thêm mới hồ sơ"
+                        title="Thêm mới hồ sơ"
+                        className="hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2 focus-visible:ring-sidebar-ring"
+                      >
+                        <Link to="/upload?mode=manual-entry">
+                          <Plus className="size-4" aria-hidden="true" />
+                        </Link>
+                      </SidebarMenuAction>
+                    )}
+                    {item.href === "/borrow" && canManageBorrow && (
+                      <SidebarMenuAction
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          window.dispatchEvent(new CustomEvent('open-create-borrow-modal'));
+                        }}
+                        aria-label="Tạo phiếu mượn mới"
+                        title="Tạo phiếu mượn mới"
+                        className="hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2 focus-visible:ring-sidebar-ring"
+                      >
+                        <Plus className="size-4" aria-hidden="true" />
+                      </SidebarMenuAction>
+                    )}
                   </SidebarMenuItem>
                 ))}
               </SidebarMenu>
