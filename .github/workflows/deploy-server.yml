@@ -11,6 +11,8 @@ on:
       - "prisma/**"
       - "docker-compose.server.yml"
       - ".github/workflows/deploy-server.yml"
+      - "!**.md"
+      - "!**.MD"
 
 env:
   IMAGE: ghcr.io/nqanhtu/cm-server

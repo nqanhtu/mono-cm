@@ -3,6 +3,7 @@
   "bunVersion": "1.x",
   "framework": "vite",
   "buildCommand": "bun run build",
+  "ignoreCommand": "sh -c 'base=${VERCEL_GIT_PREVIOUS_SHA:-}; [ -n \"$base\" ] && git cat-file -e \"$base^{commit}\" 2>/dev/null || exit 1; git diff --quiet \"$base\" HEAD -- . \":(exclude,glob)**/*.md\" \":(exclude,glob)**/*.MD\"'",
   "devCommand": "vite --port $PORT",
   "outputDirectory": "dist",
   "rewrites": [

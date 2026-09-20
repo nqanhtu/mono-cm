@@ -106,6 +106,8 @@ BACKUP_DATABASES=dongnai_city longan_city
 BACKUP_KEEP_DAYS=14
 ```
 
+`BACKUP_DATABASES` phía trên chỉ là ví dụ cũ có hai database. Khi vận hành bốn backend instance, phải đối chiếu tên database thực tế của từng instance rồi liệt kê đủ cả bốn database cần bảo vệ; không suy tên database từ tên service Docker.
+
 Khoá quyền đọc — file này chứa mật khẩu:
 
 ```bash
@@ -575,7 +577,7 @@ Giao diện admin hiện có chức năng sao lưu/khôi phục riêng, hoạt �
 2. **Không có snapshot nhất quán.** 15 lệnh đọc chạy tuần tự, không nằm trong một transaction. Nếu có người nhập liệu trong lúc sao lưu, file kết quả có thể chứa bản ghi con trỏ tới bản ghi cha không tồn tại → khi khôi phục sẽ lỗi khoá ngoại và file trở nên vô dụng.
 3. **Cột JSON bị biến dạng.** Giá trị `NULL` của các cột JSON (`File.details`, `AuditLog.detail`, `BorrowSlipEvent.details`) sau khi khôi phục trở thành JSON `'null'` thay vì `NULL` thật.
 4. **Không đối chiếu sau khi khôi phục.** API trả về "thành công" kể cả khi một số bảng bị bỏ qua.
-5. **Giới hạn kỹ thuật.** Transaction đặt timeout cứng 30 giây; bản Vercel còn bị chặn thêm bởi giới hạn 60 giây và ~4.5MB mỗi request.
+5. **Giới hạn kỹ thuật.** Transaction đặt timeout cứng 30 giây. Backend hiện chạy trên VPS; giới hạn thời gian và dung lượng request thực tế cần đo ở Traefik và container đang triển khai.
 
 Khi cần dùng (ví dụ bàn giao dữ liệu cho đơn vị khác), bắt buộc:
 
@@ -913,4 +915,4 @@ Dùng khi muốn chạy Backend dưới máy local (`bun run dev:server`), nhưn
 
 ---
 
-**Tài liệu liên quan:** [scripts/pg-backup.sh](../scripts/pg-backup.sh) · [scripts/pg-verify-restore.sh](../scripts/pg-verify-restore.sh) · [DEPLOY.md](../.gemini/DEPLOY.md) · [docker-compose.server.yml](../docker-compose.server.yml) · [prisma/schema.prisma](../prisma/schema.prisma)
+**Tài liệu liên quan:** [scripts/pg-backup.sh](../scripts/pg-backup.sh) · [scripts/pg-verify-restore.sh](../scripts/pg-verify-restore.sh) · [DEPLOY.md](DEPLOY.md) · [docker-compose.server.yml](../docker-compose.server.yml) · [prisma/schema.prisma](../prisma/schema.prisma)
