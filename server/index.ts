@@ -8,7 +8,6 @@ const port = Number(process.env.PORT ?? 3001);
 const defaultFrontendOrigins: (string | RegExp)[] = [
   "http://localhost:5173",
   "https://court-management-livid.vercel.app",
-  /.*-livid\.vercel\.app$/
 ];
 
 function normalizeOrigin(origin: string) {

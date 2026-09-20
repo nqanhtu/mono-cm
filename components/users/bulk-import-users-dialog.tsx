@@ -53,8 +53,7 @@ const ROLE_LABELS: Record<string, string> = {
   SUPER_ADMIN: 'Quản trị toàn hệ thống',
   ADMIN: 'Quản trị',
   COORDINATOR: 'Điều phối',
-  VIEWER: 'Chỉ xem',
-  BASIC_VIEWER: 'Basic Viewer'
+  VIEWER: 'Chỉ xem'
 }
 
 export function BulkImportUsersDialog({ onSuccess, onCancel }: BulkImportUsersDialogProps) {

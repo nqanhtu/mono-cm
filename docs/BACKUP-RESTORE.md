@@ -544,100 +544,6 @@ Dữ liệu nhập kể từ lần backup gần nhất **sẽ mất**. Nói rõ 
 
 ---
 
-## Phần F — Database đặt trên Neon
-
-Neon là PostgreSQL dạng serverless. Backup vẫn dùng `pg_dump` như mọi nơi khác, nhưng có bốn điểm riêng dễ làm hỏng bản dump nếu không biết trước.
-
-### F1. Lấy đúng chuỗi kết nối — không dùng endpoint pooler
-
-Neon cấp hai chuỗi kết nối cho cùng một database:
-
-```
-postgresql://user:pass@ep-abc-123-pooler.us-east-2.aws.neon.tech/neondb?sslmode=require   ← KHÔNG dùng
-postgresql://user:pass@ep-abc-123.us-east-2.aws.neon.tech/neondb?sslmode=require          ← dùng cái này
-```
-
-Khác nhau đúng chữ `-pooler` trong tên host. Chuỗi có `-pooler` đi qua PgBouncer ở chế độ transaction, trong khi `pg_dump` cần giữ một transaction xuyên suốt để lấy ảnh chụp nhất quán. Dump qua pooler hoặc là lỗi giữa chừng, hoặc tệ hơn: chạy xong nhưng dữ liệu không nhất quán giữa các bảng.
-
-Trong bảng điều khiển Neon, bỏ tick **"Pooled connection"** để lấy chuỗi trực tiếp.
-
-> Script kiểm chứng ở [F3](#f3-kiểm-chứng-bản-backup-có-restore-được-không) tự phát hiện và tự bỏ `-pooler`, có in thông báo. Nhưng khi tự gõ lệnh thì phải tự để ý.
-
-### F2. Backup định kỳ từ Neon
-
-Script [`scripts/pg-backup.sh`](../scripts/pg-backup.sh) dùng được nguyên xi, chỉ cần tách chuỗi kết nối Neon ra thành các biến trong `.env.backup`:
-
-```bash
-PGHOST=ep-abc-123.us-east-2.aws.neon.tech
-PGPORT=5432
-PGUSER=neondb_owner
-PGPASSWORD=MẬT_KHẨU_NEON
-PGSSLMODE=require
-BACKUP_DATABASES=neondb
-BACKUP_KEEP_DAYS=30
-```
-
-`PGSSLMODE=require` là bắt buộc — Neon từ chối mọi kết nối không mã hoá.
-
-Backup một lần cho nhanh:
-
-```bash
-docker run --rm -e U="postgresql://user:pass@ep-abc-123.us-east-2.aws.neon.tech/neondb?sslmode=require" -v "$PWD:/w" postgres:18-alpine sh -c 'pg_dump -d "$U" -Fc --no-owner --no-privileges -f /w/neon-$(date -u +%Y%m%dT%H%M%SZ).dump'
-```
-
-> Dòng `[CẢNH BÁO] Không dump được globals (roles)` khi chạy script trên Neon là **bình thường**. Neon không cho tài khoản thường đọc danh sách role toàn server. Bản dump database vẫn hợp lệ.
-
-### F3. Kiểm chứng bản backup có restore được không
-
-Script [`scripts/pg-verify-restore.sh`](../scripts/pg-verify-restore.sh) làm trọn vòng: dump từ nguồn → dựng một PostgreSQL tạm trong Docker → restore vào đó → đếm và so từng bảng → dọn dẹp. **Không ghi gì vào database nguồn**, chỉ đọc.
-
-```bash
-SOURCE_URL="postgresql://user:pass@ep-abc-123.us-east-2.aws.neon.tech/neondb?sslmode=require" ./scripts/pg-verify-restore.sh
-```
-
-Kết quả khi đạt:
-
-```
-=== [1/6] Đọc thông tin database nguồn ===
-Phiên bản nguồn : 17.2 (major 17)
-Bộ công cụ dùng : postgres:18-alpine
-...
-┌────────────────────────────────────────────────┐
-│  ĐẠT — bản backup restore được, dữ liệu khớp   │
-└────────────────────────────────────────────────┘
-  Số bảng   : 16
-  Số bản ghi: 12480
-  File dump : ./backup-verify/source.dump
-```
-
-Script tự chọn phiên bản bộ công cụ theo đúng phiên bản của Neon, nên không phải đoán tag image. Khi không đạt, nó in `diff` từng bảng để thấy ngay bảng nào lệch.
-
-Có thể chạy với bất kỳ database nào, không riêng Neon:
-
-```bash
-SOURCE_URL="postgresql://dn_city:MẬT_KHẨU@160.30.160.49:5432/dongnai_city" ./scripts/pg-verify-restore.sh
-```
-
-Muốn giữ lại PostgreSQL tạm để tự vào xem dữ liệu:
-
-```bash
-KEEP_TARGET=1 SOURCE_URL="..." ./scripts/pg-verify-restore.sh
-```
-
-Nhớ `docker rm -f` container đó sau khi xem xong.
-
-### F4. Những điểm khác của Neon so với PostgreSQL tự host
-
-**Compute ngủ đông.** Neon tự tắt compute sau một thời gian không có kết nối. Lệnh dump đầu tiên có thể chờ vài giây để máy chủ tỉnh dậy — đó không phải lỗi. Nhưng nếu đặt lịch backup, hãy tính thêm khoảng chờ này vào timeout.
-
-**Branch không phải backup.** Neon cho tạo branch tức thời và khôi phục về một thời điểm trong quá khứ. Rất tiện để lùi lại sau khi lỡ tay, và nên dùng. Nhưng branch nằm cùng tài khoản, cùng nhà cung cấp với bản gốc: mất quyền truy cập tài khoản, hoặc Neon gặp sự cố, hoặc hết hạn thanh toán là mất cả branch lẫn database. **Vẫn phải có bản `pg_dump` nằm ngoài Neon.**
-
-**Không có quyền superuser.** Vì vậy `pg_dumpall --globals-only` không chạy được, và một vài đối tượng cấp hệ thống không nằm trong dump. Với schema của dự án này thì không ảnh hưởng — không có extension, view, trigger hay sequence nào ngoài các bảng do Prisma quản lý.
-
-**Giới hạn dung lượng và băng thông.** Dump toàn bộ database mỗi ngày sẽ tính vào lượng dữ liệu truyền đi của gói dịch vụ. Với dữ liệu cỡ vài chục nghìn bản ghi thì không đáng kể, nhưng nên kiểm tra hoá đơn sau tháng đầu.
-
----
-
 ## Phụ lục A — Sự cố thường gặp
 
 | Thông báo lỗi | Nguyên nhân | Cách xử lý |
@@ -656,9 +562,6 @@ Nhớ `docker rm -f` container đó sau khi xem xong.
 | `docker: invalid mount config ... path is not shared` | Docker Desktop chưa được chia sẻ ổ C | Settings → Resources → File Sharing → thêm `C:\mono-cm` |
 | Task Scheduler báo `0x1` nhưng chạy tay thì được | Task chạy bằng SYSTEM, chưa thấy Docker | Kiểm tra Docker Desktop đặt chế độ khởi động cùng Windows; hoặc đổi `/RU` sang tài khoản có quyền dùng Docker |
 | Hash SHA256 không khớp sau khi tải | File hỏng trên đường truyền | Tải lại. **Tuyệt đối không restore** file sai hash |
-| Dump từ Neon lỗi giữa chừng, hoặc chạy xong nhưng dữ liệu lệch | Dùng nhầm endpoint pooler | Bỏ `-pooler` khỏi tên host ([F1](#f1-lấy-đúng-chuỗi-kết-nối--không-dùng-endpoint-pooler)) |
-| `no pg_hba.conf entry ... no encryption` khi kết nối Neon | Thiếu SSL | Thêm `?sslmode=require` vào URL hoặc `PGSSLMODE=require` vào env |
-| Neon báo `Không dump được globals (roles)` | Neon không cho tài khoản thường đọc role toàn server | Bình thường, bỏ qua — bản dump database vẫn hợp lệ |
 
 ---
 

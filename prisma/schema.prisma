@@ -16,7 +16,6 @@ enum UserRole {
   ADMIN // Admin (Chánh án): Xem, sửa, xoá hồ sơ, xem phiếu mượn
   VIEWER // View (Thẩm phán): Xem hồ sơ
   COORDINATOR // Coordinate: Xem hồ sơ, tạo phiếu mượn trả, xem vị trí lưu kho
-  BASIC_VIEWER // Basic Viewer: Xem hồ sơ, lưu trữ, báo cáo cơ bản
 }
 
 model User {

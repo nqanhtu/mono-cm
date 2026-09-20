@@ -44,10 +44,11 @@ trap cleanup EXIT INT TERM
 command -v docker >/dev/null 2>&1 || fail "Không tìm thấy Docker. Script này cần Docker để dựng PostgreSQL tạm."
 docker info >/dev/null 2>&1 || fail "Docker chưa chạy. Khởi động Docker rồi chạy lại."
 
-# ── Neon: bắt buộc dùng endpoint trực tiếp, không dùng endpoint pooler ───────
-# Endpoint pooler đi qua PgBouncer ở chế độ transaction; pg_dump cần giữ một
-# transaction xuyên suốt nên dump qua pooler có thể lỗi hoặc ra dữ liệu không
-# nhất quán. Chuỗi kết nối pooler nhận ra qua "-pooler" trong tên host.
+# ── Bắt buộc dùng endpoint trực tiếp, không dùng endpoint pooler ─────────────
+# Một số PostgreSQL quản lý (kể cả tự host qua PgBouncer) cấp thêm một chuỗi
+# kết nối pooler, nhận ra qua "-pooler" trong tên host. Endpoint đó chạy
+# PgBouncer ở chế độ transaction; pg_dump cần giữ một transaction xuyên suốt
+# nên dump qua pooler có thể lỗi hoặc ra dữ liệu không nhất quán.
 case "$SOURCE_URL" in
   *-pooler.*)
     SOURCE_URL=$(echo "$SOURCE_URL" | sed 's/-pooler\./\./')

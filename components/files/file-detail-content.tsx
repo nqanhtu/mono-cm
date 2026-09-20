@@ -52,7 +52,6 @@ export function FileDetailContent({ id }: { id: string }) {
     const isOwnCoordinatorFile = session?.role === 'COORDINATOR' && Boolean(file?.createdById) && file?.createdById === session.id
     const canEditFile = canManageFiles || isOwnCoordinatorFile
     const showEditButton = (canEditFile && !file?.isLocked) || session?.role === 'SUPER_ADMIN'
-    const isBasicViewer = session?.role === 'BASIC_VIEWER'
 
     useEffect(() => {
         if (!isLoading && file) {
@@ -292,7 +291,7 @@ export function FileDetailContent({ id }: { id: string }) {
             <Tabs defaultValue="general" className="w-full">
                 <TabsList className="flex w-full justify-start overflow-x-auto lg:w-[600px]">
                     <TabsTrigger value="general" className="min-w-max flex-1">Thông tin chung</TabsTrigger>
-                    {!isBasicViewer && <TabsTrigger value="storage" className="min-w-max flex-1">Lưu trữ</TabsTrigger>}
+                    <TabsTrigger value="storage" className="min-w-max flex-1">Lưu trữ</TabsTrigger>
                     <TabsTrigger value="index" className="min-w-max flex-1">Mục lục hồ sơ</TabsTrigger>
                     <TabsTrigger value="borrow" className="min-w-max flex-1">Mượn trả</TabsTrigger>
                 </TabsList>
@@ -393,66 +392,64 @@ export function FileDetailContent({ id }: { id: string }) {
                 </TabsContent>
 
                 {/* Storage Tab */}
-                {!isBasicViewer && (
-                    <TabsContent value="storage" className="mt-6">
-                        <Card>
-                            <CardHeader>
-                                <CardTitle className="flex items-center gap-2">
-                                    <Archive className="h-5 w-5 text-orange-500" />
-                                    Thông tin lưu trữ
-                                </CardTitle>
-                            </CardHeader>
-                            <CardContent>
-                                {file.box ? (
-                                    <div className="grid gap-6 md:grid-cols-2">
-                                        <div className="space-y-4">
-                                            <div className="flex items-center justify-between p-4 border rounded-lg bg-slate-50">
-                                                <div className="min-w-0">
-                                                    <p className="text-sm text-muted-foreground">Hộp số</p>
-                                                    <p className="text-2xl font-bold">{file.box.boxNumber}</p>
-                                                    <p className="text-xs text-muted-foreground">{file.box.code}</p>
-                                                </div>
-                                                <Box className="h-8 w-8 text-slate-300" />
+                <TabsContent value="storage" className="mt-6">
+                    <Card>
+                        <CardHeader>
+                            <CardTitle className="flex items-center gap-2">
+                                <Archive className="h-5 w-5 text-orange-500" />
+                                Thông tin lưu trữ
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            {file.box ? (
+                                <div className="grid gap-6 md:grid-cols-2">
+                                    <div className="space-y-4">
+                                        <div className="flex items-center justify-between p-4 border rounded-lg bg-slate-50">
+                                            <div className="min-w-0">
+                                                <p className="text-sm text-muted-foreground">Hộp số</p>
+                                                <p className="text-2xl font-bold">{file.box.boxNumber}</p>
+                                                <p className="text-xs text-muted-foreground">{file.box.code}</p>
                                             </div>
-                                            {file.box.agency && (
-                                                <div className="p-4 border rounded-lg">
-                                                    <p className="text-sm text-muted-foreground mb-1">Phông lưu trữ</p>
-                                                    <p className="font-semibold">{file.box.agency.name}</p>
-                                                    <p className="text-xs text-muted-foreground mt-1">
-                                                        {formatDate(file.box.agency.startDate)} -
-                                                        {file.box.agency.endDate ? formatDate(file.box.agency.endDate) : 'Hiện tại'}
-                                                    </p>
-                                                </div>
-                                            )}
+                                            <Box className="h-8 w-8 text-slate-300" />
                                         </div>
-                                        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                                            <div className="p-3 border rounded">
-                                                <p className="text-xs text-muted-foreground uppercase">Kho</p>
-                                                <p className="font-medium">{file.box.warehouse}</p>
+                                        {file.box.agency && (
+                                            <div className="p-4 border rounded-lg">
+                                                <p className="text-sm text-muted-foreground mb-1">Phông lưu trữ</p>
+                                                <p className="font-semibold">{file.box.agency.name}</p>
+                                                <p className="text-xs text-muted-foreground mt-1">
+                                                    {formatDate(file.box.agency.startDate)} -
+                                                    {file.box.agency.endDate ? formatDate(file.box.agency.endDate) : 'Hiện tại'}
+                                                </p>
                                             </div>
-                                            <div className="p-3 border rounded">
-                                                <p className="text-xs text-muted-foreground uppercase">Dãy</p>
-                                                <p className="font-medium">{file.box.line}</p>
-                                            </div>
-                                            <div className="p-3 border rounded">
-                                                <p className="text-xs text-muted-foreground uppercase">Kệ (Giá)</p>
-                                                <p className="font-medium">{file.box.shelf}</p>
-                                            </div>
-                                            <div className="p-3 border rounded">
-                                                <p className="text-xs text-muted-foreground uppercase">Ngăn</p>
-                                                <p className="font-medium">{file.box.slot}</p>
-                                            </div>
+                                        )}
+                                    </div>
+                                    <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                                        <div className="p-3 border rounded">
+                                            <p className="text-xs text-muted-foreground uppercase">Kho</p>
+                                            <p className="font-medium">{file.box.warehouse}</p>
+                                        </div>
+                                        <div className="p-3 border rounded">
+                                            <p className="text-xs text-muted-foreground uppercase">Dãy</p>
+                                            <p className="font-medium">{file.box.line}</p>
+                                        </div>
+                                        <div className="p-3 border rounded">
+                                            <p className="text-xs text-muted-foreground uppercase">Kệ (Giá)</p>
+                                            <p className="font-medium">{file.box.shelf}</p>
+                                        </div>
+                                        <div className="p-3 border rounded">
+                                            <p className="text-xs text-muted-foreground uppercase">Ngăn</p>
+                                            <p className="font-medium">{file.box.slot}</p>
                                         </div>
                                     </div>
-                                ) : (
-                                    <div className="text-center py-8 text-muted-foreground border-2 border-dashed rounded-lg">
-                                        Hồ sơ chưa được xếp vào hộp/vị trí lưu trữ.
-                                    </div>
-                                )}
-                            </CardContent>
-                        </Card>
-                    </TabsContent>
-                )}
+                                </div>
+                            ) : (
+                                <div className="text-center py-8 text-muted-foreground border-2 border-dashed rounded-lg">
+                                    Hồ sơ chưa được xếp vào hộp/vị trí lưu trữ.
+                                </div>
+                            )}
+                        </CardContent>
+                    </Card>
+                </TabsContent>
 
                 {/* Index Tab */}
                 <TabsContent value="index" className="mt-6">
@@ -537,20 +534,18 @@ export function FileDetailContent({ id }: { id: string }) {
                 </TabsContent>
 
                 {/* Documents List - Always Visible */}
-                {!isBasicViewer && (
-                    <ChildDocumentWorkspace
-                        fileId={file.id}
-                        parentFileCode={file.code}
-                        parentFileTitle={file.title}
-                        parentYear={file.year || undefined}
-                        parentRetention={file.retention || undefined}
-                        documents={file.documents || []}
-                        canManage={canEditFile}
-                        isSuperAdmin={session?.role === 'SUPER_ADMIN'}
-                        onMutate={() => mutate()}
-                        entryMode={new URLSearchParams(window.location.search).get('entry') === 'create' ? 'create' : 'idle'}
-                    />
-                )}
+                <ChildDocumentWorkspace
+                    fileId={file.id}
+                    parentFileCode={file.code}
+                    parentFileTitle={file.title}
+                    parentYear={file.year || undefined}
+                    parentRetention={file.retention || undefined}
+                    documents={file.documents || []}
+                    canManage={canEditFile}
+                    isSuperAdmin={session?.role === 'SUPER_ADMIN'}
+                    onMutate={() => mutate()}
+                    entryMode={new URLSearchParams(window.location.search).get('entry') === 'create' ? 'create' : 'idle'}
+                />
             </Tabs>
         </div>
     )

@@ -12,7 +12,7 @@ Tài liệu này cung cấp cái nhìn tổng quan nhanh chóng và toàn diện
 - **Runtime**: [Bun](https://bun.sh/) (sử dụng thay thế cho Node.js).
 - **Framework**: [Elysia.js](https://elysiajs.com/) (siêu nhanh, hỗ trợ OpenAPI/Swagger).
 - **ORM**: [Prisma](https://www.prisma.io/) (với adapter `@prisma/adapter-pg` + `pg` driver cho PostgreSQL).
-- **Database**: PostgreSQL (Neon Postgres qua `DATABASE_URL`).
+- **Database**: PostgreSQL tự host, mỗi tỉnh một database riêng (qua `DATABASE_URL`).
 - **Authentication**: Cookie-based JWT (`session` cookie).
 
 ### Frontend

@@ -34,7 +34,10 @@ function normalizeNFCDeep(value: unknown): unknown {
 }
 
 function createPrismaClient(): PrismaClient {
-  const client = new PrismaClient({ adapter })
+  // Never let `password` leak through `include: { user: true }` /
+  // `include: { lender: true }` style queries. Routes that genuinely need
+  // the hash (login) must opt back in per-query with `omit: { password: false }`.
+  const client = new PrismaClient({ adapter, omit: { user: { password: true } } })
   return client.$extends({
     query: {
       $allModels: {

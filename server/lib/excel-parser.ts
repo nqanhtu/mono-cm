@@ -151,16 +151,17 @@ function normalizeUserRole(roleStr: string): string {
     if (['SUPER_ADMIN', 'SUPERADMIN'].includes(normalized)) return 'SUPER_ADMIN'
     if (['ADMIN'].includes(normalized)) return 'ADMIN'
     if (['COORDINATOR'].includes(normalized)) return 'COORDINATOR'
-    if (['VIEWER'].includes(normalized)) return 'VIEWER'
-    if (['BASIC_VIEWER', 'BASICVIEWER'].includes(normalized)) return 'BASIC_VIEWER'
+    // BASIC_VIEWER no longer exists as a role (merged into VIEWER on 2026-09-15) —
+    // an old export or a hand-typed cell that still says "Basic Viewer" should
+    // resolve to VIEWER rather than fail import as an unrecognized role.
+    if (['VIEWER', 'BASIC_VIEWER', 'BASICVIEWER'].includes(normalized)) return 'VIEWER'
 
     const vnLower = roleStr.trim().toLowerCase()
     if (vnLower.includes('quản trị toàn hệ thống') || vnLower.includes('quản trị hệ thống') || vnLower.includes('super admin')) return 'SUPER_ADMIN'
     if (vnLower.includes('quản trị') || vnLower.includes('admin')) return 'ADMIN'
     if (vnLower.includes('điều phối')) return 'COORDINATOR'
-    if (vnLower.includes('chỉ xem') || vnLower.includes('xem') || vnLower.includes('viewer')) return 'VIEWER'
-    if (vnLower.includes('basic viewer') || vnLower.includes('người xem cơ bản')) return 'BASIC_VIEWER'
-    
+    if (vnLower.includes('basic viewer') || vnLower.includes('người xem cơ bản') || vnLower.includes('chỉ xem') || vnLower.includes('xem') || vnLower.includes('viewer')) return 'VIEWER'
+
     return roleStr
 }
 

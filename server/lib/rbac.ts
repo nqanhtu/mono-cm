@@ -2,7 +2,7 @@ import type { AppSet } from '@/lib/http'
 import type { SessionPayload } from '@/lib/session'
 import { jsonError } from '@/lib/http'
 
-export const USER_ROLES = ['SUPER_ADMIN', 'ADMIN', 'VIEWER', 'COORDINATOR', 'BASIC_VIEWER'] as const
+export const USER_ROLES = ['SUPER_ADMIN', 'ADMIN', 'VIEWER', 'COORDINATOR'] as const
 
 export type UserRole = (typeof USER_ROLES)[number]
 
@@ -10,13 +10,13 @@ export const permissions = {
   manageUsers: ['SUPER_ADMIN'],
   manageAgencies: ['SUPER_ADMIN'],
   viewAudit: ['SUPER_ADMIN'],
-  viewFiles: ['SUPER_ADMIN', 'ADMIN', 'VIEWER', 'COORDINATOR', 'BASIC_VIEWER'],
+  viewFiles: ['SUPER_ADMIN', 'ADMIN', 'VIEWER', 'COORDINATOR'],
   manageFiles: ['SUPER_ADMIN', 'ADMIN', 'COORDINATOR'],
   viewBorrow: ['SUPER_ADMIN', 'ADMIN', 'COORDINATOR'],
   manageBorrow: ['SUPER_ADMIN', 'ADMIN', 'COORDINATOR'],
-  viewStorage: ['SUPER_ADMIN', 'ADMIN', 'VIEWER', 'COORDINATOR', 'BASIC_VIEWER'],
+  viewStorage: ['SUPER_ADMIN', 'ADMIN', 'VIEWER', 'COORDINATOR'],
   manageStorage: ['SUPER_ADMIN'],
-  viewReports: ['SUPER_ADMIN', 'ADMIN', 'VIEWER', 'COORDINATOR', 'BASIC_VIEWER'],
+  viewReports: ['SUPER_ADMIN', 'ADMIN', 'VIEWER', 'COORDINATOR'],
 } as const satisfies Record<string, readonly UserRole[]>
 
 export type Permission = keyof typeof permissions

@@ -70,7 +70,7 @@ export async function previewUserImport(payload: ExtractedUser[]): Promise<UserI
         buildIssue(
           row,
           'Vai trò',
-          'Vai trò không hợp lệ (hợp lệ: SUPER_ADMIN, ADMIN, COORDINATOR, VIEWER, BASIC_VIEWER)',
+          'Vai trò không hợp lệ (hợp lệ: SUPER_ADMIN, ADMIN, COORDINATOR, VIEWER)',
           uname
         )
       )

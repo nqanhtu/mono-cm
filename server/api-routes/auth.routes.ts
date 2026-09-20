@@ -27,7 +27,9 @@ export const authRoutes = new Elysia()
         return { success: false, message: 'Vui lòng nhập đầy đủ thông tin' }
       }
 
-      const user = await db.user.findUnique({ where: { username } })
+      // password is globally omitted (server/lib/db.ts) — opt back in here only,
+      // since this is the one place that legitimately needs the hash.
+      const user = await db.user.findUnique({ where: { username }, omit: { password: false } })
       if (!user || !user.status) {
         set.status = 401
         return { success: false, message: 'Tài khoản không tồn tại hoặc bị khóa' }
