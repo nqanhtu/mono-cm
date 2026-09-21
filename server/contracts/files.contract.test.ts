@@ -840,6 +840,9 @@ describe('files contract', () => {
             return files
           },
         },
+        agencyHistory: {
+          findFirst: async () => ({ name: 'Toà án nhân dân khu vực 3 Tây Ninh' }),
+        },
         auditLog: {
           create: async (args: unknown) => {
             auditLogCalls.push(args)
@@ -854,7 +857,7 @@ describe('files contract', () => {
 
       expect(response.status).toBe(200)
       expect(response.headers.get('content-type')).toContain('spreadsheetml.sheet')
-      expect(response.headers.get('content-disposition')).toMatch(/attachment; filename="muc-luc-ho-so_\d{8}_\d{4}\.xlsx"/)
+      expect(response.headers.get('content-disposition')).toMatch(/attachment; filename="muc-luc-ho-so_toa-an-nhan-dan-khu-vuc-3-tay-ninh_\d{8}_\d{4}\.xlsx"/)
 
       expect(findManyCalls).toHaveLength(1)
       expect(findManyCalls[0]).not.toHaveProperty('take')
@@ -936,6 +939,9 @@ describe('files contract', () => {
             return []
           },
         },
+        agencyHistory: {
+          findFirst: async () => null,
+        },
         auditLog: {
           create: async () => ({ id: 'audit-1' }),
         },
@@ -960,6 +966,9 @@ describe('files contract', () => {
         file: {
           findMany: async () => [],
         },
+        agencyHistory: {
+          findFirst: async () => null,
+        },
         auditLog: {
           create: async () => ({ id: 'audit-1' }),
         },
@@ -970,6 +979,7 @@ describe('files contract', () => {
       }))
 
       expect(response.status).toBe(200)
+      expect(response.headers.get('content-disposition')).toMatch(/attachment; filename="muc-luc-ho-so_\d{8}_\d{4}\.xlsx"/)
       const buffer = await response.arrayBuffer()
       const workbook = XLSX.read(buffer, { type: 'buffer' })
       const sheet = workbook.Sheets[workbook.SheetNames[0]]

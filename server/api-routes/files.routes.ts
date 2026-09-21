@@ -56,10 +56,23 @@ function toFileIndexRows(files: FileIndexSource[]) {
   }))
 }
 
-function buildFileIndexFilename(date: Date) {
+function slugifyForFilename(text: string, maxLength = 60) {
+  const slug = text
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g, '')
+    .replace(/đ/gi, (m) => (m === 'đ' ? 'd' : 'D'))
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+  return slug.slice(0, maxLength).replace(/-+$/g, '')
+}
+
+function buildFileIndexFilename(date: Date, courtName?: string | null) {
   const pad = (n: number) => String(n).padStart(2, '0')
   const stamp = `${date.getFullYear()}${pad(date.getMonth() + 1)}${pad(date.getDate())}_${pad(date.getHours())}${pad(date.getMinutes())}`
-  return `muc-luc-ho-so_${stamp}.xlsx`
+  const courtSlug = courtName ? slugifyForFilename(courtName) : ''
+  const prefix = courtSlug ? `muc-luc-ho-so_${courtSlug}` : 'muc-luc-ho-so'
+  return `${prefix}_${stamp}.xlsx`
 }
 
 function toFileIndexXlsx(rows: Array<Record<string, unknown>>) {
@@ -119,23 +132,26 @@ export const fileRoutes = new Elysia()
       if (denied) return denied
 
       const where = await buildFileWhere(query, session)
-      const files = await db.file.findMany({
-        where,
-        select: {
-          code: true,
-          title: true,
-          type: true,
-          year: true,
-          pageCount: true,
-          plaintiffs: true,
-          defendants: true,
-          civilDefendants: true,
-          box: { select: { boxNumber: true } },
-        },
-      })
+      const [files, currentAgency] = await Promise.all([
+        db.file.findMany({
+          where,
+          select: {
+            code: true,
+            title: true,
+            type: true,
+            year: true,
+            pageCount: true,
+            plaintiffs: true,
+            defendants: true,
+            civilDefendants: true,
+            box: { select: { boxNumber: true } },
+          },
+        }),
+        db.agencyHistory.findFirst({ where: { endDate: null }, orderBy: { startDate: 'desc' }, select: { name: true } }),
+      ])
       const sorted = sortFilesForIndex(files)
       const rows = toFileIndexRows(sorted)
-      const filename = buildFileIndexFilename(new Date())
+      const filename = buildFileIndexFilename(new Date(), currentAgency?.name)
       const body = toFileIndexXlsx(rows)
 
       await createAuditLog({
