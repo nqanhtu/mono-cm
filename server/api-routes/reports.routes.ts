@@ -1,5 +1,4 @@
 import { Elysia } from 'elysia'
-import * as XLSX from 'xlsx'
 import type { Prisma } from '@/generated/prisma/client'
 
 import { db } from '@/lib/db'
@@ -7,6 +6,7 @@ import { jsonError } from '@/lib/http'
 import { getClientIp } from '@/lib/request'
 import { sessionOrDenied } from '@/api-routes/_shared'
 import { createAuditLog } from '@/lib/services/audit-log'
+import { toXlsx } from '@/lib/xlsx'
 
 export const reportRoutes = new Elysia()
   .get('/api/reports/stats', async ({ request, set }) => {
@@ -578,10 +578,4 @@ function csvCell(value: unknown) {
   const text = String(value ?? '')
   if (!/[",\n]/.test(text)) return text
   return `"${text.replace(/"/g, '""')}"`
-}
-
-function toXlsx(rows: Array<Record<string, unknown>>, sheetName: string) {
-  const workbook = XLSX.utils.book_new()
-  XLSX.utils.book_append_sheet(workbook, XLSX.utils.json_to_sheet(rows), sheetName)
-  return XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' }) as Buffer
 }

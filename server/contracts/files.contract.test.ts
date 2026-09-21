@@ -1,4 +1,5 @@
 import { describe, expect, test } from 'bun:test'
+import * as XLSX from 'xlsx'
 
 import { USER_SELECT } from '@/api-routes/_shared'
 import { createTestApp, jsonRequest, postJson, sessionCookie, setDbForTesting } from './helpers'
@@ -792,5 +793,190 @@ describe('files contract', () => {
         headers: { cookie: await sessionCookie('ADMIN') },
       }))
       expect(response.status).toBe(404)
+    })
+
+    test('GET /api/files/export rejects VIEWER with 403', async () => {
+      const app = createTestApp()
+      const response = await app.handle(jsonRequest('/api/files/export', {
+        headers: { cookie: await sessionCookie('VIEWER') },
+      }))
+      expect(response.status).toBe(403)
+    })
+
+    test('GET /api/files/export rejects COORDINATOR with 403', async () => {
+      const app = createTestApp()
+      const response = await app.handle(jsonRequest('/api/files/export', {
+        headers: { cookie: await sessionCookie('COORDINATOR') },
+      }))
+      expect(response.status).toBe(403)
+    })
+
+    test('GET /api/files/export returns an xlsx workbook for ADMIN, sorted by Hộp số then Mã hồ sơ regardless of query sort, with STT and joined multi-value cells', async () => {
+      const app = createTestApp()
+      const files = [
+        {
+          id: 'file-2', code: 'HS-002', title: 'Hồ sơ 2', type: 'Dân sự', year: 2021, pageCount: 15,
+          plaintiffs: ['Nguyễn Văn A'], defendants: ['Trần Văn B'], civilDefendants: [],
+          box: { boxNumber: '02' },
+        },
+        {
+          id: 'file-1', code: 'HS-001', title: 'Hồ sơ 1', type: 'Hình sự', year: 2020, pageCount: 10,
+          plaintiffs: ['Lê Thị C', 'Phạm Thị D'], defendants: [], civilDefendants: ['Hoàng Văn E'],
+          box: { boxNumber: '01' },
+        },
+        {
+          id: 'file-3', code: 'HS-003', title: 'Hồ sơ 3', type: 'Dân sự', year: 2022, pageCount: 5,
+          plaintiffs: [], defendants: [], civilDefendants: [],
+          box: null,
+        },
+      ]
+      const findManyCalls: unknown[] = []
+      const auditLogCalls: unknown[] = []
+
+      setDbForTesting({
+        file: {
+          findMany: async (args: unknown) => {
+            findManyCalls.push(args)
+            return files
+          },
+        },
+        auditLog: {
+          create: async (args: unknown) => {
+            auditLogCalls.push(args)
+            return { id: 'audit-1' }
+          },
+        },
+      })
+
+      const response = await app.handle(jsonRequest('/api/files/export?sortField=title&sortOrder=asc', {
+        headers: { cookie: await sessionCookie('ADMIN') },
+      }))
+
+      expect(response.status).toBe(200)
+      expect(response.headers.get('content-type')).toContain('spreadsheetml.sheet')
+      expect(response.headers.get('content-disposition')).toMatch(/attachment; filename="muc-luc-ho-so_\d{8}_\d{4}\.xlsx"/)
+
+      expect(findManyCalls).toHaveLength(1)
+      expect(findManyCalls[0]).not.toHaveProperty('take')
+      expect(findManyCalls[0]).not.toHaveProperty('skip')
+      expect(findManyCalls[0]).not.toHaveProperty('orderBy')
+      expect(findManyCalls[0]).toMatchObject({
+        select: {
+          code: true,
+          title: true,
+          type: true,
+          year: true,
+          pageCount: true,
+          plaintiffs: true,
+          defendants: true,
+          civilDefendants: true,
+          box: { select: { boxNumber: true } },
+        },
+      })
+
+      expect(auditLogCalls).toHaveLength(1)
+      expect(auditLogCalls[0]).toMatchObject({
+        data: {
+          action: 'EXPORT',
+          target: 'File',
+          targetId: 'file_index',
+        },
+      })
+
+      const buffer = await response.arrayBuffer()
+      const workbook = XLSX.read(buffer, { type: 'buffer' })
+      const sheet = workbook.Sheets[workbook.SheetNames[0]]
+      const rows = XLSX.utils.sheet_to_json(sheet)
+
+      expect(rows).toEqual([
+        {
+          'STT': 1,
+          'Hộp số': '',
+          'Mã hồ sơ': 'HS-003',
+          'Nguyên đơn/Bị hại': '',
+          'Bị cáo/Bị đơn': '',
+          'Tiêu đề': 'Hồ sơ 3',
+          'Loại án': 'Dân sự',
+          'Năm': 2022,
+          'Số tờ': 5,
+        },
+        {
+          'STT': 2,
+          'Hộp số': '01',
+          'Mã hồ sơ': 'HS-001',
+          'Nguyên đơn/Bị hại': 'Lê Thị C, Phạm Thị D',
+          'Bị cáo/Bị đơn': 'Hoàng Văn E',
+          'Tiêu đề': 'Hồ sơ 1',
+          'Loại án': 'Hình sự',
+          'Năm': 2020,
+          'Số tờ': 10,
+        },
+        {
+          'STT': 3,
+          'Hộp số': '02',
+          'Mã hồ sơ': 'HS-002',
+          'Nguyên đơn/Bị hại': 'Nguyễn Văn A',
+          'Bị cáo/Bị đơn': 'Trần Văn B',
+          'Tiêu đề': 'Hồ sơ 2',
+          'Loại án': 'Dân sự',
+          'Năm': 2021,
+          'Số tờ': 15,
+        },
+      ])
+    })
+
+    test('GET /api/files/export applies the current filters (type) to the Prisma where clause', async () => {
+      const app = createTestApp()
+      const findManyCalls: unknown[] = []
+
+      setDbForTesting({
+        file: {
+          findMany: async (args: unknown) => {
+            findManyCalls.push(args)
+            return []
+          },
+        },
+        auditLog: {
+          create: async () => ({ id: 'audit-1' }),
+        },
+      })
+
+      const response = await app.handle(jsonRequest('/api/files/export?type=Dân+sự', {
+        headers: { cookie: await sessionCookie('SUPER_ADMIN') },
+      }))
+
+      expect(response.status).toBe(200)
+      expect(findManyCalls[0]).toMatchObject({
+        where: {
+          AND: expect.arrayContaining([{ type: { equals: 'Dân sự' } }]),
+        },
+      })
+    })
+
+    test('GET /api/files/export returns a valid workbook with only the header row when no file matches', async () => {
+      const app = createTestApp()
+
+      setDbForTesting({
+        file: {
+          findMany: async () => [],
+        },
+        auditLog: {
+          create: async () => ({ id: 'audit-1' }),
+        },
+      })
+
+      const response = await app.handle(jsonRequest('/api/files/export', {
+        headers: { cookie: await sessionCookie('ADMIN') },
+      }))
+
+      expect(response.status).toBe(200)
+      const buffer = await response.arrayBuffer()
+      const workbook = XLSX.read(buffer, { type: 'buffer' })
+      const sheet = workbook.Sheets[workbook.SheetNames[0]]
+      const rawRows = XLSX.utils.sheet_to_json(sheet, { header: 1 })
+
+      expect(rawRows).toEqual([
+        ['STT', 'Hộp số', 'Mã hồ sơ', 'Nguyên đơn/Bị hại', 'Bị cáo/Bị đơn', 'Tiêu đề', 'Loại án', 'Năm', 'Số tờ'],
+      ])
     })
 })

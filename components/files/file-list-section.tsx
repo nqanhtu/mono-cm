@@ -18,6 +18,7 @@ export function FileListSection({ onCreate }: FileListSectionProps) {
     const searchParams = useSearchParams()
     const q = searchParams.get('q') || undefined
     const type = searchParams.get('type') || undefined
+    const year = searchParams.get('year') ? parseInt(searchParams.get('year')!, 10) : undefined
     const status = searchParams.get('status') || undefined
     const hasBox = searchParams.get('hasBox') || undefined
     const judgmentNumber = searchParams.get('judgmentNumber') || undefined
@@ -35,6 +36,7 @@ export function FileListSection({ onCreate }: FileListSectionProps) {
     const { files, total, isLoading, mutate } = useFiles({
         query: q,
         type,
+        year,
         status,
         hasBox,
         judgmentNumber,

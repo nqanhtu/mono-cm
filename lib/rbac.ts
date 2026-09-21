@@ -11,6 +11,7 @@ export const permissions = {
   viewFiles: ['SUPER_ADMIN', 'ADMIN', 'VIEWER', 'COORDINATOR'],
   createFiles: ['SUPER_ADMIN', 'ADMIN', 'COORDINATOR'],
   manageFiles: ['SUPER_ADMIN', 'ADMIN'],
+  exportFiles: ['SUPER_ADMIN', 'ADMIN'],
   viewBorrow: ['SUPER_ADMIN', 'ADMIN', 'COORDINATOR'],
   manageBorrow: ['SUPER_ADMIN', 'ADMIN', 'COORDINATOR'],
   viewStorage: ['SUPER_ADMIN', 'ADMIN', 'VIEWER', 'COORDINATOR'],

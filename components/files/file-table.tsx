@@ -317,6 +317,7 @@ export function FileTable({
         density={density}
         onDensityChange={setDensity}
         role={role}
+        total={total}
       />
       <TableSurface
         toolbar={

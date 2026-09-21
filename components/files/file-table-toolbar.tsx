@@ -1,13 +1,15 @@
 "use client";
 
 import { Table } from "@tanstack/react-table";
-import { SlidersHorizontal, Search, X, Settings, CalendarDays } from "lucide-react";
+import { SlidersHorizontal, Search, X, Settings, CalendarDays, Download, Loader2 } from "lucide-react";
 import { useState, useMemo } from "react";
 import { useRouter, useSearchParams } from '@/src/lib/router';
 import { useDebouncedCallback } from "use-debounce";
 import useSWR from "swr";
+import { toast } from "sonner";
 import { apiFetch } from "@/lib/api/client";
 import type { UserDto } from "@/lib/api/types";
+import { can } from "@/lib/rbac";
 
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -29,6 +31,16 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 interface FileTableToolbarProps<TData> {
   table: Table<TData>;
@@ -36,6 +48,28 @@ interface FileTableToolbarProps<TData> {
   density?: "compact" | "comfortable";
   onDensityChange?: (density: "compact" | "comfortable") => void;
   role?: string;
+  total?: number;
+}
+
+const EXPORT_FILTER_KEYS = [
+  "q",
+  "type",
+  "status",
+  "hasBox",
+  "year",
+  "judgmentNumber",
+  "party",
+  "warehouse",
+  "line",
+  "shelf",
+  "slot",
+  "createdById",
+];
+
+function getDownloadFilename(contentDisposition: string | null, fallback: string) {
+  if (!contentDisposition) return fallback;
+  const filenameMatch = contentDisposition.match(/filename="?([^";]+)"?/i);
+  return filenameMatch?.[1] || fallback;
 }
 
 const statuses = [
@@ -69,9 +103,41 @@ export function FileTableToolbar<TData>({
   density = "comfortable",
   onDensityChange,
   role,
+  total,
 }: FileTableToolbarProps<TData>) {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const [isExportDialogOpen, setIsExportDialogOpen] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
+  const canExportFiles = can(role, "exportFiles");
+
+  const handleExport = async () => {
+    setIsExporting(true);
+    try {
+      const params = new URLSearchParams();
+      EXPORT_FILTER_KEYS.forEach((key) => {
+        const value = searchParams.get(key);
+        if (value) params.set(key, value);
+      });
+      const query = params.toString();
+      const response = await apiFetch(`/api/files/export${query ? `?${query}` : ""}`);
+      if (!response.ok) throw new Error("Không thể xuất mục lục hồ sơ");
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = getDownloadFilename(response.headers.get("content-disposition"), "muc-luc-ho-so.xlsx");
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+      toast.success("Đã xuất mục lục hồ sơ");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Lỗi kết nối");
+    } finally {
+      setIsExporting(false);
+    }
+  };
 
   const { data: suggestionsData } = useSWR<SuggestionsResponse>(
     '/api/files/autocomplete-suggestions',
@@ -99,14 +165,7 @@ export function FileTableToolbar<TData>({
   const hasAdvancedFilters = advancedFilterKeys.some((key) => !!searchParams.get(key));
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(hasAdvancedFilters);
 
-  const isFiltered = [
-    "q",
-    "type",
-    "status",
-    "hasBox",
-    ...advancedFilterKeys,
-    "createdById",
-  ].some((key) => !!searchParams.get(key)) || table.getState().columnFilters.length > 0;
+  const isFiltered = EXPORT_FILTER_KEYS.some((key) => !!searchParams.get(key)) || table.getState().columnFilters.length > 0;
 
   const isSuperOrAdmin = role === 'SUPER_ADMIN' || role === 'ADMIN';
   const { data: usersData } = useSWR<UsersResponse>(
@@ -165,20 +224,7 @@ export function FileTableToolbar<TData>({
   const handleReset = () => {
     table.resetColumnFilters();
     const params = new URLSearchParams(searchParams);
-    [
-      "q",
-      "type",
-      "status",
-      "hasBox",
-      "year",
-      "judgmentNumber",
-      "party",
-      "warehouse",
-      "line",
-      "shelf",
-      "slot",
-      "createdById",
-    ].forEach((key) => params.delete(key));
+    EXPORT_FILTER_KEYS.forEach((key) => params.delete(key));
     params.set("page", "1");
     router.replace(`/?${params.toString()}`);
   };
@@ -257,6 +303,23 @@ export function FileTableToolbar<TData>({
                 })}
             </DropdownMenuContent>
           </DropdownMenu>
+
+          {canExportFiles && (
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-9 gap-1.5 rounded-lg border-slate-300 dark:border-slate-700 font-semibold"
+              onClick={() => setIsExportDialogOpen(true)}
+              disabled={isExporting}
+            >
+              {isExporting ? (
+                <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+              ) : (
+                <Download className="h-4 w-4 text-muted-foreground" />
+              )}
+              Xuất Excel toàn bộ
+            </Button>
+          )}
 
           {table.getFilteredSelectedRowModel().rows.length === 0 && onCreate && (
             <Button className="h-9 font-semibold rounded-lg" onClick={onCreate}>Thêm hồ sơ</Button>
@@ -449,6 +512,23 @@ export function FileTableToolbar<TData>({
           </div>
         </div>
       )}
+
+      <AlertDialog open={isExportDialogOpen} onOpenChange={setIsExportDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Xuất toàn bộ mục lục hồ sơ?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {typeof total === "number"
+                ? `Sẽ xuất ${total.toLocaleString("vi-VN")} hồ sơ khớp bộ lọc hiện tại ra file Excel, sắp xếp theo Hộp số rồi đến Mã hồ sơ.`
+                : "Sẽ xuất toàn bộ hồ sơ khớp bộ lọc hiện tại ra file Excel, sắp xếp theo Hộp số rồi đến Mã hồ sơ."}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Hủy</AlertDialogCancel>
+            <AlertDialogAction onClick={handleExport}>Xuất Excel</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

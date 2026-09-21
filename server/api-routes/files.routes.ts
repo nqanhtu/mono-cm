@@ -6,100 +6,77 @@ import { apiError, jsonError } from '@/lib/http'
 import { getClientIp, toInt } from '@/lib/request'
 import { sessionOrDenied, USER_SELECT } from '@/api-routes/_shared'
 import { createAuditLog } from '@/lib/services/audit-log'
+import { buildFileWhere, compareVi } from '@/lib/services/file-query'
 import { createFileQrToken, verifyFileQrToken } from '@/lib/services/qr-token'
-import { findFileIdsMatchingParty, findFileIdsMatchingText } from '@/lib/vi-search'
+import { toXlsx } from '@/lib/xlsx'
+
+const FILE_INDEX_COLUMNS = [
+  'STT',
+  'Hộp số',
+  'Mã hồ sơ',
+  'Nguyên đơn/Bị hại',
+  'Bị cáo/Bị đơn',
+  'Tiêu đề',
+  'Loại án',
+  'Năm',
+  'Số tờ',
+] as const
+
+type FileIndexSource = {
+  code: string
+  title: string
+  type: string
+  year: number | null
+  pageCount: number | null
+  plaintiffs: string[]
+  defendants: string[]
+  civilDefendants: string[]
+  box: { boxNumber: string } | null
+}
+
+function sortFilesForIndex<T extends FileIndexSource>(files: T[]): T[] {
+  return [...files].sort((a, b) => {
+    const boxCompare = compareVi(a.box?.boxNumber ?? '', b.box?.boxNumber ?? '')
+    if (boxCompare !== 0) return boxCompare
+    return compareVi(a.code ?? '', b.code ?? '')
+  })
+}
+
+function toFileIndexRows(files: FileIndexSource[]) {
+  return files.map((file, index) => ({
+    'STT': index + 1,
+    'Hộp số': file.box?.boxNumber ?? '',
+    'Mã hồ sơ': file.code,
+    'Nguyên đơn/Bị hại': (file.plaintiffs ?? []).join(', '),
+    'Bị cáo/Bị đơn': [...(file.defendants ?? []), ...(file.civilDefendants ?? [])].join(', '),
+    'Tiêu đề': file.title,
+    'Loại án': file.type,
+    'Năm': file.year ?? '',
+    'Số tờ': file.pageCount ?? '',
+  }))
+}
+
+function buildFileIndexFilename(date: Date) {
+  const pad = (n: number) => String(n).padStart(2, '0')
+  const stamp = `${date.getFullYear()}${pad(date.getMonth() + 1)}${pad(date.getDate())}_${pad(date.getHours())}${pad(date.getMinutes())}`
+  return `muc-luc-ho-so_${stamp}.xlsx`
+}
+
+function toFileIndexXlsx(rows: Array<Record<string, unknown>>) {
+  return toXlsx(rows, 'Mục lục hồ sơ', [...FILE_INDEX_COLUMNS])
+}
 
 export const fileRoutes = new Elysia()
   .get('/api/files', async ({ request, set, query }) => {
     const { session, denied } = await sessionOrDenied({ request, set }, 'viewFiles')
     if (denied) return denied
 
-    const q = query.q || undefined
-    const type = query.type || undefined
-    const year = query.year ? Number.parseInt(String(query.year), 10) : undefined
-    const status = query.status || undefined
-    const judgmentNumber = query.judgmentNumber || undefined
-    const party = query.party || undefined
-    const warehouse = query.warehouse || undefined
-    const line = query.line || undefined
-    const shelf = query.shelf || undefined
-    const slot = query.slot || undefined
-    const hasBox = query.hasBox || undefined
     const limit = toInt(query.limit, 20) ?? 20
     const offset = toInt(query.offset, 0) ?? 0
     const sortField = query.sortField || undefined
     const sortOrder = query.sortOrder === 'asc' ? 'asc' : 'desc'
 
-    let filterCreatedById: string | undefined = undefined
-    if (session?.role === 'COORDINATOR') {
-      filterCreatedById = session.id
-    } else if (query.createdById) {
-      filterCreatedById = String(query.createdById)
-    }
-
-    let partyFileIds: string[] | undefined = undefined
-    if (party) {
-      try {
-        partyFileIds = await findFileIdsMatchingParty(party)
-      } catch (err) {
-        console.error('Error querying party with raw SQL:', err)
-      }
-    }
-
-    let qFileIds: string[] | undefined = undefined
-    if (q) {
-      try {
-        qFileIds = await findFileIdsMatchingText(q)
-      } catch (err) {
-        console.error('Error querying q with raw SQL:', err)
-      }
-    }
-
-    const where: Prisma.FileWhereInput = {
-      AND: [
-        q ? (
-          qFileIds !== undefined
-            ? { id: { in: qFileIds } }
-            : {
-                OR: [
-                  { code: { contains: q, mode: 'insensitive' } },
-                  { title: { contains: q, mode: 'insensitive' } },
-                  { judgmentNumber: { contains: q, mode: 'insensitive' } },
-                  { indexCode: { contains: q, mode: 'insensitive' } },
-                  { defendants: { has: q } },
-                  { plaintiffs: { has: q } },
-                  { civilDefendants: { has: q } },
-                ],
-              }
-        ) : {},
-        type && type !== 'all' ? { type: { equals: type } } : {},
-        year ? { year: { equals: year } } : {},
-        status && status !== 'all' ? { status: { equals: status } } : { NOT: { status: 'ARCHIVED' } },
-        hasBox === 'false' ? { boxId: null } : {},
-        hasBox === 'true' ? { boxId: { not: null } } : {},
-        judgmentNumber ? { judgmentNumber: { contains: judgmentNumber, mode: 'insensitive' } } : {},
-        party ? (
-          partyFileIds !== undefined 
-            ? { id: { in: partyFileIds } } 
-            : { OR: [{ defendants: { has: party } }, { plaintiffs: { has: party } }, { civilDefendants: { has: party } }] }
-        ) : {},
-        warehouse || line || shelf || slot ? {
-          box: {
-            is: {
-              ...(warehouse ? { warehouse: { contains: warehouse, mode: 'insensitive' as const } } : {}),
-              ...(line ? { line: { contains: line, mode: 'insensitive' as const } } : {}),
-              ...(shelf ? { shelf: { contains: shelf, mode: 'insensitive' as const } } : {}),
-              ...(slot ? { slot: { contains: slot, mode: 'insensitive' as const } } : {}),
-            },
-          },
-        } : {},
-        filterCreatedById ? {
-          createdById: {
-            in: filterCreatedById === 'none' ? [] : filterCreatedById.split(','),
-          },
-        } : {},
-      ],
-    }
+    const where = await buildFileWhere(query, session)
 
     try {
       const validFields = ['code', 'title', 'type', 'year', 'pageCount', 'status', 'createdAt', 'updatedAt', 'note', 'judgmentNumber', 'judgmentDate']
@@ -120,11 +97,7 @@ export const fileRoutes = new Elysia()
           include: { box: true, createdBy: { select: USER_SELECT }, updatedBy: { select: USER_SELECT } },
         })
         const mult = sortOrder === 'asc' ? 1 : -1
-        allFiles.sort((a, b) => {
-          const codeA = a.code ?? ''
-          const codeB = b.code ?? ''
-          return codeA.localeCompare(codeB, 'vi', { numeric: true, sensitivity: 'base' }) * mult
-        })
+        allFiles.sort((a, b) => compareVi(a.code ?? '', b.code ?? '') * mult)
         const total = allFiles.length
         const files = allFiles.slice(offset, offset + limit)
         return { files, total }
@@ -138,6 +111,52 @@ export const fileRoutes = new Elysia()
     } catch (error) {
       console.error('Error searching files:', error)
       return jsonError(set, 'Internal Server Error', 500)
+    }
+  })
+  .get('/api/files/export', async ({ request, set, query }) => {
+    try {
+      const { session, denied } = await sessionOrDenied({ request, set }, 'exportFiles')
+      if (denied) return denied
+
+      const where = await buildFileWhere(query, session)
+      const files = await db.file.findMany({
+        where,
+        select: {
+          code: true,
+          title: true,
+          type: true,
+          year: true,
+          pageCount: true,
+          plaintiffs: true,
+          defendants: true,
+          civilDefendants: true,
+          box: { select: { boxNumber: true } },
+        },
+      })
+      const sorted = sortFilesForIndex(files)
+      const rows = toFileIndexRows(sorted)
+      const filename = buildFileIndexFilename(new Date())
+      const body = toFileIndexXlsx(rows)
+
+      await createAuditLog({
+        action: 'EXPORT',
+        target: 'File',
+        targetId: 'file_index',
+        userId: session?.id,
+        ipAddress: getClientIp(request),
+        detail: { rows: rows.length, filename },
+      })
+
+      return new Response(new Uint8Array(body), {
+        headers: {
+          'content-type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+          'content-disposition': `attachment; filename="${filename}"`,
+          'cache-control': 'no-store',
+        },
+      })
+    } catch (error) {
+      console.error('Error exporting file index:', error)
+      return jsonError(set, 'Không thể xuất mục lục hồ sơ', 500)
     }
   })
   .post('/api/files', async ({ request, set }) => {

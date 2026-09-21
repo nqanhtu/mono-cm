@@ -52,6 +52,7 @@ export function createApp(options: CreateAppOptions = {}) {
         origin: frontendOrigins,
         credentials: true,
         allowedHeaders: ["Content-Type", "Authorization", "x-mac-address"],
+        exposeHeaders: ["Content-Disposition"],
         methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
       }),
     )
