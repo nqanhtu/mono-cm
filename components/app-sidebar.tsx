@@ -98,7 +98,7 @@ export function AppSidebar({ user }: AppSidebarProps) {
                   <span className="truncate text-sm font-semibold leading-5">
                     {import.meta.env.VITE_COURT_NAME || "Quản lý hồ sơ"}
                   </span>
-                  <span className="truncate text-[11px] font-medium text-sidebar-foreground/55">
+                  <span className="truncate text-[11px] font-medium text-sidebar-foreground/70">
                     Lưu trữ nội bộ
                   </span>
                 </span>

@@ -248,7 +248,7 @@ export function FileTableToolbar<TData>({
             value={density}
             onValueChange={(value) => onDensityChange?.(value as "compact" | "comfortable")}
           >
-            <SelectTrigger className="h-9 w-28 rounded-lg">
+            <SelectTrigger aria-label="Mật độ hiển thị" className="h-9 w-28 rounded-lg">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>

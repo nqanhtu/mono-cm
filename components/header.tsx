@@ -56,12 +56,12 @@ export default function Header({ user }: HeaderProps) {
           <TooltipTrigger asChild>
             <button
               onClick={() => window.dispatchEvent(new CustomEvent('toggle-command-palette'))}
-              aria-label="Tìm kiếm nhanh (Ctrl + K)"
+              aria-label="Tìm kiếm... (Ctrl + K)"
               className="ml-0 hidden w-72 items-center gap-2 rounded-lg border bg-muted/35 px-2.5 py-1.5 text-left text-xs font-normal text-muted-foreground transition-colors hover:bg-muted/60 hover:text-foreground md:flex lg:ml-6"
             >
               <Search className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
               <span>Tìm kiếm...</span>
-              <kbd className="ml-auto pointer-events-none inline-flex h-4.5 select-none items-center gap-0.5 rounded border bg-muted px-1.5 font-mono text-[9px] font-medium opacity-100" aria-hidden="true">
+              <kbd className="ml-auto pointer-events-none inline-flex h-4.5 select-none items-center gap-0.5 rounded border bg-muted px-1.5 font-mono text-[9px] font-medium text-foreground opacity-100" aria-hidden="true">
                 <span className="text-[10px]">Ctrl</span> K
               </kbd>
             </button>

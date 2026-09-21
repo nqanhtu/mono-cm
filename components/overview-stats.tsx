@@ -102,7 +102,7 @@ export function OverviewStats() {
         <button
           type="button"
           onClick={toggleExpanded}
-          className="flex h-6 shrink-0 items-center justify-center gap-1 rounded px-1.5 text-[10px] font-medium text-muted-foreground/75 hover:bg-muted/70 hover:text-foreground transition-colors xl:justify-start"
+          className="flex h-6 shrink-0 items-center justify-center gap-1 rounded px-1.5 text-[10px] font-medium text-muted-foreground hover:bg-muted/70 hover:text-foreground transition-colors xl:justify-start"
         >
           {isExpanded ? <ChevronUp className="size-2.5" /> : <ChevronDown className="size-2.5" />}
           {isExpanded ? 'Chi tiết kho' : 'Chi tiết kho'}

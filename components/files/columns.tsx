@@ -206,7 +206,7 @@ export const getColumns = (
             {remainingCount > 0 && (
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <Badge variant="secondary" className="cursor-help px-1.5 py-0.5 text-[10px] font-medium bg-muted/65 hover:bg-muted/80 text-muted-foreground border border-muted/85">
+                  <Badge variant="secondary" className="cursor-help px-1.5 py-0.5 text-[10px] font-medium bg-muted/65 hover:bg-muted/80 text-foreground border border-muted/85">
                     +{remainingCount} khác
                   </Badge>
                 </TooltipTrigger>
@@ -257,7 +257,7 @@ export const getColumns = (
             {remainingCount > 0 && (
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <Badge variant="secondary" className="cursor-help px-1.5 py-0.5 text-[10px] font-medium bg-muted/65 hover:bg-muted/80 text-muted-foreground border border-muted/85">
+                  <Badge variant="secondary" className="cursor-help px-1.5 py-0.5 text-[10px] font-medium bg-muted/65 hover:bg-muted/80 text-foreground border border-muted/85">
                     +{remainingCount} khác
                   </Badge>
                 </TooltipTrigger>
