@@ -4,9 +4,9 @@
 
 **Blocked by:** 02 (Danh sách Hộp có Hồ sơ lệch loại)
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] Ô tổng quan khớp `summary` của API; bấm ô áp/bỏ bộ lọc
-- [ ] Bộ lọc mức độ, kiểu vấn đề, tổ hợp Loại án kết hợp được với nhau; có cách xoá bộ lọc
-- [ ] Dòng nhắc chuẩn hoá có liên kết sang tab "Loại án"
-- [ ] Trạng thái trống cho "kho sạch" và "không khớp bộ lọc" phân biệt rõ
+- [x] Ô tổng quan khớp `summary` của API; bấm ô áp/bỏ bộ lọc
+- [x] Bộ lọc mức độ, kiểu vấn đề, tổ hợp Loại án kết hợp được với nhau; có cách xoá bộ lọc
+- [x] Dòng nhắc chuẩn hoá có liên kết sang tab "Loại án"
+- [x] Trạng thái trống cho "kho sạch" và "không khớp bộ lọc" phân biệt rõ

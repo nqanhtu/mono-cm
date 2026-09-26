@@ -2,6 +2,7 @@ import { useMutation, useQuery } from '@tanstack/react-query'
 
 import { apiJson } from '@/lib/api/client'
 import type { BlankCaseTypeRecords, CaseTypeGroups } from '@/lib/data-cleanup/case-types'
+import type { MismatchedBoxesResponse } from '@/lib/data-cleanup/mismatched-boxes'
 import { queryClient } from '@/src/lib/query-client'
 import { queryKeys } from '@/src/lib/query-keys'
 
@@ -23,6 +24,13 @@ export function useBlankCaseTypeRecords(enabled: boolean) {
     queryKey: queryKeys.dataCleanup.blankCaseTypes,
     queryFn: () => apiJson<BlankCaseTypeRecords>('/api/admin/data-cleanup/case-types/blank'),
     enabled,
+  })
+}
+
+export function useMismatchedBoxes() {
+  return useQuery({
+    queryKey: queryKeys.dataCleanup.mismatchedBoxes,
+    queryFn: () => apiJson<MismatchedBoxesResponse>('/api/admin/data-cleanup/mismatched-boxes'),
   })
 }
 

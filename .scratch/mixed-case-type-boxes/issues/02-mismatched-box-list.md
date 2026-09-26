@@ -4,12 +4,12 @@
 
 **Blocked by:** 01 (Chuyển trang Chuẩn hoá dữ liệu sang dạng tab)
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] Hàm phân loại thuần trả về kiểu vấn đề, mức độ, tỉ lệ, thành phần Loại án (giảm dần), tổ hợp Loại án (chuỗi ổn định), danh sách Hồ sơ lệch; Hộp không lệch bị loại
-- [ ] Unit test: ba kiểu vấn đề, biên ngưỡng 50%/20%, trim nhưng không bỏ qua khác biệt cách viết ("Hình sự" ≠ "Hình sự sơ thẩm"), Hộp chưa nhãn luôn 🔴, thứ tự sắp xếp
-- [ ] API chỉ đọc trả `summary` và `boxes` theo spec, dùng quyền `manageStorage`
-- [ ] Contract test: 401 chưa đăng nhập, 403 ADMIN/VIEWER/COORDINATOR, 200 SUPER_ADMIN; hình dạng response; điều kiện truy vấn loại ARCHIVED và Loại án rỗng
-- [ ] Tab hiển thị danh sách với các cột/huy hiệu trên, đúng thứ tự sắp xếp
-- [ ] Đổi tên/điền Loại án ở tab "Loại án" làm mới số liệu tab này
-- [ ] Không có nút sửa dữ liệu nào
+- [x] Hàm phân loại thuần trả về kiểu vấn đề, mức độ, tỉ lệ, thành phần Loại án (giảm dần), tổ hợp Loại án (chuỗi ổn định), danh sách Hồ sơ lệch; Hộp không lệch bị loại
+- [x] Unit test: ba kiểu vấn đề, biên ngưỡng 50%/20%, trim nhưng không bỏ qua khác biệt cách viết ("Hình sự" ≠ "Hình sự sơ thẩm"), Hộp chưa nhãn luôn 🔴, thứ tự sắp xếp
+- [x] API chỉ đọc trả `summary` và `boxes` theo spec, dùng quyền `manageStorage`
+- [x] Contract test: 401 chưa đăng nhập, 403 ADMIN/VIEWER/COORDINATOR, 200 SUPER_ADMIN; hình dạng response; điều kiện truy vấn loại ARCHIVED và Loại án rỗng
+- [x] Tab hiển thị danh sách với các cột/huy hiệu trên, đúng thứ tự sắp xếp
+- [x] Đổi tên/điền Loại án ở tab "Loại án" làm mới số liệu tab này
+- [x] Không có nút sửa dữ liệu nào

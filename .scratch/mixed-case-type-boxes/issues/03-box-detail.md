@@ -4,9 +4,9 @@
 
 **Blocked by:** 02 (Danh sách Hộp có Hồ sơ lệch loại)
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] Thanh tỉ lệ đúng thành phần Loại án của Hộp, có chú thích tên + số lượng
-- [ ] Màu không phải kênh thông tin duy nhất (có chữ/số kèm theo), đọc được ở cả giao diện sáng và tối
-- [ ] Mở/đóng từng Hộp; danh sách chỉ gồm Hồ sơ lệch, kèm số Hồ sơ đúng nhãn
-- [ ] Mã hồ sơ mở trang chi tiết ở tab mới
+- [x] Thanh tỉ lệ đúng thành phần Loại án của Hộp, có chú thích tên + số lượng
+- [x] Màu không phải kênh thông tin duy nhất (có chữ/số kèm theo), đọc được ở cả giao diện sáng và tối
+- [x] Mở/đóng từng Hộp; danh sách chỉ gồm Hồ sơ lệch, kèm số Hồ sơ đúng nhãn
+- [x] Mã hồ sơ mở trang chi tiết ở tab mới

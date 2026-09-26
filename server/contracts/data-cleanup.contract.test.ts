@@ -9,7 +9,7 @@ type Call = { model: string; op: string; args: any }
 
 function createFakeDb(seed: {
   boxes?: { id: string; caseType: string | null }[]
-  files?: { id: string; type: string; status?: string }[]
+  files?: { id: string; type: string; status?: string; boxId?: string }[]
 }) {
   const boxes = seed.boxes ?? []
   const files = seed.files ?? []
@@ -33,6 +33,24 @@ function createFakeDb(seed: {
       findMany: async (args: any) => {
         record('storageBox', 'findMany', args)
         const where = args.where
+        if (where.files) {
+          const fileWhere = where.files.some
+          return boxes
+            .map((box) => ({
+              id: box.id,
+              boxNumber: box.id.slice(1),
+              code: `C-${box.id}`,
+              warehouse: '01',
+              line: '01',
+              shelf: '01',
+              slot: '01',
+              caseType: box.caseType,
+              files: files
+                .filter((file) => file.boxId === box.id && liveFile(file, fileWhere) && file.type !== fileWhere.type.not)
+                .map((file) => ({ id: file.id, code: `HS-${file.id}`, title: `Hồ sơ ${file.id}`, year: 2000, type: file.type })),
+            }))
+            .filter((box) => box.files.length > 0)
+        }
         if (where.OR) return boxes.filter((box) => where.OR.some((c: any) => matches(box.caseType, c.caseType)))
         return boxes.filter((box) => matches(box.caseType, where.caseType)).map(({ id }) => ({ id }))
       },
@@ -218,5 +236,66 @@ describe('GET /api/admin/data-cleanup/case-types/blank', () => {
     expect(body.boxes.map((b: any) => b.id)).toEqual(['b4'])
     expect(body.files.map((f: any) => f.id)).toEqual(['f4'])
     expect(body.suggestions).toEqual(['Hình sự', 'Hôn nhân sơ thẩm', 'Hơn nhân sơ thẩm'])
+  })
+})
+
+describe('GET /api/admin/data-cleanup/mismatched-boxes', () => {
+  beforeEach(() => {
+    fake = createFakeDb({
+      boxes: [
+        { id: 'b1', caseType: 'Dân sự sơ thẩm' },
+        { id: 'b2', caseType: 'Hôn nhân sơ thẩm' },
+        { id: 'b3', caseType: null },
+        { id: 'b4', caseType: 'Hình sự sơ thẩm' },
+      ],
+      files: [
+        { id: 'f1', type: 'Dân sự sơ thẩm', boxId: 'b1' },
+        { id: 'f2', type: 'Hôn nhân sơ thẩm', boxId: 'b1' },
+        { id: 'f3', type: 'Hôn nhân sơ thẩm', boxId: 'b1', status: 'ARCHIVED' },
+        { id: 'f4', type: 'Hôn nhân sơ thẩm', boxId: 'b2' },
+        { id: 'f5', type: '', boxId: 'b2' },
+        { id: 'f6', type: 'Dân sự sơ thẩm', boxId: 'b3' },
+        { id: 'f7', type: 'Hình sự sơ thẩm', boxId: 'b4' },
+        { id: 'f8', type: 'Dân sự sơ thẩm', boxId: 'b4', status: 'ARCHIVED' },
+      ],
+    })
+    setDbForTesting(fake.fakeDb)
+  })
+
+  it('is SUPER_ADMIN only', async () => {
+    expect((await call('GET', '/api/admin/data-cleanup/mismatched-boxes', null)).status).toBe(401)
+    for (const role of ['ADMIN', 'VIEWER', 'COORDINATOR']) {
+      expect((await call('GET', '/api/admin/data-cleanup/mismatched-boxes', role)).status).toBe(403)
+    }
+    expect((await call('GET', '/api/admin/data-cleanup/mismatched-boxes', 'SUPER_ADMIN')).status).toBe(200)
+  })
+
+  it('excludes archived files and blank case types in the query', async () => {
+    await call('GET', '/api/admin/data-cleanup/mismatched-boxes', 'SUPER_ADMIN')
+    const args = fake.calls.find((c) => c.model === 'storageBox' && c.op === 'findMany')!.args
+    const liveFiles = { NOT: { status: 'ARCHIVED' }, type: { not: '' } }
+    expect(args.where).toEqual({ files: { some: liveFiles } })
+    expect(args.select.files.where).toEqual(liveFiles)
+  })
+
+  it('returns a summary and only boxes holding mismatched files', async () => {
+    const { body } = await call('GET', '/api/admin/data-cleanup/mismatched-boxes', 'SUPER_ADMIN')
+
+    expect(body.summary).toEqual({
+      totalBoxes: 2,
+      mismatchedFiles: 2,
+      bySeverity: { 'wrong-label': 1, significant: 1, minor: 0 },
+      byKind: { mixed: 1, 'label-mismatch': 0, unlabeled: 1 },
+    })
+    expect(body.boxes.map((b: any) => [b.id, b.kind, b.severity, b.mismatchedCount, b.totalCount])).toEqual([
+      ['b3', 'unlabeled', 'wrong-label', 1, 1],
+      ['b1', 'mixed', 'significant', 1, 2],
+    ])
+    expect(body.boxes[1]).toMatchObject({
+      caseType: 'Dân sự sơ thẩm',
+      combo: 'Dân sự sơ thẩm + Hôn nhân sơ thẩm',
+      warehouse: '01',
+      mismatchedFiles: [{ id: 'f2', caseType: 'Hôn nhân sơ thẩm' }],
+    })
   })
 })

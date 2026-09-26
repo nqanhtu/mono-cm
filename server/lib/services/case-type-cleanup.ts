@@ -1,11 +1,12 @@
 import { db } from '@/lib/db'
 import { buildCaseTypeGroups, compareCaseTypes, isBlankCaseType } from '@/lib/case-type-cleanup'
 import { createAuditLog } from '@/lib/services/audit-log'
+import { classifyBoxes, summarizeMismatchedBoxes } from '@/lib/mismatched-boxes'
 
 type Actor = { userId: string; ipAddress: string }
 
 /** Hồ sơ đã xoá mềm bị ẩn khỏi danh sách chính, nên cũng nằm ngoài phạm vi chuẩn hoá. */
-const LIVE_FILE = { NOT: { status: 'ARCHIVED' } } as const
+export const LIVE_FILE = { NOT: { status: 'ARCHIVED' } } as const
 
 export class CaseTypeCleanupError extends Error {
   constructor(message: string, readonly status: 400 | 404 | 409) {
@@ -128,4 +129,26 @@ export async function fillBlankCaseType({ kind, id, value }: { kind: unknown; id
   })
 
   return { ok: true as const }
+}
+
+export async function listMismatchedBoxes() {
+  const boxes = await db.storageBox.findMany({
+    where: { files: { some: { ...LIVE_FILE, type: { not: '' } } } },
+    select: {
+      id: true,
+      boxNumber: true,
+      code: true,
+      warehouse: true,
+      line: true,
+      shelf: true,
+      slot: true,
+      caseType: true,
+      files: {
+        where: { ...LIVE_FILE, type: { not: '' } },
+        select: { id: true, code: true, title: true, year: true, type: true },
+      },
+    },
+  })
+  const classified = classifyBoxes(boxes)
+  return { summary: summarizeMismatchedBoxes(classified), boxes: classified }
 }

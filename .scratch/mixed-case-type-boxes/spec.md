@@ -1,6 +1,6 @@
 # Hộp lẫn loại án
 
-Status: ready-for-agent
+Status: done
 
 ## Problem Statement
 
@@ -56,7 +56,7 @@ Thêm tab thứ hai "Hộp lẫn loại án" trên trang Chuẩn hoá dữ liệ
   - Hộp không có Hồ sơ lệch không xuất hiện trong kết quả.
 - **Mức độ** theo tỉ lệ lệch = số Hồ sơ lệch / tổng số Hồ sơ được tính trong Hộp: `> 50%` → 🔴 Nhãn sai; `≥ 20%` → 🟠 Lẫn đáng kể; còn lại → 🟡 Lệch lẻ. Hộp `unlabeled` có tỉ lệ 100% nên luôn 🔴. Các ngưỡng đặt thành hằng số dễ chỉnh.
 - **Sắp xếp mặc định**: mức độ (🔴 → 🟠 → 🟡), rồi tỉ lệ lệch giảm dần, rồi Hộp số (so sánh số tự nhiên).
-- **Hàm phân loại thuần**: nhận dữ liệu thô (Hộp + các Hồ sơ được tính của nó) và trả về kiểu vấn đề, mức độ, tỉ lệ, thành phần, tổ hợp, danh sách Hồ sơ lệch; route chỉ lo truy vấn và gọi hàm này. Việc truy vấn chỉ lấy các Hộp có ít nhất một Hồ sơ lệch để giữ response nhỏ.
+- **Hàm phân loại thuần**: nhận dữ liệu thô (Hộp + các Hồ sơ được tính của nó) và trả về kiểu vấn đề, mức độ, tỉ lệ, thành phần, tổ hợp, danh sách Hồ sơ lệch; route chỉ lo truy vấn và gọi hàm này. Truy vấn lấy các Hộp có ít nhất một Hồ sơ được tính (kèm các Hồ sơ đó); hàm phân loại loại bỏ Hộp không lệch nên response chỉ chứa Hộp lệch.
 - **UI**:
   - Dòng nhắc chuẩn hoá Loại án trước, có liên kết sang tab "Loại án".
   - Ô tổng quan: 3 ô mức độ + các ô kiểu vấn đề + tổng Hồ sơ lệch; bấm ô mức độ/kiểu = áp bộ lọc tương ứng.

@@ -50,5 +50,6 @@ export const queryKeys = {
     all: ['data-cleanup'] as const,
     caseTypes: ['data-cleanup', 'case-types'] as const,
     blankCaseTypes: ['data-cleanup', 'case-types', 'blank'] as const,
+    mismatchedBoxes: ['data-cleanup', 'mismatched-boxes'] as const,
   },
 } as const

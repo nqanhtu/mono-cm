@@ -8,6 +8,7 @@ import {
   fillBlankCaseType,
   listBlankCaseTypeRecords,
   listCaseTypes,
+  listMismatchedBoxes,
   renameCaseType,
 } from '@/lib/services/case-type-cleanup'
 
@@ -54,5 +55,14 @@ export const dataCleanupRoutes = new Elysia()
       return await fillBlankCaseType({ kind: body?.kind, id: body?.id, value: body?.value }, { userId: session!.id, ipAddress: getClientIp(request) })
     } catch (error) {
       return handleError(set, error, 'Error filling case type:')
+    }
+  })
+  .get('/api/admin/data-cleanup/mismatched-boxes', async ({ request, set }) => {
+    try {
+      const { denied } = await sessionOrDenied({ request, set }, 'manageStorage')
+      if (denied) return denied
+      return await listMismatchedBoxes()
+    } catch (error) {
+      return handleError(set, error, 'Error listing mismatched boxes:')
     }
   })
