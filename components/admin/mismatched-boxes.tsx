@@ -1,5 +1,5 @@
 import { useMemo, useState, type CSSProperties } from "react";
-import { AlertOctagon, AlertTriangle, ChevronDown, ChevronRight, CircleAlert, Info, Loader2, PackageCheck, X } from "lucide-react";
+import { AlertOctagon, AlertTriangle, ChevronDown, ChevronRight, CircleAlert, Info, Loader2, PackageCheck, Tag, X } from "lucide-react";
 
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -230,7 +230,7 @@ export function MismatchedBoxes({ onGoToCaseTypes }: { onGoToCaseTypes: () => vo
 function SeverityBadge({ severity }: { severity: MismatchSeverity }) {
   const { color, icon: Icon } = SEVERITY_STYLE[severity];
   return (
-    <span className="inline-flex items-center gap-1 rounded-md border px-1.5 py-0.5 text-xs font-medium">
+    <span className="inline-flex items-center gap-1 rounded-md border px-2 py-0.5 text-sm font-medium">
       <Icon className="h-3.5 w-3.5" style={{ color }} aria-hidden="true" />
       {SEVERITY_LABELS[severity]}
     </span>
@@ -238,7 +238,7 @@ function SeverityBadge({ severity }: { severity: MismatchSeverity }) {
 }
 
 function KindBadge({ kind }: { kind: MismatchKind }) {
-  return <span className="rounded-md bg-muted px-1.5 py-0.5 text-xs text-muted-foreground">{KIND_LABELS[kind]}</span>;
+  return <span className="rounded-md border bg-muted px-2 py-0.5 text-sm font-medium text-foreground">{KIND_LABELS[kind]}</span>;
 }
 
 function MismatchedBoxRow({
@@ -269,8 +269,17 @@ function MismatchedBoxRow({
             {expanded ? <ChevronDown className="h-4 w-4" aria-hidden="true" /> : <ChevronRight className="h-4 w-4" aria-hidden="true" />}
             Hộp số {box.boxNumber}
           </button>
-          <span className={cn("text-sm", box.caseType ? "text-foreground" : "italic text-muted-foreground")}>
-            {box.caseType ?? "(chưa có nhãn)"}
+          <span
+            className={cn(
+              "inline-flex items-center gap-1.5 rounded-md border px-2 py-0.5 text-sm",
+              box.caseType
+                ? "border-primary/30 bg-primary/10 font-semibold text-primary"
+                : "border-dashed italic text-muted-foreground"
+            )}
+          >
+            <Tag className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+            <span className="sr-only">Nhãn hộp:</span>
+            {box.caseType ?? "Chưa có nhãn"}
           </span>
           <SeverityBadge severity={box.severity} />
           <KindBadge kind={box.kind} />
@@ -339,11 +348,11 @@ function CompositionBar({ box, colorFor }: { box: MismatchedBox; colorFor: (case
           />
         ))}
       </div>
-      <ul className="flex flex-wrap gap-x-3 gap-y-0.5 text-xs text-muted-foreground">
+      <ul className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted-foreground">
         {box.composition.map((item) => (
           <li key={item.caseType} className="flex items-center gap-1.5">
-            <span className={cn("inline-block h-2 w-2 rounded-[2px]", SWATCH_BG)} style={swatchStyle(colorFor(item.caseType))} aria-hidden="true" />
-            <span className="text-foreground">{item.caseType}</span>
+            <span className={cn("inline-block h-2.5 w-2.5 rounded-[2px]", SWATCH_BG)} style={swatchStyle(colorFor(item.caseType))} aria-hidden="true" />
+            <span className="font-medium text-foreground">{item.caseType}</span>
             <span className="tabular-nums">{numberFormat.format(item.count)}</span>
             {item.caseType === box.caseType && <span>(đúng nhãn)</span>}
           </li>
