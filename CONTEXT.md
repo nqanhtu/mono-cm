@@ -24,6 +24,10 @@ _Avoid_: Box, Thùng
 Phân loại của một vụ án, hiện ghi gộp cả loại án lẫn cấp xét xử trong một chuỗi (vd. "Hình sự sơ thẩm", "Hôn nhân sơ thẩm"). Được gán độc lập trên cả Hồ sơ và Hộp: loại án của một Hộp không quyết định loại án của các Hồ sơ nằm trong nó, và hai giá trị này có thể lệch nhau.
 _Avoid_: Case type, Loại vụ việc
 
+**Hồ sơ lệch loại**:
+Hồ sơ có Loại án khác nhãn Loại án của Hộp chứa nó (so sánh chính xác, không bỏ qua khác biệt cách viết). Một Hộp có Hồ sơ lệch loại có thể là **Hộp lẫn loại án** (Hồ sơ thuộc từ 2 Loại án trở lên) hoặc **Hộp sai nhãn** (Hồ sơ chỉ một Loại án nhưng khác nhãn Hộp). Hệ thống chỉ phát hiện, chưa quy định Hồ sơ lệch loại là lỗi hay xếp gửi hợp lệ.
+_Avoid_: Hồ sơ sai hộp, Hộp lỗi
+
 **Nguyên đơn/Bị hại**:
 Các bên khởi kiện hoặc bị hại trong một Hồ sơ. Lưu chung trong một trường duy nhất (`File.plaintiffs`) — hệ thống hiện không phân biệt Nguyên đơn dân sự và Bị hại hình sự trong dữ liệu dù là hai vai trò pháp lý khác nhau.
 _Avoid_: Plaintiffs (khi nói tiếng Việt), Người khởi kiện

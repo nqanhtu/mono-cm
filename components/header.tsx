@@ -26,7 +26,7 @@ export default function Header({ user }: HeaderProps) {
     "/users": { title: "Người dùng", description: "Quản lý tài khoản và phân quyền" },
     "/admin/agency": { title: "Phông lưu trữ", description: "Quản lý đơn vị và phông lưu trữ" },
     "/admin/boxes": { title: "Hộp lưu trữ", description: "Quản lý vị trí và hộp hồ sơ" },
-    "/admin/data-cleanup": { title: "Chuẩn hoá dữ liệu", description: "Gộp và điền Loại án cho Hộp, Hồ sơ" },
+    "/admin/data-cleanup": { title: "Chuẩn hoá dữ liệu", description: "Chuẩn hoá Loại án, rà soát Hộp lệch loại" },
     "/admin/backup": { title: "Sao lưu dữ liệu", description: "Thiết lập và kiểm tra sao lưu" },
     "/admin/audit": { title: "Nhật ký", description: "Theo dõi hoạt động hệ thống" },
     "/reports": { title: "Thống kê", description: "Báo cáo tình trạng hồ sơ" },
