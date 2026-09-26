@@ -1,6 +1,7 @@
 import { Pool } from 'pg'
 import { PrismaPg } from '@prisma/adapter-pg'
 import { PrismaClient } from '@/generated/prisma/client'
+import { trimCaseTypeData } from '@/lib/case-type-cleanup'
 
 const connectionString = process.env.DATABASE_URL
 
@@ -21,6 +22,8 @@ const DATA_WRITE_OPERATIONS = new Set(['create', 'update', 'createMany', 'update
  * single write choke point guarantees data at rest stays consistent, so
  * search code only has to normalize the (untrusted) search term rather
  * than every stored column too. See server/lib/vi-search.ts.
+ * The same choke point trims Loại án (`File.type`, `StorageBox.caseType`)
+ * so stray whitespace can't split one case type into two groups.
  */
 function normalizeNFCDeep(value: unknown): unknown {
   if (typeof value === 'string') return value.normalize('NFC')
@@ -41,17 +44,18 @@ function createPrismaClient(): PrismaClient {
   return client.$extends({
     query: {
       $allModels: {
-        $allOperations({ operation, args, query }) {
+        $allOperations({ model, operation, args, query }) {
+          const normalize = (data: unknown) => trimCaseTypeData(model, normalizeNFCDeep(data))
           let nextArgs: unknown = args
           if (operation === 'upsert' && args && typeof args === 'object') {
             const upsertArgs = args as { create?: unknown; update?: unknown }
             nextArgs = {
               ...args,
-              ...(upsertArgs.create !== undefined ? { create: normalizeNFCDeep(upsertArgs.create) } : {}),
-              ...(upsertArgs.update !== undefined ? { update: normalizeNFCDeep(upsertArgs.update) } : {}),
+              ...(upsertArgs.create !== undefined ? { create: normalize(upsertArgs.create) } : {}),
+              ...(upsertArgs.update !== undefined ? { update: normalize(upsertArgs.update) } : {}),
             }
           } else if (DATA_WRITE_OPERATIONS.has(operation) && args && typeof args === 'object' && 'data' in args) {
-            nextArgs = { ...args, data: normalizeNFCDeep((args as { data: unknown }).data) }
+            nextArgs = { ...args, data: normalize((args as { data: unknown }).data) }
           }
           return query(nextArgs as typeof args)
         },

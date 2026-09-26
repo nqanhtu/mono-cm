@@ -11,6 +11,7 @@ import {
   RotateCcw,
   Archive,
   Database,
+  Wand2,
   Scale,
   Plus,
 } from "lucide-react";
@@ -69,6 +70,9 @@ export function AppSidebar({ user }: AppSidebarProps) {
               { name: "Sao lưu dữ liệu", href: "/admin/backup", icon: Database },
               { name: "Nhật ký", href: "/admin/audit", icon: HistoryIcon },
             ]
+          : []),
+        ...(can(role, "manageStorage")
+          ? [{ name: "Chuẩn hoá dữ liệu", href: "/admin/data-cleanup", icon: Wand2 }]
           : []),
         ...(can(role, "manageMaintenance")
           ? [{ name: "Reset dữ liệu", href: "/reset", icon: RotateCcw }]

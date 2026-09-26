@@ -46,4 +46,9 @@ export const queryKeys = {
   backup: {
     schedule: ['backup', 'schedule'] as const,
   },
+  dataCleanup: {
+    all: ['data-cleanup'] as const,
+    caseTypes: ['data-cleanup', 'case-types'] as const,
+    blankCaseTypes: ['data-cleanup', 'case-types', 'blank'] as const,
+  },
 } as const

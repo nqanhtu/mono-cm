@@ -24,6 +24,7 @@ const AgencyPage = lazy(() => import('@/src/routes/admin/agency-page'))
 const AuditLogPage = lazy(() => import('@/src/routes/admin/audit-page'))
 const StorageBoxesPage = lazy(() => import('@/src/routes/admin/storage-boxes-page'))
 const BackupPage = lazy(() => import('@/src/routes/admin/backup-page'))
+const DataCleanupPage = lazy(() => import('@/src/routes/admin/data-cleanup-page'))
 const Reports = lazy(() => import('@/src/routes/reports/reports-page'))
 const ResetPage = lazy(() => import('@/src/routes/reset/reset-page'))
 const ForbiddenPage = lazy(() => import('@/src/routes/forbidden-page'))
@@ -51,6 +52,7 @@ const mainRoutes: AppRoute[] = [
   { path: '/admin/agency', element: <AgencyPage />, permission: 'manageAgencies', layout: 'main', lazy: true },
   { path: '/admin/audit', element: <AuditLogPage />, permission: 'viewAudit', layout: 'main', lazy: true },
   { path: '/admin/boxes', element: <StorageBoxesPage />, permission: 'manageStorage', layout: 'main', lazy: true },
+  { path: '/admin/data-cleanup', element: <DataCleanupPage />, permission: 'manageStorage', layout: 'main', lazy: true },
   { path: '/admin/backup', element: <BackupPage />, permission: 'manageMaintenance', layout: 'main', lazy: true },
   { path: '/reports', element: <Reports />, permission: 'viewReports', layout: 'main', lazy: true },
   { path: '/reset', element: <ResetPage />, permission: 'manageMaintenance', layout: 'main', lazy: true },

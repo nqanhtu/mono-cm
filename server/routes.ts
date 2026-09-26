@@ -4,6 +4,7 @@ import { adminRoutes } from '@/api-routes/admin.routes'
 import { auditRoutes } from '@/api-routes/audit.routes'
 import { authRoutes } from '@/api-routes/auth.routes'
 import { borrowRoutes } from '@/api-routes/borrow.routes'
+import { dataCleanupRoutes } from '@/api-routes/data-cleanup.routes'
 import { documentRoutes } from '@/api-routes/documents.routes'
 import { fileRoutes } from '@/api-routes/files.routes'
 import { reportRoutes } from '@/api-routes/reports.routes'
@@ -17,6 +18,7 @@ export const apiRoutes = new Elysia()
   .use(fileRoutes)
   .use(documentRoutes)
   .use(adminRoutes)
+  .use(dataCleanupRoutes)
   .use(borrowRoutes)
   .use(auditRoutes)
   .use(reportRoutes)

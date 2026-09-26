@@ -20,6 +20,10 @@ _Avoid_: Mã VB, File code
 Đơn vị lưu trữ vật lý chứa nhiều Hồ sơ, có vị trí (Kho → Dãy → Kệ → Ô) và Hộp số. Trong code là model `StorageBox`.
 _Avoid_: Box, Thùng
 
+**Loại án**:
+Phân loại của một vụ án, hiện ghi gộp cả loại án lẫn cấp xét xử trong một chuỗi (vd. "Hình sự sơ thẩm", "Hôn nhân sơ thẩm"). Được gán độc lập trên cả Hồ sơ và Hộp: loại án của một Hộp không quyết định loại án của các Hồ sơ nằm trong nó, và hai giá trị này có thể lệch nhau.
+_Avoid_: Case type, Loại vụ việc
+
 **Nguyên đơn/Bị hại**:
 Các bên khởi kiện hoặc bị hại trong một Hồ sơ. Lưu chung trong một trường duy nhất (`File.plaintiffs`) — hệ thống hiện không phân biệt Nguyên đơn dân sự và Bị hại hình sự trong dữ liệu dù là hai vai trò pháp lý khác nhau.
 _Avoid_: Plaintiffs (khi nói tiếng Việt), Người khởi kiện
