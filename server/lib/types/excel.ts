@@ -49,6 +49,7 @@ export interface ExtractedLocation {
 }
 
 export interface ImportData {
+    issues?: import('../validation/import').ImportIssue[]
     files: ExtractedFile[]
     documents: ExtractedDocument[]
     boxes: ExtractedLocation[]
@@ -63,4 +64,3 @@ export interface ExtractedUser {
     status?: boolean
     row: number
 }
-

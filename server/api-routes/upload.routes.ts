@@ -194,7 +194,8 @@ async function legacyImportFiles(request: Request, set: AppSet) {
     const formData = await request.formData()
     const file = formData.get('file')
     if (!isUploadedFile(file)) return jsonError(set, 'Không tìm thấy file tải lên', 400)
-    const { files } = await parseExcelFile(await file.arrayBuffer())
+    const { files, issues = [] } = await parseExcelFile(await file.arrayBuffer())
+    if (issues.length) return jsonError(set, issues.map(issue => `${issue.column}: ${issue.message}`).join('; '), 400)
     if (!files || files.length === 0) return jsonError(set, 'Không có dữ liệu hợp lệ trong file Excel', 400)
 
     const codes = files.map(f => f.code).filter(Boolean) as string[]

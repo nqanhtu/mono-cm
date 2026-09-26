@@ -1,6 +1,34 @@
 import * as XLSX from 'xlsx'
 import { ExtractedFile, ExtractedDocument, ExtractedLocation, ImportData, ExtractedUser } from './types/excel'
 
+const fileColumns = ['Hộp số', 'Dữ liệu ( Hộp)', 'Hộp', 'Mã hộp', 'Hồ sơ số', 'Tiêu đề', 'Trích yếu', 'Loại án', 'Thời gian', 'Số tờ', 'THBQ', 'Thời hạn bảo quản', 'MLHS', 'Ghi chú', 'Số bản án/ quyết định', 'Ngày bản án/ quyết định', 'Nguyên đơn/ người bị hại', 'Nguyên đơn', 'Bị cáo/ bị đơn', 'Bị cáo', 'Bị đơn', 'STT']
+const normalizeHeader = (value: unknown) => String(value ?? '').normalize('NFC').trim().replace(/\s+/g, ' ').replace(/\s*\/\s*/g, '/').toLocaleLowerCase('vi')
+
+function normalizeFileSheet(sheet: XLSX.WorkSheet) {
+    const result = { ...sheet }
+    const range = XLSX.utils.decode_range(sheet['!ref'] || 'A1')
+    const headers = new Set<string>()
+    const issues: NonNullable<ImportData['issues']> = []
+    for (let col = range.s.c; col <= range.e.c; col++) {
+        const address = XLSX.utils.encode_cell({ r: range.s.r, c: col })
+        const cell = sheet[address]
+        if (!cell || !String(cell.v ?? '').trim()) continue
+        const key = normalizeHeader(cell.v)
+        if (headers.has(key)) {
+            issues.push({ row: range.s.r + 1, column: String(cell.v), severity: 'error', message: 'Tên cột trùng sau chuẩn hóa; vui lòng giữ một cột.' })
+            continue
+        }
+        headers.add(key)
+        const canonical = fileColumns.find(name => normalizeHeader(name) === key)
+        if (!canonical) issues.push({ row: range.s.r + 1, column: String(cell.v), severity: 'warning', message: 'Không nhận diện được cột; dữ liệu cột này sẽ không được nhập.' })
+        result[address] = { ...cell, v: canonical ?? key, w: canonical ?? key }
+    }
+    for (const alternatives of [['Nguyên đơn/ người bị hại', 'Nguyên đơn'], ['Bị cáo/ bị đơn', 'Bị cáo', 'Bị đơn'], ['Số bản án/ quyết định'], ['Ngày bản án/ quyết định']]) {
+        if (!alternatives.some(name => headers.has(normalizeHeader(name)))) issues.push({ row: range.s.r + 1, column: alternatives[0], severity: 'warning', message: 'Không có cột này trong Excel; trường tương ứng sẽ không được nhập.' })
+    }
+    return { sheet: result, issues }
+}
+
 export const parseExcelFile = async (buffer: ArrayBuffer): Promise<ImportData> => {
     const workbook = XLSX.read(buffer, { type: 'array', cellDates: true })
 
@@ -9,16 +37,18 @@ export const parseExcelFile = async (buffer: ArrayBuffer): Promise<ImportData> =
         throw new Error('File Excel phải có ít nhất 1 Sheet dữ liệu.')
     }
 
-    const filesSheet = workbook.Sheets[sheetNames[0]]
+    const { sheet: filesSheet, issues } = normalizeFileSheet(workbook.Sheets[sheetNames[0]])
     const rawFiles = XLSX.utils.sheet_to_json<Record<string, unknown>>(filesSheet)
     
     const files: ExtractedFile[] = rawFiles.map((row: Record<string, unknown>) => {
         const rawBoxCode = row['Hộp số'] ?? row['Dữ liệu ( Hộp)'] ?? row['Hộp'] ?? row['Mã hộp'] ?? ''
         const judgmentDate = parseExcelDate(row['Ngày bản án/ quyết định'])
-        const year = parseYear(row['Thời gian']) || (judgmentDate ? judgmentDate.getFullYear() : 0)
+        if (String(row['Ngày bản án/ quyết định'] ?? '').trim() && !judgmentDate) issues.push({ row: (row.__rowNum__ as number) + 1, column: 'Ngày bản án/ quyết định', code: String(row['Hồ sơ số'] ?? ''), severity: 'error', message: 'Ngày không hợp lệ; cần kiểm tra Excel gốc.' })
+        const year = parseYear(row['Thời gian']) || (judgmentDate ? vnYear(judgmentDate) : 0)
 
         const plaintiffs = parseNameList(row['Nguyên đơn/ người bị hại'] ?? row['Nguyên đơn'])
         const defendants = parseNameList(row['Bị cáo/ bị đơn'] ?? row['Bị cáo'])
+        const civilDefendants = parseNameList(row['Bị đơn'])
 
         return {
             code: String(row['Hồ sơ số'] ?? '').trim(),
@@ -34,12 +64,14 @@ export const parseExcelFile = async (buffer: ArrayBuffer): Promise<ImportData> =
             startDate: judgmentDate,
             plaintiffs: plaintiffs.length > 0 ? plaintiffs : undefined,
             defendants: defendants.length > 0 ? defendants : undefined,
+            civilDefendants: civilDefendants.length > 0 ? civilDefendants : undefined,
             details: {
                 summary: String(row['Tiêu đề'] ?? '').trim(),
                 judgmentNumber: row['Số bản án/ quyết định'] ? String(row['Số bản án/ quyết định']).trim() : undefined,
                 judgmentDate: judgmentDate ? judgmentDate.toISOString() : undefined,
                 plaintiffs,
                 defendants,
+                civilDefendants,
             }
         }
     })
@@ -65,7 +97,7 @@ export const parseExcelFile = async (buffer: ArrayBuffer): Promise<ImportData> =
     }
 
     const boxes: ExtractedLocation[] = []
-    return { files, documents, boxes }
+    return { files, documents, boxes, issues }
 }
 
 function parseNameList(value: unknown): string[] {
@@ -75,14 +107,23 @@ function parseNameList(value: unknown): string[] {
     return str.split(/[,;\n]/).map(s => s.trim()).filter(Boolean)
 }
 
+// Dates are stored as midnight in Vietnam (UTC+7, no DST), matching what the file forms save.
+const DAY_MS = 86_400_000
+const VN_OFFSET_MS = 7 * 3_600_000
+const vnYear = (date: Date) => new Date(date.getTime() + VN_OFFSET_MS).getUTCFullYear()
+
 function parseExcelDate(value: unknown): Date | undefined {
     if (!value) return undefined
-    if (value instanceof Date && !isNaN(value.getTime())) return value
+    if (value instanceof Date && !isNaN(value.getTime())) {
+        // SheetJS builds date cells at local midnight, sometimes off by seconds; keep the calendar day.
+        const local = value.getTime() - value.getTimezoneOffset() * 60_000
+        return new Date(Math.floor((local + 3_600_000) / DAY_MS) * DAY_MS - VN_OFFSET_MS)
+    }
     if (typeof value === 'number') {
         // Excel serial date to JS Date
         const parsed = XLSX.SSF.parse_date_code(value)
         if (parsed) {
-            return new Date(Date.UTC(parsed.y, parsed.m - 1, parsed.d))
+            return new Date(Date.UTC(parsed.y, parsed.m - 1, parsed.d) - VN_OFFSET_MS)
         }
     }
     if (typeof value === 'string') {
@@ -94,7 +135,8 @@ function parseExcelDate(value: unknown): Date | undefined {
             const month = parseInt(dmyMatch[2], 10) - 1
             const year = parseInt(dmyMatch[3], 10)
             const d = new Date(Date.UTC(year, month, day))
-            if (!isNaN(d.getTime())) return d
+            if (d.getUTCFullYear() === year && d.getUTCMonth() === month && d.getUTCDate() === day) return new Date(d.getTime() - VN_OFFSET_MS)
+            return undefined
         }
         // YYYY-MM-DD
         const ymdMatch = str.match(/^(\d{4})[\/\-](\d{1,2})[\/\-](\d{1,2})$/)
@@ -103,7 +145,8 @@ function parseExcelDate(value: unknown): Date | undefined {
             const month = parseInt(ymdMatch[2], 10) - 1
             const day = parseInt(ymdMatch[3], 10)
             const d = new Date(Date.UTC(year, month, day))
-            if (!isNaN(d.getTime())) return d
+            if (d.getUTCFullYear() === year && d.getUTCMonth() === month && d.getUTCDate() === day) return new Date(d.getTime() - VN_OFFSET_MS)
+            return undefined
         }
         const d = new Date(str)
         if (!isNaN(d.getTime())) return d
@@ -114,7 +157,10 @@ function parseExcelDate(value: unknown): Date | undefined {
 function parseYear(val: unknown): number {
     if (!val) return 0
     if (typeof val === 'number') return Math.floor(val)
-    if (val instanceof Date) return val.getFullYear()
+    if (val instanceof Date) {
+        const date = parseExcelDate(val)
+        return date ? vnYear(date) : 0
+    }
     const str = String(val).trim()
     const match = str.match(/\b(19\d\d|20\d\d)\b/)
     if (match) return parseInt(match[1], 10)
@@ -199,4 +245,3 @@ export const parseUsersExcel = async (buffer: ArrayBuffer): Promise<ExtractedUse
         }
     })
 }
-

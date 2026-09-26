@@ -21,7 +21,7 @@ export async function parseExcelUpload(file: File): Promise<ImportPayload> {
 }
 
 export async function previewExcelImport(payload: ImportPayload): Promise<ExcelImportPreview> {
-  const issues: ImportIssue[] = []
+  const issues: ImportIssue[] = [...(payload.issues ?? [])]
   const codes = payload.files.map((file) => normalizeCode(file.code))
   const codeCounts = new Map<string, number>()
 

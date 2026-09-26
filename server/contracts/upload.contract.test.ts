@@ -60,6 +60,17 @@ function createSampleExcelBuffer(options?: {
 }
 
 describe('upload contract', () => {
+    test('commit rejects malformed date before starting any write transaction', async () => {
+      const app = createTestApp()
+      let transactions = 0
+      setDbForTesting({ file: { findMany: async () => [] }, $transaction: async () => { transactions++; throw new Error('Must not write') } })
+      const body = new FormData()
+      body.append('file', new File([createSampleExcelBuffer({ judgmentDate: '31/02/2023' })], 'invalid.xlsx'))
+      const response = await app.handle(jsonRequest('/api/upload/excel/commit', { method: 'POST', headers: { cookie: await sessionCookie('ADMIN') }, body }))
+      expect(response.status).toBe(422)
+      expect(transactions).toBe(0)
+      expect((await response.json()).errors).toEqual(expect.arrayContaining([expect.objectContaining({ column: 'Ngày bản án/ quyết định', severity: 'error' })]))
+    })
     test('POST /api/upload/excel/preview without a session keeps the legacy auth error shape', async () => {
       const app = createTestApp()
       const formData = new FormData()
@@ -241,8 +252,9 @@ describe('upload contract', () => {
       expect(createdData.type).toBe('Hình sự')
       expect(createdData.year).toBe(2024)
       expect(createdData.judgmentNumber).toBe('45/2024/HS-ST')
-      expect(createdData.judgmentDate).toEqual(new Date(Date.UTC(2024, 3, 15)))
-      expect(createdData.datetime).toEqual(new Date(Date.UTC(2024, 3, 15)))
+      // 15/04/2024 at midnight Vietnam time (UTC+7)
+      expect(createdData.judgmentDate).toEqual(new Date("2024-04-15T00:00:00+07:00"))
+      expect(createdData.datetime).toEqual(new Date("2024-04-15T00:00:00+07:00"))
       expect(createdData.plaintiffs).toEqual(['Nguyễn Văn Bị Hại'])
       expect(createdData.defendants).toEqual(['Trần Văn Bị Cáo 1', 'Lê Văn Bị Cáo 2'])
       expect(createdData.pageCount).toBe(120)
@@ -322,4 +334,3 @@ describe('upload contract', () => {
       expect(await response.json()).toEqual({ error: 'Unauthorized' })
     })
 })
-
