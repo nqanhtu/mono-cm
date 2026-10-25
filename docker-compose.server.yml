@@ -141,6 +141,93 @@ services:
       - cm-net
       - n8n_n8n-net
 
+  # ─── Tây Ninh Khu Vực 10 ────────────────────────────────────────────────────
+  tayninh_kv10_server:
+    image: ghcr.io/nqanhtu/cm-server:latest
+    container_name: tayninh_kv10_server
+    restart: always
+    env_file:
+      - .env.tayninh_kv10
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      - REDIS_URL=redis://cm-redis:6379
+    depends_on:
+      - cm-redis
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=n8n_n8n-net"
+      # Router
+      - "traefik.http.routers.tayninh-kv10.rule=Host(`namnn07.zhost.store`) && PathPrefix(`/tayninh-kv10`)"
+      - "traefik.http.routers.tayninh-kv10.entrypoints=websecure"
+      - "traefik.http.routers.tayninh-kv10.tls.certresolver=myresolver"
+      # Strip /tayninh-kv10 prefix before forwarding
+      - "traefik.http.middlewares.tayninh-kv10-strip.stripprefix.prefixes=/tayninh-kv10"
+      - "traefik.http.routers.tayninh-kv10.middlewares=tayninh-kv10-strip"
+      # Service
+      - "traefik.http.services.tayninh-kv10.loadbalancer.server.port=3000"
+    networks:
+      - cm-net
+      - n8n_n8n-net
+
+  # ─── Tây Ninh Khu Vực 11 ────────────────────────────────────────────────────
+  tayninh_kv11_server:
+    image: ghcr.io/nqanhtu/cm-server:latest
+    container_name: tayninh_kv11_server
+    restart: always
+    env_file:
+      - .env.tayninh_kv11
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      - REDIS_URL=redis://cm-redis:6379
+    depends_on:
+      - cm-redis
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=n8n_n8n-net"
+      # Router
+      - "traefik.http.routers.tayninh-kv11.rule=Host(`namnn07.zhost.store`) && PathPrefix(`/tayninh-kv11`)"
+      - "traefik.http.routers.tayninh-kv11.entrypoints=websecure"
+      - "traefik.http.routers.tayninh-kv11.tls.certresolver=myresolver"
+      # Strip /tayninh-kv11 prefix before forwarding
+      - "traefik.http.middlewares.tayninh-kv11-strip.stripprefix.prefixes=/tayninh-kv11"
+      - "traefik.http.routers.tayninh-kv11.middlewares=tayninh-kv11-strip"
+      # Service
+      - "traefik.http.services.tayninh-kv11.loadbalancer.server.port=3000"
+    networks:
+      - cm-net
+      - n8n_n8n-net
+
+  # ─── Tây Ninh Khu Vực 12 ────────────────────────────────────────────────────
+  tayninh_kv12_server:
+    image: ghcr.io/nqanhtu/cm-server:latest
+    container_name: tayninh_kv12_server
+    restart: always
+    env_file:
+      - .env.tayninh_kv12
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      - REDIS_URL=redis://cm-redis:6379
+    depends_on:
+      - cm-redis
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=n8n_n8n-net"
+      # Router
+      - "traefik.http.routers.tayninh-kv12.rule=Host(`namnn07.zhost.store`) && PathPrefix(`/tayninh-kv12`)"
+      - "traefik.http.routers.tayninh-kv12.entrypoints=websecure"
+      - "traefik.http.routers.tayninh-kv12.tls.certresolver=myresolver"
+      # Strip /tayninh-kv12 prefix before forwarding
+      - "traefik.http.middlewares.tayninh-kv12-strip.stripprefix.prefixes=/tayninh-kv12"
+      - "traefik.http.routers.tayninh-kv12.middlewares=tayninh-kv12-strip"
+      # Service
+      - "traefik.http.services.tayninh-kv12.loadbalancer.server.port=3000"
+    networks:
+      - cm-net
+      - n8n_n8n-net
+
 networks:
   cm-net:
     driver: bridge

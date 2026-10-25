@@ -12,7 +12,7 @@ Không có backend Vercel Function trong cây source hiện tại. `vercel.json`
 
 `.github/workflows/deploy-server.yml` chạy khi nhánh `main` có thay đổi trong `server/**`, `lib/**`, `prisma/**`, `docker-compose.server.yml` hoặc chính workflow. Job build dùng `server/Dockerfile`, đẩy image `ghcr.io/nqanhtu/cm-server` lên GHCR. Job deploy SSH vào VPS, cập nhật repo, pull image và chạy `docker compose -f docker-compose.server.yml up -d` cho các service backend, không restart `cm-redis` trong bước này.
 
-`docker-compose.server.yml` hiện khai báo bốn backend service:
+`docker-compose.server.yml` hiện khai báo bảy backend service:
 
 | Service | Env file | Traefik path prefix |
 | --- | --- | --- |
@@ -20,6 +20,9 @@ Không có backend Vercel Function trong cây source hiện tại. `vercel.json`
 | `longan_server` | `.env.longan` | `/longan` |
 | `dongnai_city_server` | `.env.dongnai_city` | `/dongnai-city` |
 | `dongnai_kv1_server` | `.env.dongnai_kv1` | `/dongnai-kv1` |
+| `tayninh_kv10_server` | `.env.tayninh_kv10` | `/tayninh-kv10` |
+| `tayninh_kv11_server` | `.env.tayninh_kv11` | `/tayninh-kv11` |
+| `tayninh_kv12_server` | `.env.tayninh_kv12` | `/tayninh-kv12` |
 
 Traefik bỏ prefix trước khi chuyển tới app trên cổng 3000. Mỗi env file phải trỏ đến database đúng của instance đó. Repo không lưu các env file production; không suy tên database từ tên service.
 
