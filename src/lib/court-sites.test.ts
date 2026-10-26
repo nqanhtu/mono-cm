@@ -34,9 +34,10 @@ describe('court sites', () => {
     }
   })
 
-  it('defines light and dark colors for every court theme', () => {
+  it('defines light and dark colors for every assigned court theme', () => {
     const courtThemesCss = readFileSync('app/court-themes.css', 'utf8')
     for (const { theme } of Object.values(COURT_SITES)) {
+      if (!theme) continue
       expect(courtThemesCss).toContain(`:root[data-court-theme="${theme}"] {`)
       expect(courtThemesCss).toContain(`:root.dark[data-court-theme="${theme}"] {`)
     }

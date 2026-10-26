@@ -9,7 +9,7 @@ import { currentCourtSite } from '@/lib/court-sites'
 // title placeholder is replaced here along with the court's theme.
 const courtSite = currentCourtSite()
 if (courtSite) {
-  document.documentElement.dataset.courtTheme = courtSite.theme
+  if (courtSite.theme) document.documentElement.dataset.courtTheme = courtSite.theme
   document.title = courtSite.name
 }
 
