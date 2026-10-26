@@ -12,6 +12,7 @@ export type CourtSite = {
 }
 
 export const COURT_SITES: Record<string, CourtSite> = {
+  // Original per-court domains, kept until they redirect to the new ones below.
   'luutruhoso1.vercel.app': {
     name: 'Khu vực 3 - Tây Ninh',
     backendUrl: 'https://namnn07.zhost.store/longan',
@@ -25,6 +26,22 @@ export const COURT_SITES: Record<string, CourtSite> = {
     backendUrl: 'https://namnn07.zhost.store/dongnai-city',
   },
   'luutruhoso4.vercel.app': {
+    name: 'Khu vực 1 Đồng Nai',
+    backendUrl: 'https://namnn07.zhost.store/dongnai-kv1',
+  },
+  'luutruhoso-tayninh-kv3.vercel.app': {
+    name: 'Khu vực 3 - Tây Ninh',
+    backendUrl: 'https://namnn07.zhost.store/longan',
+  },
+  'luutruhoso-tayninh-tinh.vercel.app': {
+    name: 'Tỉnh Tây Ninh',
+    backendUrl: 'https://namnn07.zhost.store/dongnai',
+  },
+  'luutruhoso-dongnai-tp.vercel.app': {
+    name: 'Thành phố Đồng Nai',
+    backendUrl: 'https://namnn07.zhost.store/dongnai-city',
+  },
+  'luutruhoso-dongnai-kv1.vercel.app': {
     name: 'Khu vực 1 Đồng Nai',
     backendUrl: 'https://namnn07.zhost.store/dongnai-kv1',
   },
