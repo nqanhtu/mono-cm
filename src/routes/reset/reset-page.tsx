@@ -251,15 +251,15 @@ export default function ResetPage() {
 
             <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_360px]">
                 <main className="space-y-5">
-                    <Card className="border-blue-200 shadow-sm">
-                        <CardHeader className="border-b border-blue-100 bg-blue-50/60">
+                    <Card className="border-primary/20 shadow-sm">
+                        <CardHeader className="border-b border-primary/10 bg-primary/5">
                             <div className="flex items-start justify-between gap-3">
                                 <div className="min-w-0">
                                     <div className="flex items-center gap-2">
-                                        <DatabaseBackup className="h-5 w-5 text-blue-600" />
-                                        <CardTitle className="text-blue-900">Sao lưu cơ sở dữ liệu</CardTitle>
+                                        <DatabaseBackup className="h-5 w-5 text-primary" />
+                                        <CardTitle className="text-foreground">Sao lưu cơ sở dữ liệu</CardTitle>
                                     </div>
-                                    <CardDescription className="mt-1 text-blue-700/80">
+                                    <CardDescription className="mt-1">
                                         Tạo file PostgreSQL .dump từ dữ liệu hiện tại.
                                     </CardDescription>
                                 </div>
@@ -267,12 +267,12 @@ export default function ResetPage() {
                             </div>
                         </CardHeader>
                         <CardContent className="space-y-4 pt-5">
-                            <p className="rounded-lg border border-blue-100 bg-blue-50/50 px-4 py-3 text-sm text-slate-600">
+                            <p className="rounded-lg border border-primary/10 bg-primary/5 px-4 py-3 text-sm text-slate-600">
                                 File backup dùng để khôi phục hệ thống khi bảo trì, thử nghiệm hoặc xử lý sự cố dữ liệu.
                             </p>
                             <Button
                                 variant="outline"
-                                className="min-h-10 w-full border-blue-200 text-blue-700 hover:bg-blue-50 hover:text-blue-800 sm:w-auto"
+                                className="min-h-10 w-full border-primary/30 text-primary hover:bg-primary/10 hover:text-primary sm:w-auto"
                                 disabled={isAnyOperationRunning}
                                 onClick={handleBackup}
                             >

@@ -237,7 +237,7 @@ export function AgencyList() {
                       <DropdownMenuContent align="end">
                         <DropdownMenuLabel>Thao tác</DropdownMenuLabel>
                         <DropdownMenuItem 
-                          className="cursor-pointer focus:bg-blue-50 focus:text-blue-600 dark:focus:bg-blue-950/50 dark:focus:text-blue-400"
+                          className="cursor-pointer focus:bg-primary/10 focus:text-primary"
                           onClick={() => handlePrintLabel(agency)}
                         >
                           <Printer className="mr-2 h-4 w-4" /> In nhãn

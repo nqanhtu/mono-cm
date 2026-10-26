@@ -41,7 +41,7 @@ export function AuditFilters() {
     return (
         <div className='p-4 border-b border-slate-200 flex flex-wrap items-center gap-3 bg-white shrink-0'>
             <div className='flex items-center gap-2'>
-                <Filter className='w-5 h-5 text-indigo-600' />
+                <Filter className='w-5 h-5 text-primary' />
                 <h3 className='font-bold text-slate-700'>Bộ lọc</h3>
             </div>
             <div className='h-6 w-px bg-slate-200 mx-2 hidden md:block'></div>
@@ -71,7 +71,7 @@ export function AuditFilters() {
                     placeholder='Tìm kiếm người dùng, đối tượng…'
                     defaultValue={searchParams.get('q')?.toString()}
                     onChange={(e) => handleSearch(e.target.value)}
-                    className='w-full pl-9 pr-4 py-1.5 bg-slate-50 border-slate-200 rounded-lg text-sm outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 transition-colors h-9'
+                    className='w-full pl-9 pr-4 py-1.5 bg-slate-50 border-slate-200 rounded-lg text-sm outline-none focus-visible:ring-2 focus-visible:ring-primary/50 transition-colors h-9'
                 />
             </div>
         </div>

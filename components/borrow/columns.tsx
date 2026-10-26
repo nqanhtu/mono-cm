@@ -178,7 +178,7 @@ export const getColumns = ({ onReturn, onApprove, onReject, onExport, onEdit, on
               variant="ghost"
               size="icon"
               onClick={() => onViewHistory(slip.id)}
-              className='h-8 w-8 text-blue-600 hover:text-blue-700 hover:bg-blue-50'
+              className='h-8 w-8 text-primary hover:text-primary hover:bg-primary/10'
               title='Nhật ký'
               aria-label='Xem nhật ký mượn'
             >
@@ -221,7 +221,7 @@ export const getColumns = ({ onReturn, onApprove, onReject, onExport, onEdit, on
                   variant="ghost"
                   size="icon"
                   onClick={() => onExport(slip.id)}
-                  className='h-8 w-8 text-blue-600 hover:text-blue-700 hover:bg-blue-50'
+                  className='h-8 w-8 text-primary hover:text-primary hover:bg-primary/10'
                   title='Xuất hồ sơ'
                   aria-label='Xuất hồ sơ mượn'
                 >
@@ -256,7 +256,7 @@ export const getColumns = ({ onReturn, onApprove, onReject, onExport, onEdit, on
             variant="ghost"
             size="icon"
             onClick={() => onViewHistory(slip.id)}
-            className='h-8 w-8 text-blue-600 hover:text-blue-700 hover:bg-blue-50'
+            className='h-8 w-8 text-primary hover:text-primary hover:bg-primary/10'
             title='Nhật ký'
             aria-label='Xem nhật ký mượn'
           >

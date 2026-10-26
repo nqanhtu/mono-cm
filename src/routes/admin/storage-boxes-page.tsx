@@ -391,7 +391,7 @@ export default function StorageBoxesPage() {
                           <TableCell>
                             {box.agency ? (
                               <div className="flex items-center gap-1.5">
-                                <Building2 className="h-3.5 w-3.5 text-sky-600" />
+                                <Building2 className="h-3.5 w-3.5 text-primary" />
                                 <span className="text-xs font-medium text-foreground max-w-[200px] truncate">
                                   {box.agency.name}
                                 </span>
@@ -457,7 +457,7 @@ export default function StorageBoxesPage() {
                                 <DropdownMenuLabel className="text-xs text-muted-foreground">Lựa chọn</DropdownMenuLabel>
                                 <DropdownMenuItem
                                   onClick={() => openLabelPreview([box])}
-                                  className="text-xs cursor-pointer flex items-center gap-2 focus:bg-blue-50 focus:text-blue-600 dark:focus:bg-blue-950/50 dark:focus:text-blue-400"
+                                  className="text-xs cursor-pointer flex items-center gap-2 focus:bg-primary/10 focus:text-primary"
                                 >
                                   <Printer className="h-3.5 w-3.5" /> In nhãn
                                 </DropdownMenuItem>

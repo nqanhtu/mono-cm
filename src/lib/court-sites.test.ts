@@ -1,4 +1,5 @@
 import vercelConfig from '../../vercel.json'
+import { readFileSync } from 'node:fs'
 import { COURT_SITES, courtName, courtSiteFor } from '@/lib/court-sites'
 
 type Rewrite = { source: string; destination: string; has?: { type: string; value: string }[] }
@@ -30,6 +31,14 @@ describe('court sites', () => {
       expect(rewrite.source).toBe('/api/:path*')
       expect(rewrite.destination).toBe(`${site.backendUrl}/api/:path*`)
       expect(rewrites.indexOf(rewrite)).toBeLessThan(spaIndex)
+    }
+  })
+
+  it('defines light and dark colors for every court theme', () => {
+    const courtThemesCss = readFileSync('app/court-themes.css', 'utf8')
+    for (const { theme } of Object.values(COURT_SITES)) {
+      expect(courtThemesCss).toContain(`:root[data-court-theme="${theme}"] {`)
+      expect(courtThemesCss).toContain(`:root.dark[data-court-theme="${theme}"] {`)
     }
   })
 })

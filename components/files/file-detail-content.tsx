@@ -302,7 +302,7 @@ export function FileDetailContent({ id }: { id: string }) {
                         <Card>
                             <CardHeader>
                                 <CardTitle className="flex items-center gap-2">
-                                    <Info className="h-5 w-5 text-blue-500" />
+                                    <Info className="h-5 w-5 text-primary" />
                                     Thông tin cơ bản
                                 </CardTitle>
                             </CardHeader>
@@ -343,7 +343,7 @@ export function FileDetailContent({ id }: { id: string }) {
                         <Card>
                             <CardHeader>
                                 <CardTitle className="flex items-center gap-2">
-                                    <Users className="h-5 w-5 text-indigo-500" />
+                                    <Users className="h-5 w-5 text-primary" />
                                     Đương sự
                                 </CardTitle>
                             </CardHeader>

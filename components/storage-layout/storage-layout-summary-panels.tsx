@@ -45,8 +45,8 @@ export function StorageLayoutDistributionPanel({
                 key={`${warehouse.id}-${shelf.id}`}
                 type="button"
                 className={cn(
-                  "rounded-xl border bg-slate-50 p-3 text-left transition-all hover:-translate-y-0.5 hover:border-sky-300 hover:bg-sky-50 hover:shadow-sm dark:bg-slate-950 dark:hover:bg-slate-900",
-                  selectedElement?.type === "shelf" && selectedElement.warehouseId === warehouse.id && selectedElement.id === shelf.id && "border-sky-400 bg-sky-50 dark:bg-slate-900",
+                  "rounded-xl border bg-slate-50 p-3 text-left transition-all hover:-translate-y-0.5 hover:border-primary/40 hover:bg-primary/5 hover:shadow-sm dark:bg-slate-950 dark:hover:bg-slate-900",
+                  selectedElement?.type === "shelf" && selectedElement.warehouseId === warehouse.id && selectedElement.id === shelf.id && "border-primary/60 bg-primary/5 dark:bg-slate-900",
                 )}
                 onClick={() => onSelectShelf({ type: "shelf", warehouseId: warehouse.id, id: shelf.id })}
               >
@@ -60,7 +60,7 @@ export function StorageLayoutDistributionPanel({
                 <div className="mt-3 space-y-1">
                   {shelfBoxes.slice(0, 3).map((box) => (
                     <div key={box.id} className="flex items-center justify-between gap-2 rounded bg-white px-2 py-1 text-[11px] dark:bg-slate-900">
-                      <span className="truncate font-mono text-sky-700">{box.code}</span>
+                      <span className="truncate font-mono text-primary">{box.code}</span>
                       <span className="shrink-0 text-slate-400">{box.year || "-"}</span>
                     </div>
                   ))}
@@ -106,7 +106,7 @@ export function StorageLayoutMismatchPanel({ mismatch, onSelectShelf }: StorageL
             <div className="space-y-1">
               {mismatch.staleWarehouses.map((warehouse) => <div key={warehouse.id}>{warehouse.name}</div>)}
               {mismatch.staleShelves.map((item) => (
-                <button key={`${item.warehouseId}-${item.shelfId}`} type="button" className="block text-left text-sky-700" onClick={() => onSelectShelf({ type: "shelf", warehouseId: item.warehouseId, id: item.shelfId })}>
+                <button key={`${item.warehouseId}-${item.shelfId}`} type="button" className="block text-left text-primary" onClick={() => onSelectShelf({ type: "shelf", warehouseId: item.warehouseId, id: item.shelfId })}>
                   {item.warehouseId} / {item.shelfId}
                 </button>
               ))}

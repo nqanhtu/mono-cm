@@ -368,7 +368,7 @@ export default function BorrowForm({ onSuccess, onCancel, initialData, slipId, i
                   value={borrowDate}
                   onChange={(e) => setBorrowDate(e.target.value)}
                   suppressHydrationWarning
-                  className="w-full pl-9 pr-3 py-2 bg-white border-slate-200 rounded-lg text-sm focus-visible:ring-2 focus-visible:ring-indigo-500 outline-none transition-colors"
+                  className="w-full pl-9 pr-3 py-2 bg-white border-slate-200 rounded-lg text-sm focus-visible:ring-2 focus-visible:ring-primary/50 outline-none transition-colors"
                 />
               </div>
             </Field>
@@ -383,7 +383,7 @@ export default function BorrowForm({ onSuccess, onCancel, initialData, slipId, i
                   value={dueDate}
                   onChange={(e) => setDueDate(e.target.value)}
                   suppressHydrationWarning
-                  className="w-full pl-9 pr-3 py-2 bg-white border-slate-200 rounded-lg text-sm focus-visible:ring-2 focus-visible:ring-indigo-500 outline-none transition-colors"
+                  className="w-full pl-9 pr-3 py-2 bg-white border-slate-200 rounded-lg text-sm focus-visible:ring-2 focus-visible:ring-primary/50 outline-none transition-colors"
                 />
               </div>
             </Field>
@@ -395,7 +395,7 @@ export default function BorrowForm({ onSuccess, onCancel, initialData, slipId, i
               id="reason"
               value={reason}
               onChange={(e) => setReason(e.target.value)}
-              className="w-full px-3 py-2 bg-white border-slate-200 rounded-lg text-sm focus-visible:ring-2 focus-visible:ring-indigo-500 outline-none transition-colors h-20 resize-none"
+              className="w-full px-3 py-2 bg-white border-slate-200 rounded-lg text-sm focus-visible:ring-2 focus-visible:ring-primary/50 outline-none transition-colors h-20 resize-none"
               placeholder="Lý do mượn, ghi chú tình trạng hồ sơ…"
             />
           </Field>
@@ -443,7 +443,7 @@ export default function BorrowForm({ onSuccess, onCancel, initialData, slipId, i
             >
               <FileText className="w-3.5 h-3.5" aria-hidden="true" />
               Danh sách hồ sơ
-              <span className="bg-indigo-100 text-indigo-700 px-1.5 rounded-full text-[10px]">
+              <span className="bg-primary/10 text-primary px-1.5 rounded-full text-[10px]">
                 {selectedFiles.length}
               </span>
             </div>
@@ -467,7 +467,7 @@ export default function BorrowForm({ onSuccess, onCancel, initialData, slipId, i
               }}
               disabled={isSearchingFile}
               placeholder="Nhập mã hoặc quét…"
-              className="w-full pl-9 pr-3 py-2 bg-slate-50 border-slate-200 rounded-lg text-sm focus:bg-white focus-visible:ring-2 focus-visible:ring-indigo-500 outline-none transition-colors"
+              className="w-full pl-9 pr-3 py-2 bg-slate-50 border-slate-200 rounded-lg text-sm focus:bg-white focus-visible:ring-2 focus-visible:ring-primary/50 outline-none transition-colors"
             />
             {showSuggestions && fileSuggestions.length > 0 && (
               <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-slate-200 rounded-lg shadow-lg z-50 max-h-60 overflow-auto">
@@ -510,7 +510,7 @@ export default function BorrowForm({ onSuccess, onCancel, initialData, slipId, i
                 key={file.id}
                 className="bg-white p-3 rounded-lg border border-slate-100 shadow-sm flex items-start gap-3 group"
               >
-                <div className="p-2 bg-indigo-50 text-indigo-600 rounded">
+                <div className="p-2 bg-primary/10 text-primary rounded">
                   <FileStack className="w-4 h-4" />
                 </div>
                 <div className="flex-1 min-w-0">

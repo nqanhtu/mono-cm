@@ -338,7 +338,7 @@ export const getColumns = (
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="h-8 w-8 text-muted-foreground hover:bg-blue-50 hover:text-blue-600 dark:hover:bg-blue-950/50 dark:hover:text-blue-400"
+                  className="h-8 w-8 text-muted-foreground hover:bg-primary/10 hover:text-primary"
                   onClick={() => onPrintFile(doc)}
                   title="In bìa hồ sơ"
                   aria-label="In bìa hồ sơ"

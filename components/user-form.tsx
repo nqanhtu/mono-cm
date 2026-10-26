@@ -126,9 +126,9 @@ export default function UserForm({ userId, initialData, onSuccess, onCancel }: U
           <span className="text-xs font-medium mt-2">Tải ảnh đại diện</span>
           <Input type="file" className="absolute inset-0 opacity-0 cursor-pointer p-0 h-full" />
         </div>
-        <div className="p-4 bg-indigo-50 border border-indigo-100 rounded-xl">
-          <h4 className="text-sm font-bold text-indigo-900 mb-1">Mẹo</h4>
-          <p className="text-xs text-indigo-700 leading-relaxed">
+        <div className="p-4 bg-primary/5 border border-primary/15 rounded-xl">
+          <h4 className="text-sm font-bold text-foreground mb-1">Mẹo</h4>
+          <p className="text-xs text-muted-foreground leading-relaxed">
             Tên đăng nhập nên ngắn gọn và dễ nhớ. Mật khẩu phải có ít nhất 6 ký tự.
           </p>
         </div>
@@ -147,7 +147,7 @@ export default function UserForm({ userId, initialData, onSuccess, onCancel }: U
                 type="text"
                 value={formData.fullName}
                 onChange={(e) => handleChange('fullName', e.target.value)}
-                className="w-full pl-9 pr-3 py-2 bg-white border-slate-200 rounded-lg text-sm focus-visible:ring-2 focus-visible:ring-indigo-500 outline-none transition-colors"
+                className="w-full pl-9 pr-3 py-2 bg-white border-slate-200 rounded-lg text-sm focus-visible:ring-2 focus-visible:ring-primary/50 outline-none transition-colors"
                 placeholder="Nhập họ và tên…"
               />
             </div>
@@ -160,7 +160,7 @@ export default function UserForm({ userId, initialData, onSuccess, onCancel }: U
                 type="text"
                 value={formData.unit}
                 onChange={(e) => handleChange('unit', e.target.value)}
-                className="w-full pl-9 pr-3 py-2 bg-white border-slate-200 rounded-lg text-sm focus-visible:ring-2 focus-visible:ring-indigo-500 outline-none transition-colors"
+                className="w-full pl-9 pr-3 py-2 bg-white border-slate-200 rounded-lg text-sm focus-visible:ring-2 focus-visible:ring-primary/50 outline-none transition-colors"
                 placeholder="Phòng ban…"
               />
             </div>
@@ -179,7 +179,7 @@ export default function UserForm({ userId, initialData, onSuccess, onCancel }: U
                 value={formData.username}
                 onChange={(e) => handleChange('username', e.target.value)}
                 spellCheck={false}
-                className="w-full pl-9 pr-3 py-2 bg-white border-slate-200 rounded-lg text-sm focus-visible:ring-2 focus-visible:ring-indigo-500 outline-none transition-colors"
+                className="w-full pl-9 pr-3 py-2 bg-white border-slate-200 rounded-lg text-sm focus-visible:ring-2 focus-visible:ring-primary/50 outline-none transition-colors"
                 placeholder="username"
                 disabled={isEditMode}
               />
@@ -195,7 +195,7 @@ export default function UserForm({ userId, initialData, onSuccess, onCancel }: U
                 type="password"
                 value={formData.password}
                 onChange={(e) => handleChange('password', e.target.value)}
-                className="w-full pl-9 pr-3 py-2 bg-white border-slate-200 rounded-lg text-sm focus-visible:ring-2 focus-visible:ring-indigo-500 outline-none transition-colors"
+                className="w-full pl-9 pr-3 py-2 bg-white border-slate-200 rounded-lg text-sm focus-visible:ring-2 focus-visible:ring-primary/50 outline-none transition-colors"
                 placeholder={isEditMode ? "Để trống nếu không đổi" : "Nhập mật khẩu…"}
               />
             </div>
@@ -246,7 +246,7 @@ export default function UserForm({ userId, initialData, onSuccess, onCancel }: U
           <Button
             type="submit"
             disabled={isSubmitting}
-            className="px-5 py-2 bg-indigo-600 text-white font-medium rounded-lg hover:bg-indigo-700 shadow-sm shadow-indigo-200 transition-colors h-auto"
+            className="px-5 py-2 bg-primary text-primary-foreground font-medium rounded-lg hover:bg-primary/90 shadow-sm shadow-primary/20 transition-colors h-auto"
           >
             {isSubmitting && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
             {isEditMode ? 'Cập nhật' : 'Lưu thông tin'}

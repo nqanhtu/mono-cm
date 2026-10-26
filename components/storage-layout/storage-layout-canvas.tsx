@@ -1143,7 +1143,7 @@ export function StorageLayoutCanvas({
       <div className="border-b bg-white px-4 py-3 dark:bg-slate-900">
         <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
           <div className="flex min-w-0 items-center gap-3">
-            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-sky-600 text-white shadow-sm">
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-sm">
               <Warehouse className="h-5 w-5" />
             </div>
             <div className="min-w-0">
@@ -1228,7 +1228,7 @@ export function StorageLayoutCanvas({
                     <button
                       key={box.id}
                       type="button"
-                      className="flex w-full items-center justify-between gap-3 rounded-lg border bg-slate-50 px-3 py-2 text-left text-xs transition-all hover:-translate-y-0.5 hover:border-sky-300 hover:bg-sky-50 hover:shadow-sm dark:bg-slate-950 dark:hover:bg-slate-900"
+                      className="flex w-full items-center justify-between gap-3 rounded-lg border bg-slate-50 px-3 py-2 text-left text-xs transition-all hover:-translate-y-0.5 hover:border-primary/40 hover:bg-primary/5 hover:shadow-sm dark:bg-slate-950 dark:hover:bg-slate-900"
                       onClick={() => {
                         const warehouse = layout.warehouses.find((item) => item.id === box.warehouse);
                         const shelf = warehouse?.shelves.find((item) => item.id === getStorageShelfId(box));
@@ -1243,7 +1243,7 @@ export function StorageLayoutCanvas({
                       }}
                     >
                       <span className="min-w-0">
-                        <span className="block truncate font-mono font-semibold text-sky-700">{box.code}</span>
+                        <span className="block truncate font-mono font-semibold text-primary">{box.code}</span>
                         <span className="block truncate text-slate-500">{[box.warehouse, box.line, box.shelf].filter(Boolean).join(" / ")}</span>
                       </span>
                       <span className="shrink-0 text-slate-400">{box.year || "-"}</span>
@@ -1340,7 +1340,7 @@ export function StorageLayoutCanvas({
           <div className="storage-animate-fade-in relative min-h-[660px] overflow-hidden rounded-2xl border bg-white shadow-sm dark:bg-slate-900">
             <div className="pointer-events-none absolute left-4 top-4 z-10 rounded-xl border bg-white/90 px-3 py-2 text-xs shadow-sm backdrop-blur dark:bg-slate-900/90">
               <div className="flex items-center gap-2 font-semibold text-slate-700 dark:text-slate-100">
-                <span className={cn("h-2.5 w-2.5 rounded-full", isEditMode ? "animate-pulse bg-emerald-500" : "bg-sky-500")} />
+                <span className={cn("h-2.5 w-2.5 rounded-full", isEditMode ? "animate-pulse bg-emerald-500" : "bg-primary")} />
                 {is25DMode ? "Mặt bằng 2.5D" : "Mặt bằng 2D"}
               </div>
               <div className="text-slate-500">{is25DMode ? "2.5D chỉ xem" : isEditMode ? "Sửa layout" : "Xem layout"} · {isHeatmapMode ? "Heatmap" : "Màu trạng thái"}</div>
@@ -1426,7 +1426,7 @@ export function StorageLayoutCanvas({
                 {(hoveredShelf.occupancy?.boxes || []).length > 0 ? (
                   hoveredShelf.occupancy?.boxes.map((box) => (
                     <div key={box.id} className="rounded border bg-slate-50 p-2">
-                      <div className="font-mono font-semibold text-sky-700">{box.code}</div>
+                      <div className="font-mono font-semibold text-primary">{box.code}</div>
                       <div className="truncate text-muted-foreground">{box.agencyName || "Chưa phân phối"}</div>
                       <div className="mt-1 flex justify-between text-[10px] text-muted-foreground">
                         <span>{box.caseType || "-"}</span>

@@ -130,14 +130,14 @@ export default function BorrowHistoryModal({ isOpen, onClose, slipId }: BorrowHi
                             <Loader2 className="w-6 h-6 animate-spin text-slate-400" />
                         </div>
                     ) : (
-                        <ol className="relative border-s border-indigo-200 ml-3">
+                        <ol className="relative border-s border-primary/25 ml-3">
                             {borrowEvent.length === 0 && (
                                 <li className="mb-10 ms-6 text-slate-500 text-sm italic">Chưa có nhật ký nào.</li>
                             )}
                             {borrowEvent.map((log) => (
                                 <li key={log.id} className="mb-10 ms-6">
-                                    <span className="absolute flex items-center justify-center w-6 h-6 bg-indigo-100 rounded-full -start-3 ring-8 ring-white">
-                                        <History className="w-3 h-3 text-indigo-600" />
+                                    <span className="absolute flex items-center justify-center w-6 h-6 bg-primary/10 rounded-full -start-3 ring-8 ring-white">
+                                        <History className="w-3 h-3 text-primary" />
                                     </span>
                                     <time className="bg-slate-100 border border-slate-200 text-slate-600 text-xs font-medium px-1.5 py-0.5 rounded">
                                         {format(new Date(log.createdAt), "dd/MM/yyyy HH:mm")}
