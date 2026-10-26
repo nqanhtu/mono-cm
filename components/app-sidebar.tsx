@@ -32,6 +32,7 @@ import {
 } from "@/components/ui/sidebar";
 import { Link } from 'react-router-dom';
 import { can } from "@/lib/rbac";
+import { courtName } from "@/lib/court-sites";
 
 interface AppSidebarProps {
   user?: User;
@@ -100,7 +101,7 @@ export function AppSidebar({ user }: AppSidebarProps) {
                 </span>
                 <span className="flex min-w-0 flex-col">
                   <span className="truncate text-sm font-semibold leading-5">
-                    {import.meta.env.VITE_COURT_NAME || "Quản lý hồ sơ"}
+                    {courtName() || "Quản lý hồ sơ"}
                   </span>
                   <span className="truncate text-[11px] font-medium text-sidebar-foreground/70">
                     Lưu trữ nội bộ

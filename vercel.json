@@ -6,7 +6,28 @@
   "ignoreCommand": "sh -c 'base=${VERCEL_GIT_PREVIOUS_SHA:-}; [ -n \"$base\" ] && git cat-file -e \"$base^{commit}\" 2>/dev/null || exit 1; git diff --quiet \"$base\" HEAD -- . \":(exclude,glob)**/*.md\" \":(exclude,glob)**/*.MD\"'",
   "devCommand": "vite --port $PORT",
   "outputDirectory": "dist",
+  "headers": [
+    {
+      "source": "/api/(.*)",
+      "headers": [{ "key": "x-vercel-enable-rewrite-caching", "value": "0" }]
+    }
+  ],
   "rewrites": [
+    {
+      "source": "/api/:path*",
+      "has": [{ "type": "host", "value": "luutruhoso-tayninh-kv10.vercel.app" }],
+      "destination": "https://namnn07.zhost.store/tayninh-kv10/api/:path*"
+    },
+    {
+      "source": "/api/:path*",
+      "has": [{ "type": "host", "value": "luutruhoso-tayninh-kv11.vercel.app" }],
+      "destination": "https://namnn07.zhost.store/tayninh-kv11/api/:path*"
+    },
+    {
+      "source": "/api/:path*",
+      "has": [{ "type": "host", "value": "luutruhoso-tayninh-kv12.vercel.app" }],
+      "destination": "https://namnn07.zhost.store/tayninh-kv12/api/:path*"
+    },
     {
       "source": "/((?!@vite/|@react-refresh$)(?!.*\\.[a-zA-Z0-9]+$).*)",
       "destination": "/index.html"

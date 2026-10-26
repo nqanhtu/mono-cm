@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { SidebarTrigger } from "./ui/sidebar";
 import { useSession } from "@/lib/hooks/use-auth";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { courtName } from "@/lib/court-sites";
 
 interface HeaderProps {
   user?: User;
@@ -35,7 +36,7 @@ export default function Header({ user }: HeaderProps) {
   const currentPage = pageTitles[pathname] ?? (
     pathname.startsWith("/files/")
       ? { title: "Chi tiết hồ sơ", description: "Xem và cập nhật thông tin hồ sơ" }
-      : { title: import.meta.env.VITE_COURT_NAME || "Quản lý hồ sơ", description: "Hệ thống lưu trữ nội bộ" }
+      : { title: courtName() || "Quản lý hồ sơ", description: "Hệ thống lưu trữ nội bộ" }
   )
 
   async function handleLogout() {

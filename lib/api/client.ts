@@ -1,3 +1,5 @@
+import { currentCourtSite } from '@/lib/court-sites'
+
 export type ApiError = {
   status: number
   message: string
@@ -19,7 +21,8 @@ export class ApiClientError extends Error {
 export function apiUrl(path: string) {
   if (/^https?:\/\//.test(path)) return path
 
-  const configuredBaseUrl = import.meta.env.PROD ? import.meta.env.VITE_API_URL : ''
+  // Shared-project court hosts reach their backend through the vercel.json proxy.
+  const configuredBaseUrl = import.meta.env.PROD && !currentCourtSite() ? import.meta.env.VITE_API_URL : ''
   const baseUrl = typeof configuredBaseUrl === 'string'
     ? configuredBaseUrl.trim().replace(/^["']|["']$/g, '')
     : ''

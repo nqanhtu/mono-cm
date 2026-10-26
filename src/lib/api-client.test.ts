@@ -1,4 +1,5 @@
 import { apiDownload, apiJson, ApiClientError } from '@/lib/api/client'
+import * as courtSites from '@/lib/court-sites'
 
 describe('api client', () => {
   beforeEach(() => {
@@ -60,6 +61,21 @@ describe('api client', () => {
   it('keeps non-production API calls same-origin even when VITE_API_URL is present', async () => {
     vi.stubEnv('PROD', false)
     vi.stubEnv('VITE_API_URL', 'https://api.example.com/')
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ ok: true }),
+    })
+    vi.stubGlobal('fetch', fetchMock)
+
+    await apiJson('/api/health')
+
+    expect(fetchMock).toHaveBeenCalledWith('/api/health', expect.any(Object))
+  })
+
+  it('keeps shared court-site hosts same-origin so the vercel.json proxy handles them', async () => {
+    vi.stubEnv('PROD', true)
+    vi.stubEnv('VITE_API_URL', 'https://api.example.com/')
+    vi.spyOn(courtSites, 'currentCourtSite').mockReturnValue(courtSites.COURT_SITES['luutruhoso-tayninh-kv10.vercel.app'])
     const fetchMock = vi.fn().mockResolvedValue({
       ok: true,
       json: async () => ({ ok: true }),

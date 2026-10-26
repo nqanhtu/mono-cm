@@ -1,6 +1,7 @@
 'use client';
 
 import { apiFetch } from '@/lib/api/client';
+import { courtName } from '@/lib/court-sites';
 
 import { useState } from 'react';
 import { useLocation } from 'react-router-dom';
@@ -18,6 +19,7 @@ export default function LoginPage() {
     const router = useRouter();
     const location = useLocation();
     const { mutate } = useSession();
+    const siteCourtName = courtName();
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState('');
 
@@ -79,7 +81,7 @@ export default function LoginPage() {
                     </div>
                     <CardTitle className="text-2xl font-semibold text-slate-900">Đăng nhập hệ thống</CardTitle>
                     <CardDescription className="text-slate-500">
-                        {import.meta.env.VITE_COURT_NAME ? `${import.meta.env.VITE_COURT_NAME} - Lưu trữ nội bộ` : "Quản lý hồ sơ lưu trữ nội bộ"}
+                        {siteCourtName ? `${siteCourtName} - Lưu trữ nội bộ` : "Quản lý hồ sơ lưu trữ nội bộ"}
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -141,7 +143,7 @@ export default function LoginPage() {
                 </CardContent>
                 <CardFooter className="flex justify-center pb-8 pt-2">
                     <p className="text-xs text-slate-400 text-center">
-                        {import.meta.env.VITE_COURT_NAME ? `${import.meta.env.VITE_COURT_NAME} - Hệ thống lưu trữ nội bộ` : "Hệ thống lưu trữ và quản lý hồ sơ nội bộ"} <br />
+                        {siteCourtName ? `${siteCourtName} - Hệ thống lưu trữ nội bộ` : "Hệ thống lưu trữ và quản lý hồ sơ nội bộ"} <br />
                     </p>
                 </CardFooter>
             </Card>
