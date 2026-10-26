@@ -15,6 +15,26 @@
   "rewrites": [
     {
       "source": "/api/:path*",
+      "has": [{ "type": "host", "value": "luutruhoso1.vercel.app" }],
+      "destination": "https://namnn07.zhost.store/longan/api/:path*"
+    },
+    {
+      "source": "/api/:path*",
+      "has": [{ "type": "host", "value": "luutruhoso2.vercel.app" }],
+      "destination": "https://namnn07.zhost.store/dongnai/api/:path*"
+    },
+    {
+      "source": "/api/:path*",
+      "has": [{ "type": "host", "value": "luutruhoso3.vercel.app" }],
+      "destination": "https://namnn07.zhost.store/dongnai-city/api/:path*"
+    },
+    {
+      "source": "/api/:path*",
+      "has": [{ "type": "host", "value": "luutruhoso4.vercel.app" }],
+      "destination": "https://namnn07.zhost.store/dongnai-kv1/api/:path*"
+    },
+    {
+      "source": "/api/:path*",
       "has": [{ "type": "host", "value": "luutruhoso-tayninh-kv10.vercel.app" }],
       "destination": "https://namnn07.zhost.store/tayninh-kv10/api/:path*"
     },

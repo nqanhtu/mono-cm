@@ -11,7 +11,7 @@ describe('court sites', () => {
 
   it('resolves only listed hosts', () => {
     expect(courtSiteFor('luutruhoso-tayninh-kv10.vercel.app')?.name).toBe('Toà án nhân dân khu vực 10 - Tây Ninh')
-    expect(courtSiteFor('luutruhoso1.vercel.app')).toBeUndefined()
+    expect(courtSiteFor('cm-tayninh.vercel.app')).toBeUndefined()
     expect(courtSiteFor('toString')).toBeUndefined()
   })
 
